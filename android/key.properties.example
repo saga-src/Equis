@@ -1,0 +1,5 @@
+# Copy to android/key.properties. Never commit the populated file or keystore.
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=equis-release
+storeFile=F:/PATH/OUTSIDE/REPOSITORY/equis-release.jks

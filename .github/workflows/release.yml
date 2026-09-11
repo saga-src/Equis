@@ -1,0 +1,159 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: 3.44.7
+  RELEASE_VERSION: 1.0.0
+  RELEASE_BUILD: 6
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test integration_test
+      - run: flutter analyze
+      - run: flutter test
+      - name: Verify release version
+        run: |
+          grep -q "^version: ${RELEASE_VERSION}+${RELEASE_BUILD}$" pubspec.yaml
+
+  android:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Require Android signing and runtime configuration
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          SUPABASE_URL: ${{ vars.EQUIS_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.EQUIS_SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          test -n "$STORE_PASSWORD"
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_ANON_KEY"
+      - name: Materialize ephemeral release inputs
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          SUPABASE_URL: ${{ vars.EQUIS_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.EQUIS_SUPABASE_ANON_KEY }}
+        run: |
+          mkdir -p android/release
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/release/equis-release.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=../release/equis-release.jks\n' "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
+          jq -n --arg url "$SUPABASE_URL" --arg key "$SUPABASE_ANON_KEY" '{EQUIS_ENVIRONMENT:"production",EQUIS_SUPABASE_URL:$url,EQUIS_SUPABASE_ANON_KEY:$key,EQUIS_LOCAL_INTELLIGENCE_ENABLED:"true"}' > .dart-defines.release.local.json
+      - run: flutter pub get
+      - run: flutter build apk --release --dart-define=EQUIS_VERSION=${RELEASE_VERSION} --dart-define=EQUIS_BUILD=${RELEASE_BUILD} --dart-define-from-file=.dart-defines.release.local.json
+      - name: Verify Android signature
+        run: $ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk
+      - name: Name Android package
+        run: cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/Equis-Android-${RELEASE_VERSION}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Equis-Android-${{ env.RELEASE_VERSION }}
+          path: |
+            build/app/outputs/flutter-apk/Equis-Android-${{ env.RELEASE_VERSION }}.apk
+          if-no-files-found: error
+      - name: Remove ephemeral release inputs
+        if: always()
+        run: rm -f android/key.properties android/release/equis-release.jks .dart-defines.release.local.json
+
+  windows:
+    needs: quality
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Install Inno Setup
+        run: winget install --id JRSoftware.InnoSetup --exact --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+      - name: Materialize runtime configuration
+        shell: pwsh
+        env:
+          SUPABASE_URL: ${{ vars.EQUIS_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.EQUIS_SUPABASE_ANON_KEY }}
+        run: |
+          if (!$env:SUPABASE_URL -or !$env:SUPABASE_ANON_KEY) { throw 'Runtime configuration required.' }
+          @{ EQUIS_ENVIRONMENT='production'; EQUIS_SUPABASE_URL=$env:SUPABASE_URL; EQUIS_SUPABASE_ANON_KEY=$env:SUPABASE_ANON_KEY; EQUIS_LOCAL_INTELLIGENCE_ENABLED='true' } |
+            ConvertTo-Json | Set-Content .dart-defines.release.local.json
+      - run: flutter pub get
+      - run: flutter build windows --release --dart-define=EQUIS_VERSION=$env:RELEASE_VERSION --dart-define=EQUIS_BUILD=$env:RELEASE_BUILD --dart-define-from-file=.dart-defines.release.local.json
+      - name: Build update helper and inventory
+        shell: pwsh
+        run: ./tool/prepare_windows_update.ps1
+      - name: Package installer and portable bundle
+        shell: pwsh
+        run: |
+          ./tool/package_windows_release.ps1 -Version $env:RELEASE_VERSION -Build $env:RELEASE_BUILD -Unsigned
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "dist/Equis-Windows-$env:RELEASE_VERSION-portable.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Equis-Windows-${{ env.RELEASE_VERSION }}
+          path: |
+            dist/Equis-Windows-${{ env.RELEASE_VERSION }}-setup.exe
+            dist/Equis-Windows-${{ env.RELEASE_VERSION }}-portable.zip
+          if-no-files-found: error
+      - name: Remove ephemeral release inputs
+        if: always()
+        shell: pwsh
+        run: Remove-Item -LiteralPath windows-release.pfx,.dart-defines.release.local.json -Force -ErrorAction SilentlyContinue
+
+  publish:
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - run: flutter pub get
+      - name: Sign complete release manifest
+        env:
+          UPDATE_SIGNING_SEED: ${{ secrets.EQUIS_UPDATE_SIGNING_SEED }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then test "$GITHUB_REF_NAME" = "v${RELEASE_VERSION}"; fi
+          dart run tool/update_signing.dart sign release-artifacts "$RELEASE_VERSION" "$RELEASE_BUILD"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Equis-signed-release-${{ env.RELEASE_VERSION }}
+          path: release-artifacts/*
+      - name: Publish immutable GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" release-artifacts/* --verify-tag --title "Equis ${RELEASE_VERSION}" --generate-notes

@@ -1,0 +1,1022 @@
+-- Generated from the normative local DDL in .workflow/DATABASE_SCHEMA.md.
+-- Do not redesign here; schema amendments require an explicit workflow decision.
+
+CREATE TABLE vaults (
+    id                  TEXT PRIMARY KEY,
+
+    name                TEXT NOT NULL,
+
+    base_currency_code  TEXT NOT NULL,
+    locale              TEXT NOT NULL DEFAULT 'en-US',
+    timezone            TEXT NOT NULL,
+
+    created_at          INTEGER NOT NULL,
+    updated_at          INTEGER NOT NULL,
+    deleted_at          INTEGER,
+
+    revision            INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE devices (
+    id                  TEXT PRIMARY KEY,
+    vault_id            TEXT NOT NULL,
+
+    name                TEXT NOT NULL,
+    platform            TEXT NOT NULL,
+
+    created_at          INTEGER NOT NULL,
+    last_seen_at        INTEGER,
+
+    FOREIGN KEY (vault_id)
+        REFERENCES vaults(id)
+);
+
+CREATE TABLE vault_cloud_bindings (
+    vault_id            TEXT PRIMARY KEY,
+
+    auth_user_id        TEXT NOT NULL,
+    sync_enabled        INTEGER NOT NULL DEFAULT 1,
+
+    linked_at           INTEGER NOT NULL,
+
+    FOREIGN KEY (vault_id)
+        REFERENCES vaults(id)
+);
+
+CREATE TABLE currencies (
+    code                TEXT PRIMARY KEY,
+    numeric_code        TEXT,
+    name_key            TEXT NOT NULL,
+    symbol              TEXT NOT NULL,
+    minor_units         INTEGER NOT NULL
+);
+
+CREATE TABLE accounts (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    name                    TEXT NOT NULL,
+    institution             TEXT,
+
+    account_type            TEXT NOT NULL,
+    nature                  TEXT NOT NULL,
+
+    icon                    TEXT,
+    color                   TEXT,
+    notes                   TEXT,
+
+    include_in_net_worth    INTEGER NOT NULL DEFAULT 1,
+    archived                INTEGER NOT NULL DEFAULT 0,
+
+    opened_on               TEXT,
+    closed_on               TEXT,
+
+    sort_order              INTEGER NOT NULL DEFAULT 0,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER,
+
+    FOREIGN KEY (vault_id)
+        REFERENCES vaults(id)
+);
+
+CREATE TABLE account_pockets (
+    id                  TEXT PRIMARY KEY,
+
+    account_id          TEXT NOT NULL,
+
+    currency_code       TEXT NOT NULL,
+
+    name                TEXT,
+    is_default          INTEGER NOT NULL DEFAULT 0,
+    archived            INTEGER NOT NULL DEFAULT 0,
+
+    FOREIGN KEY (account_id)
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (currency_code)
+        REFERENCES currencies(code),
+
+    UNIQUE(account_id, currency_code)
+);
+
+CREATE TABLE categories (
+    id                  TEXT PRIMARY KEY,
+    vault_id            TEXT NOT NULL,
+
+    parent_id           TEXT,
+
+    category_type       TEXT NOT NULL,
+
+    system_key          TEXT,
+    custom_name         TEXT,
+    custom_name_en_us   TEXT,
+    custom_name_pt_br   TEXT,
+
+    icon                TEXT,
+    color               TEXT,
+
+    archived            INTEGER NOT NULL DEFAULT 0,
+    sort_order          INTEGER NOT NULL DEFAULT 0,
+
+    revision            INTEGER NOT NULL DEFAULT 1,
+    created_at          INTEGER NOT NULL,
+    updated_at          INTEGER NOT NULL,
+    deleted_at          INTEGER,
+
+    FOREIGN KEY (vault_id)
+        REFERENCES vaults(id),
+
+    FOREIGN KEY (parent_id)
+        REFERENCES categories(id)
+);
+
+CREATE TABLE tags (
+    id              TEXT PRIMARY KEY,
+    vault_id        TEXT NOT NULL,
+
+    name            TEXT NOT NULL,
+    name_en_us      TEXT,
+    name_pt_br      TEXT,
+    color           TEXT,
+
+    revision        INTEGER NOT NULL DEFAULT 1,
+    created_at      INTEGER NOT NULL,
+    updated_at      INTEGER NOT NULL,
+    deleted_at      INTEGER,
+
+    FOREIGN KEY (vault_id)
+        REFERENCES vaults(id)
+);
+
+CREATE TABLE counterparties (
+    id                  TEXT PRIMARY KEY,
+    vault_id            TEXT NOT NULL,
+
+    name                TEXT NOT NULL,
+    counterparty_type   TEXT NOT NULL DEFAULT 'merchant',
+
+    notes               TEXT,
+
+    revision            INTEGER NOT NULL DEFAULT 1,
+    created_at          INTEGER NOT NULL,
+    updated_at          INTEGER NOT NULL,
+    deleted_at          INTEGER,
+
+    FOREIGN KEY (vault_id)
+        REFERENCES vaults(id)
+);
+
+CREATE TABLE counterparty_aliases (
+    id                  TEXT PRIMARY KEY,
+    counterparty_id     TEXT NOT NULL,
+
+    alias               TEXT NOT NULL,
+
+    FOREIGN KEY (counterparty_id)
+        REFERENCES counterparties(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE transactions (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    transaction_type        TEXT NOT NULL,
+    status                  TEXT NOT NULL DEFAULT 'cleared',
+
+    counterparty_id         TEXT,
+
+    title                   TEXT,
+    description             TEXT,
+    notes                   TEXT,
+
+    payment_method          TEXT,
+
+    occurred_at             INTEGER,
+    financial_date          TEXT NOT NULL,
+    timezone                TEXT,
+
+    location_name           TEXT,
+    latitude                REAL,
+    longitude               REAL,
+
+    source                  TEXT NOT NULL DEFAULT 'manual',
+
+    recurring_rule_id       TEXT,
+    recurrence_date         TEXT,
+
+    reversal_of_id          TEXT,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER,
+
+    FOREIGN KEY (vault_id)
+        REFERENCES vaults(id),
+
+    FOREIGN KEY (counterparty_id)
+        REFERENCES counterparties(id),
+
+    FOREIGN KEY (reversal_of_id)
+        REFERENCES transactions(id)
+);
+
+CREATE TABLE account_movements (
+    id                  TEXT PRIMARY KEY,
+
+    transaction_id      TEXT NOT NULL,
+    account_pocket_id   TEXT NOT NULL,
+
+    amount_minor        INTEGER NOT NULL,
+
+    sort_order          INTEGER NOT NULL DEFAULT 0,
+
+    statement_id        TEXT,
+
+    FOREIGN KEY (transaction_id)
+        REFERENCES transactions(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (account_pocket_id)
+        REFERENCES account_pockets(id)
+);
+
+CREATE TABLE transaction_splits (
+    id                  TEXT PRIMARY KEY,
+
+    transaction_id      TEXT NOT NULL,
+    category_id         TEXT NOT NULL,
+
+    currency_code       TEXT NOT NULL,
+    amount_minor        INTEGER NOT NULL,
+
+    memo                TEXT,
+    sort_order          INTEGER NOT NULL DEFAULT 0,
+
+    FOREIGN KEY (transaction_id)
+        REFERENCES transactions(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (category_id)
+        REFERENCES categories(id),
+
+    FOREIGN KEY (currency_code)
+        REFERENCES currencies(code)
+);
+
+CREATE TABLE transaction_tags (
+    transaction_id      TEXT NOT NULL,
+    tag_id              TEXT NOT NULL,
+
+    PRIMARY KEY (
+        transaction_id,
+        tag_id
+    ),
+
+    FOREIGN KEY (transaction_id)
+        REFERENCES transactions(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (tag_id)
+        REFERENCES tags(id)
+);
+
+CREATE TABLE fx_conversions (
+    id                      TEXT PRIMARY KEY,
+
+    transaction_id          TEXT NOT NULL,
+
+    from_movement_id        TEXT NOT NULL,
+    to_movement_id          TEXT NOT NULL,
+
+    exchange_rate           TEXT NOT NULL,
+
+    rate_source             TEXT NOT NULL,
+    rate_date               TEXT,
+
+    provider                TEXT,
+
+    FOREIGN KEY (transaction_id)
+        REFERENCES transactions(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE recurring_rules (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    name                    TEXT NOT NULL,
+
+    rrule                   TEXT NOT NULL,
+
+    timezone                TEXT NOT NULL,
+    starts_on               TEXT NOT NULL,
+    ends_on                 TEXT,
+
+    enabled                 INTEGER NOT NULL DEFAULT 1,
+
+    next_occurrence         TEXT,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER,
+
+    FOREIGN KEY (vault_id)
+        REFERENCES vaults(id)
+);
+
+CREATE TABLE recurring_templates (
+    recurring_rule_id       TEXT PRIMARY KEY,
+
+    transaction_type        TEXT NOT NULL,
+
+    counterparty_id         TEXT,
+    title                   TEXT,
+    description             TEXT,
+    notes                   TEXT,
+    payment_method          TEXT,
+
+    FOREIGN KEY (recurring_rule_id)
+        REFERENCES recurring_rules(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE recurring_template_movements (
+    id                      TEXT PRIMARY KEY,
+
+    recurring_rule_id       TEXT NOT NULL,
+    account_pocket_id       TEXT NOT NULL,
+
+    amount_minor            INTEGER NOT NULL,
+
+    FOREIGN KEY (recurring_rule_id)
+        REFERENCES recurring_rules(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE recurring_template_splits (
+    id                      TEXT PRIMARY KEY,
+
+    recurring_rule_id       TEXT NOT NULL,
+    category_id             TEXT NOT NULL,
+
+    currency_code           TEXT NOT NULL,
+    amount_minor            INTEGER NOT NULL,
+
+    FOREIGN KEY (recurring_rule_id)
+        REFERENCES recurring_rules(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE credit_card_profiles (
+    account_id              TEXT PRIMARY KEY,
+
+    default_closing_day     INTEGER NOT NULL,
+    default_due_day         INTEGER NOT NULL,
+
+    FOREIGN KEY (account_id)
+        REFERENCES accounts(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE credit_card_limits (
+    account_pocket_id       TEXT PRIMARY KEY,
+
+    limit_minor             INTEGER NOT NULL,
+
+    FOREIGN KEY (account_pocket_id)
+        REFERENCES account_pockets(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE credit_card_statements (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    account_pocket_id       TEXT NOT NULL,
+
+    period_start            TEXT NOT NULL,
+    period_end              TEXT NOT NULL,
+
+    closing_date            TEXT NOT NULL,
+    due_date                TEXT NOT NULL,
+
+    status                  TEXT NOT NULL,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER,
+
+    FOREIGN KEY (account_pocket_id)
+        REFERENCES account_pockets(id)
+);
+
+CREATE TABLE installment_plans (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    account_pocket_id       TEXT NOT NULL,
+
+    counterparty_id         TEXT,
+    category_id             TEXT,
+
+    description             TEXT,
+
+    currency_code           TEXT NOT NULL,
+
+    total_minor             INTEGER NOT NULL,
+    installment_count       INTEGER NOT NULL,
+
+    first_installment_date  TEXT NOT NULL,
+
+    interest_rate           TEXT,
+    recognition_mode        TEXT NOT NULL DEFAULT 'installment_date',
+
+    status                  TEXT NOT NULL DEFAULT 'active',
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER
+);
+
+CREATE TABLE installments (
+    id                      TEXT PRIMARY KEY,
+
+    installment_plan_id     TEXT NOT NULL,
+
+    installment_number      INTEGER NOT NULL,
+
+    amount_minor            INTEGER NOT NULL,
+    expected_date           TEXT NOT NULL,
+
+    transaction_id          TEXT,
+    statement_id            TEXT,
+
+    status                  TEXT NOT NULL DEFAULT 'scheduled',
+
+    FOREIGN KEY (installment_plan_id)
+        REFERENCES installment_plans(id)
+        ON DELETE CASCADE,
+
+    UNIQUE(
+        installment_plan_id,
+        installment_number
+    )
+);
+
+CREATE TABLE budgets (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    name                    TEXT NOT NULL,
+
+    currency_code           TEXT NOT NULL,
+    limit_minor             INTEGER NOT NULL,
+
+    period_type             TEXT NOT NULL,
+
+    starts_on               TEXT,
+    ends_on                 TEXT,
+
+    warning_threshold_bps   INTEGER NOT NULL DEFAULT 8000,
+
+    rollover_policy         TEXT NOT NULL DEFAULT 'none',
+
+    enabled                 INTEGER NOT NULL DEFAULT 1,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER
+);
+
+CREATE TABLE budget_categories (
+    budget_id               TEXT NOT NULL,
+    category_id             TEXT NOT NULL,
+
+    include_descendants     INTEGER NOT NULL DEFAULT 1,
+
+    PRIMARY KEY (
+        budget_id,
+        category_id
+    )
+);
+
+CREATE TABLE budget_accounts (
+    budget_id               TEXT NOT NULL,
+    account_id              TEXT NOT NULL,
+
+    PRIMARY KEY (
+        budget_id,
+        account_id
+    )
+);
+
+CREATE TABLE budget_tags (
+    budget_id               TEXT NOT NULL,
+    tag_id                  TEXT NOT NULL,
+
+    PRIMARY KEY (
+        budget_id,
+        tag_id
+    )
+);
+
+CREATE TABLE goals (
+    id                          TEXT PRIMARY KEY,
+    vault_id                    TEXT NOT NULL,
+
+    name                        TEXT NOT NULL,
+    goal_type                   TEXT NOT NULL,
+
+    currency_code               TEXT NOT NULL,
+
+    target_minor                INTEGER NOT NULL,
+
+    starts_on                   TEXT,
+    target_date                 TEXT,
+
+    planned_monthly_minor       INTEGER,
+
+    tracking_mode               TEXT NOT NULL,
+
+    priority                    INTEGER NOT NULL DEFAULT 0,
+
+    status                      TEXT NOT NULL DEFAULT 'active',
+
+    revision                    INTEGER NOT NULL DEFAULT 1,
+    created_at                  INTEGER NOT NULL,
+    updated_at                  INTEGER NOT NULL,
+    deleted_at                  INTEGER
+);
+
+CREATE TABLE goal_accounts (
+    goal_id                 TEXT NOT NULL,
+    account_pocket_id       TEXT NOT NULL,
+
+    PRIMARY KEY (
+        goal_id,
+        account_pocket_id
+    )
+);
+
+CREATE TABLE goal_contributions (
+    id                      TEXT PRIMARY KEY,
+
+    goal_id                 TEXT NOT NULL,
+    transaction_id          TEXT,
+
+    amount_minor            INTEGER NOT NULL,
+    contribution_date       TEXT NOT NULL,
+
+    notes                   TEXT,
+
+    FOREIGN KEY (goal_id)
+        REFERENCES goals(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE assets (
+    id                          TEXT PRIMARY KEY,
+    vault_id                    TEXT NOT NULL,
+
+    name                        TEXT NOT NULL,
+    asset_type                  TEXT NOT NULL,
+
+    currency_code               TEXT NOT NULL,
+
+    acquired_on                 TEXT,
+    acquisition_cost_minor      INTEGER,
+
+    valuation_method            TEXT NOT NULL DEFAULT 'manual',
+
+    annual_rate                 TEXT,
+    useful_life_months          INTEGER,
+    salvage_value_minor         INTEGER,
+
+    include_in_net_worth        INTEGER NOT NULL DEFAULT 1,
+
+    notes                       TEXT,
+
+    revision                    INTEGER NOT NULL DEFAULT 1,
+    created_at                  INTEGER NOT NULL,
+    updated_at                  INTEGER NOT NULL,
+    deleted_at                  INTEGER
+);
+
+CREATE TABLE asset_valuations (
+    id                      TEXT PRIMARY KEY,
+
+    asset_id                TEXT NOT NULL,
+
+    valuation_date          TEXT NOT NULL,
+    value_minor             INTEGER NOT NULL,
+
+    source                  TEXT NOT NULL,
+    notes                   TEXT,
+
+    FOREIGN KEY (asset_id)
+        REFERENCES assets(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE investment_instruments (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    symbol                  TEXT,
+    name                    TEXT NOT NULL,
+
+    asset_class             TEXT NOT NULL,
+    exchange                TEXT,
+
+    currency_code           TEXT NOT NULL,
+
+    isin                    TEXT,
+
+    provider_symbol         TEXT,
+    provider_name           TEXT,
+
+    custom_instrument       INTEGER NOT NULL DEFAULT 0,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER
+);
+
+CREATE TABLE investment_events (
+    id                      TEXT PRIMARY KEY,
+
+    transaction_id          TEXT NOT NULL,
+    instrument_id           TEXT NOT NULL,
+
+    event_type              TEXT NOT NULL,
+
+    quantity                TEXT,
+    unit_price              TEXT,
+
+    price_currency_code     TEXT,
+
+    gross_minor             INTEGER,
+    fees_minor              INTEGER,
+    taxes_minor             INTEGER,
+
+    FOREIGN KEY (transaction_id)
+        REFERENCES transactions(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (instrument_id)
+        REFERENCES investment_instruments(id)
+);
+
+CREATE TABLE investment_lots (
+    id                      TEXT PRIMARY KEY,
+
+    acquisition_event_id    TEXT NOT NULL,
+
+    instrument_id           TEXT NOT NULL,
+
+    acquired_on             TEXT NOT NULL,
+
+    original_quantity       TEXT NOT NULL,
+
+    cost_basis_minor        INTEGER NOT NULL,
+    cost_currency_code      TEXT NOT NULL,
+
+    FOREIGN KEY (acquisition_event_id)
+        REFERENCES investment_events(id)
+);
+
+CREATE TABLE investment_lot_disposals (
+    id                      TEXT PRIMARY KEY,
+
+    disposal_event_id       TEXT NOT NULL,
+    lot_id                  TEXT NOT NULL,
+
+    quantity                TEXT NOT NULL,
+    allocated_cost_minor    INTEGER NOT NULL,
+
+    FOREIGN KEY (disposal_event_id)
+        REFERENCES investment_events(id),
+
+    FOREIGN KEY (lot_id)
+        REFERENCES investment_lots(id)
+);
+
+CREATE TABLE fx_rate_cache (
+    base_currency           TEXT NOT NULL,
+    quote_currency          TEXT NOT NULL,
+
+    rate_date               TEXT NOT NULL,
+    rate                    TEXT NOT NULL,
+
+    provider                TEXT NOT NULL,
+    fetched_at              INTEGER NOT NULL,
+
+    PRIMARY KEY (
+        base_currency,
+        quote_currency,
+        rate_date,
+        provider
+    )
+);
+
+CREATE TABLE manual_fx_rates (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    base_currency           TEXT NOT NULL,
+    quote_currency          TEXT NOT NULL,
+
+    rate_date               TEXT NOT NULL,
+    rate                    TEXT NOT NULL,
+
+    notes                   TEXT,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER
+);
+
+CREATE TABLE market_price_cache (
+    instrument_id           TEXT NOT NULL,
+
+    price_timestamp         INTEGER NOT NULL,
+
+    price                   TEXT NOT NULL,
+    currency_code           TEXT NOT NULL,
+
+    provider                TEXT NOT NULL,
+    fetched_at              INTEGER NOT NULL,
+
+    PRIMARY KEY (
+        instrument_id,
+        price_timestamp,
+        provider
+    )
+);
+
+CREATE TABLE manual_market_prices (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    instrument_id           TEXT NOT NULL,
+
+    price_date              TEXT NOT NULL,
+    price                   TEXT NOT NULL,
+    currency_code           TEXT NOT NULL,
+
+    notes                   TEXT,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER
+);
+
+CREATE TABLE attachments (
+    id                      TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+
+    original_filename       TEXT,
+    mime_type               TEXT,
+
+    byte_size               INTEGER NOT NULL,
+
+    local_path              TEXT,
+
+    sha256                  TEXT NOT NULL,
+
+    upload_state            TEXT NOT NULL DEFAULT 'local',
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    created_at              INTEGER NOT NULL,
+    updated_at              INTEGER NOT NULL,
+    deleted_at              INTEGER
+);
+
+CREATE TABLE attachment_links (
+    attachment_id           TEXT NOT NULL,
+
+    entity_type             TEXT NOT NULL,
+    entity_id               TEXT NOT NULL,
+
+    PRIMARY KEY (
+        attachment_id,
+        entity_type,
+        entity_id
+    )
+);
+
+CREATE TABLE sync_entity_state (
+    entity_type             TEXT NOT NULL,
+    record_id               TEXT NOT NULL,
+
+    local_revision          INTEGER NOT NULL,
+    last_synced_revision    INTEGER,
+
+    server_version          INTEGER,
+
+    sync_state              TEXT NOT NULL,
+
+    PRIMARY KEY (
+        entity_type,
+        record_id
+    )
+);
+
+CREATE TABLE sync_outbox (
+    operation_id            TEXT PRIMARY KEY,
+
+    vault_id                TEXT NOT NULL,
+
+    entity_type             TEXT NOT NULL,
+    record_id               TEXT NOT NULL,
+
+    base_revision           INTEGER,
+    base_snapshot           TEXT,
+    new_revision            INTEGER NOT NULL,
+
+    operation               TEXT NOT NULL,
+
+    created_at              INTEGER NOT NULL,
+
+    attempt_count           INTEGER NOT NULL DEFAULT 0,
+    next_retry_at           INTEGER,
+
+    last_error_code         TEXT
+);
+
+CREATE TABLE sync_cursors (
+    vault_id                TEXT PRIMARY KEY,
+
+    last_server_version     INTEGER NOT NULL DEFAULT 0,
+
+    last_pull_at            INTEGER,
+    last_push_at            INTEGER,
+    last_success_at         INTEGER
+);
+
+CREATE TABLE sync_conflicts (
+    id                      TEXT PRIMARY KEY,
+
+    vault_id                TEXT NOT NULL,
+
+    entity_type             TEXT NOT NULL,
+    record_id               TEXT NOT NULL,
+
+    base_revision           INTEGER NOT NULL,
+    local_revision          INTEGER NOT NULL,
+    remote_revision         INTEGER NOT NULL,
+
+    base_snapshot           TEXT,
+    local_snapshot          TEXT NOT NULL,
+    remote_snapshot         TEXT NOT NULL,
+
+    detected_at             INTEGER NOT NULL,
+    resolved_at             INTEGER,
+
+    resolution              TEXT
+);
+
+CREATE TABLE device_preferences (
+    "key"               TEXT PRIMARY KEY,
+    value               TEXT NOT NULL
+);
+
+CREATE TABLE vault_preferences (
+    id                  TEXT PRIMARY KEY,
+    vault_id            TEXT NOT NULL,
+
+    "key"               TEXT NOT NULL,
+    value               TEXT NOT NULL,
+
+    revision            INTEGER NOT NULL DEFAULT 1,
+    created_at          INTEGER NOT NULL,
+    updated_at          INTEGER NOT NULL,
+    deleted_at          INTEGER,
+
+    UNIQUE(vault_id, "key")
+);
+
+CREATE INDEX idx_transactions_vault_date
+ON transactions (
+    vault_id,
+    financial_date DESC
+);
+
+CREATE INDEX idx_movements_pocket
+ON account_movements (
+    account_pocket_id,
+    transaction_id
+);
+
+CREATE INDEX idx_categories_parent
+ON categories (
+    vault_id,
+    parent_id
+);
+
+CREATE INDEX idx_counterparties_name
+ON counterparties (
+    vault_id,
+    name
+);
+
+CREATE INDEX idx_statements_account_due
+ON credit_card_statements (
+    account_pocket_id,
+    due_date
+);
+
+CREATE INDEX idx_goals_status
+ON goals (
+    vault_id,
+    status
+);
+
+CREATE INDEX idx_investment_events_instrument
+ON investment_events (
+    instrument_id,
+    transaction_id
+);
+
+CREATE INDEX idx_sync_outbox_retry
+ON sync_outbox (
+    next_retry_at,
+    created_at
+);
+
+CREATE INDEX idx_transactions_vault_history
+ON transactions (
+    vault_id,
+    financial_date DESC,
+    created_at DESC,
+    id DESC
+) WHERE deleted_at IS NULL;
+
+CREATE INDEX idx_transactions_vault_type_status_date
+ON transactions (
+    vault_id,
+    transaction_type,
+    status,
+    financial_date DESC
+) WHERE deleted_at IS NULL;
+
+CREATE INDEX idx_movements_amount
+ON account_movements (
+    amount_minor,
+    transaction_id
+);
+
+CREATE INDEX idx_splits_category
+ON transaction_splits (
+    category_id,
+    transaction_id
+);
+
+CREATE INDEX idx_transaction_tags_tag
+ON transaction_tags (
+    tag_id,
+    transaction_id
+);
+
+CREATE INDEX idx_pockets_currency
+ON account_pockets (
+    currency_code,
+    id
+);
+
+CREATE UNIQUE INDEX idx_transactions_recurrence
+ON transactions (
+    recurring_rule_id,
+    recurrence_date
+);
+
+CREATE INDEX idx_recurring_rules_vault_next
+ON recurring_rules (
+    vault_id,
+    enabled,
+    next_occurrence
+) WHERE deleted_at IS NULL;
+CREATE TABLE sync_activity_events (
+  vault_id TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  record_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('sent', 'received', 'conflict')),
+  local_revision INTEGER NOT NULL,
+  remote_revision INTEGER NOT NULL,
+  occurred_at INTEGER NOT NULL,
+  PRIMARY KEY (vault_id, entity_type, record_id, kind, local_revision, remote_revision)
+);
+CREATE INDEX idx_sync_activity_time ON sync_activity_events (vault_id, occurred_at);

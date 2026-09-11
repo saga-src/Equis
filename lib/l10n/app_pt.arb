@@ -1,0 +1,749 @@
+{
+  "@@locale": "pt",
+  "appTitle": "Equis",
+  "homeNavigationLabel": "Início",
+  "settingsNavigationLabel": "Configurações",
+  "availableMoneyTitle": "Dinheiro disponível",
+  "availableMoneyPlaceholder": "Seu panorama financeiro local aparecerá aqui.",
+  "addTransactionAction": "Adicionar transação",
+  "foundationStatusTitle": "Fundação local-first",
+  "foundationStatusBody": "Seus dados financeiros serão gravados localmente antes da sincronização opcional.",
+  "languageTitle": "Idioma",
+  "appearanceTitle": "Aparência",
+  "themeTitle": "Tema",
+  "themeObsidianName": "Modo Obsidian",
+  "themeObsidianDescription": "Tema escuro estável com superfícies translúcidas e detalhes em esmeralda.",
+  "themeTrueLightName": "True Light",
+  "themeTrueLightDescription": "Tema claro, limpo e de alto contraste para uso diurno.",
+  "themeLegacyName": "Legado",
+  "themeLegacyDescription": "A aparência original do Equis v1, sem efeitos de vidro.",
+  "englishLanguage": "Inglês (Estados Unidos)",
+  "portugueseLanguage": "Português (Brasil)",
+  "offlineReadyLabel": "Pronto para uso offline",
+  "transactionTypeLabel": "Tipo",
+  "expenseTypeLabel": "Despesa",
+  "incomeTypeLabel": "Receita",
+  "transferTypeLabel": "Transferência",
+  "amountLabel": "Valor",
+  "accountLabel": "Conta",
+  "categoryLabel": "Categoria",
+  "saveLocallyAction": "Salvar localmente",
+  "optionalDetailsLabel": "Detalhes opcionais",
+  "transactionSavedMessage": "Transação salva localmente",
+  "transactionSaveFailedMessage": "Não foi possível salvar a transação",
+  "editTransactionAction": "Editar transação",
+  "deleteTransactionAction": "Excluir transação",
+  "reconcileTransactionAction": "Conciliar transação",
+  "fromAccountLabel": "Conta de origem",
+  "toAccountLabel": "Conta de destino",
+  "dateLabel": "Data",
+  "payeeLabel": "Estabelecimento ou favorecido",
+  "notesLabel": "Observações",
+  "requiredFieldMessage": "Campo obrigatório",
+  "localVaultErrorMessage": "Não foi possível abrir o cofre local criptografado.",
+  "setupRequiredMessage": "Configure o cofre local antes de adicionar transações.",
+  "transactionNotFoundMessage": "Transação não encontrada.",
+  "setupLocalVaultTitle": "Configure seu cofre local",
+  "setupLocalVaultBody": "Seus dados ficam criptografados neste dispositivo e funcionam offline.",
+  "profileNameLabel": "Nome do perfil",
+  "firstAccountNameLabel": "Nome da primeira conta",
+  "reportingCurrencyLabel": "Moeda de relatório",
+  "createLocalVaultAction": "Criar cofre criptografado",
+  "recentTransactionsTitle": "Transações recentes",
+  "noRecentTransactionsMessage": "Nenhuma transação ainda.",
+  "confirmDeleteTitle": "Excluir transação?",
+  "confirmDeleteTransactionBody": "Isto remove a transação dos saldos e preserva um registro local da exclusão.",
+  "cancelAction": "Cancelar",
+  "deleteAction": "Excluir",
+  "statusPendingLabel": "Pendente",
+  "statusClearedLabel": "Compensada",
+  "statusReconciledLabel": "Conciliada",
+  "statusCancelledLabel": "Cancelada",
+  "categoryExpensesLabel": "Despesas",
+  "categoryIncomeLabel": "Receitas",
+  "categoryFoodLabel": "Alimentação",
+  "categoryHousingLabel": "Moradia",
+  "categoryTransportLabel": "Transporte",
+  "categorySalaryLabel": "Salário",
+  "categoryOtherIncomeLabel": "Outras receitas",
+  "manageCategoriesTagsAction": "Gerenciar categorias e etiquetas",
+  "manageCategoriesTagsSubtitle": "Crie, traduza e organize suas categorias e etiquetas.",
+  "alreadyHaveAccountAction": "Já tenho uma conta",
+  "restoreExistingVaultTitle": "Entrar e restaurar seus dados",
+  "restoreExistingVaultBody": "Use sua conta Equis e a chave de recuperação salva no primeiro dispositivo para baixar e descriptografar seu cofre.",
+  "recoverySecretLabel": "Chave de recuperação",
+  "recoverySecretRestoreHint": "Ela começa com equis-recovery-v1_.",
+  "restoreAndSyncAction": "Restaurar e sincronizar",
+  "restoreLocalDataSafetyMessage": "A restauração só é permitida antes da criação de um cofre local; os dados existentes no dispositivo nunca são sobrescritos.",
+  "restoreNoVaultMessage": "Nenhum cofre sincronizado foi encontrado para esta conta.",
+  "restoreMultipleVaultsMessage": "Esta conta possui mais de um cofre. A seleção de cofre ainda não está disponível.",
+  "restoreInvalidSecretMessage": "A chave de recuperação não corresponde a este cofre.",
+  "restoreLocalVaultExistsMessage": "Este dispositivo já possui um cofre local e ele não pode ser sobrescrito.",
+  "restoreSyncFailedMessage": "O cofre foi recuperado, mas a sincronização não terminou. Verifique sua conexão e tente novamente.",
+  "editTranslationsAction": "Editar nomes e traduções",
+  "englishNameLabel": "Nome em inglês (opcional)",
+  "portugueseNameLabel": "Nome em português do Brasil (opcional)",
+  "localizedNamesHint": "Quando uma tradução estiver vazia, o nome principal será usado.",
+  "categoriesTitle": "Categorias",
+  "tagsTitle": "Etiquetas",
+  "addCategoryAction": "Adicionar categoria",
+  "addTagAction": "Adicionar etiqueta",
+  "categoryNameLabel": "Nome da categoria",
+  "parentCategoryLabel": "Categoria superior",
+  "noParentLabel": "Sem categoria superior",
+  "tagNameLabel": "Nome da etiqueta",
+  "noTagsMessage": "Nenhuma etiqueta ainda.",
+  "systemCategoryLabel": "Categoria do sistema",
+  "archiveCategoryAction": "Arquivar categoria",
+  "categoryArchiveFailedMessage": "Arquive primeiro as categorias filhas.",
+  "expenseCategoriesTitle": "Categorias de despesas",
+  "incomeCategoriesTitle": "Categorias de receitas",
+  "addAccountAction": "Adicionar conta",
+  "accountNameLabel": "Nome da conta",
+  "accountTypeLabel": "Tipo de conta",
+  "currencyLabel": "Moeda",
+  "checkingAccountType": "Conta-corrente",
+  "savingsAccountType": "Poupança",
+  "cashAccountType": "Dinheiro",
+  "walletAccountType": "Carteira digital",
+  "creditCardAccountType": "Cartão de crédito",
+  "historyNavigationLabel": "Histórico",
+  "transactionHistoryTitle": "Histórico de transações",
+  "filtersAction": "Filtros",
+  "historyFiltersTitle": "Busca e filtros",
+  "minimumAmountLabel": "Valor mínimo",
+  "maximumAmountLabel": "Valor máximo",
+  "fromDateLabel": "Data inicial",
+  "toDateLabel": "Data final",
+  "anyValueLabel": "Qualquer",
+  "includeDescendantCategoriesLabel": "Incluir categorias filhas",
+  "tagFilterLabel": "Etiqueta",
+  "statusFilterLabel": "Status",
+  "clearFiltersAction": "Limpar",
+  "applyFiltersAction": "Aplicar filtros",
+  "loadMoreAction": "Carregar mais",
+  "noHistoryResultsMessage": "Nenhuma transação corresponde a estes filtros.",
+  "historySearchFailedMessage": "Não foi possível buscar no histórico local.",
+  "invalidFiltersMessage": "Confira os intervalos de valor e data.",
+  "transactionTypeName": "{type, select, opening_balance{Saldo inicial} expense{Despesa} income{Receita} transfer{Transferência} currency_exchange{Câmbio} credit_card_purchase{Compra no cartão} credit_card_payment{Pagamento de cartão} refund{Reembolso} loan_payment{Pagamento de empréstimo} investment_buy{Compra de investimento} investment_sell{Venda de investimento} dividend{Dividendo} interest{Juros} fee{Tarifa} adjustment{Ajuste} other{Transação}}",
+  "@transactionTypeName": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringNavigationLabel": "Agendado",
+  "recurringTitle": "Atividade recorrente",
+  "upcomingTabLabel": "Próximas",
+  "recurringRulesTabLabel": "Regras",
+  "addRecurringAction": "Adicionar recorrência",
+  "createRecurringAction": "Criar agendamento",
+  "recurringLoadFailedMessage": "Não foi possível carregar as recorrências do cofre local.",
+  "noUpcomingOccurrencesMessage": "Nenhuma atividade agendada nos próximos 90 dias.",
+  "noRecurringRulesMessage": "Nenhuma regra de recorrência ainda.",
+  "confirmOccurrenceAction": "Confirmar",
+  "skipOccurrenceAction": "Pular",
+  "rescheduleOccurrenceAction": "Reagendar",
+  "modifyOneOccurrenceAction": "Alterar somente esta ocorrência",
+  "modifyFutureOccurrencesAction": "Alterar esta e as próximas ocorrências",
+  "endRecurrenceAction": "Encerrar recorrência",
+  "endedRecurrenceLabel": "Encerrada",
+  "recurrenceNameLabel": "Nome do agendamento",
+  "recurrenceStartsLabel": "Início",
+  "recurrenceEndsLabel": "Término (opcional)",
+  "frequencyLabel": "Frequência",
+  "intervalLabel": "A cada",
+  "dailyFrequencyLabel": "Diária",
+  "weeklyFrequencyLabel": "Semanal",
+  "monthlyFrequencyLabel": "Mensal",
+  "yearlyFrequencyLabel": "Anual",
+  "scheduledOccurrenceLabel": "Agendada",
+  "pendingOccurrenceLabel": "Alterada",
+  "confirmedOccurrenceLabel": "Confirmada",
+  "skippedOccurrenceLabel": "Pulada",
+  "applyAction": "Aplicar",
+  "thisMonthTitle": "Este mês",
+  "incomeReportLabel": "Receitas",
+  "expensesReportLabel": "Despesas",
+  "netCashFlowLabel": "Fluxo de caixa líquido",
+  "budgetDashboardTitle": "Orçamento",
+  "budgetNextPhaseMessage": "O acompanhamento do orçamento estará disponível na próxima fase.",
+  "upcomingDashboardTitle": "Próximos",
+  "upcomingNext30DaysLabel": "Agendados nos próximos 30 dias",
+  "spendingByCategoryTitle": "Despesas por categoria",
+  "cashFlowChartTitle": "Fluxo de caixa ao longo do tempo",
+  "accountBalancesTitle": "Saldos das contas",
+  "reportsSectionTitle": "Relatórios",
+  "reportingIncompleteMessage": "Algumas moedas foram omitidas porque não há taxa de câmbio local disponível.",
+  "reportingEstimatedMessage": "Inclui taxas de câmbio estimadas do cache.",
+  "noSpendingDataMessage": "Nenhuma atividade classificada neste período.",
+  "originalCurrencyAmountLabel": "Moeda original",
+  "reportingAmountLabel": "Moeda de relatório",
+  "cardsNavigationLabel": "Cartões",
+  "creditCardsTitle": "Cartões de crédito",
+  "noCreditCardsMessage": "Crie uma conta de cartão de crédito no Início para começar.",
+  "selectCardLabel": "Cartão e moeda",
+  "configureCardAction": "Configurar cartão",
+  "closingDayLabel": "Dia de fechamento",
+  "dueDayLabel": "Dia de vencimento",
+  "creditLimitLabel": "Limite de crédito",
+  "availableCreditLabel": "Limite disponível",
+  "statementsTabLabel": "Faturas",
+  "installmentsTabLabel": "Parcelamentos",
+  "addCardPurchaseAction": "Adicionar compra",
+  "addInstallmentAction": "Adicionar compra parcelada",
+  "feeInterestAction": "Adicionar tarifa ou juros",
+  "payStatementAction": "Pagar fatura",
+  "refundPurchaseAction": "Estornar compra",
+  "noStatementsMessage": "Nenhuma fatura para este cartão.",
+  "noInstallmentsMessage": "Nenhum parcelamento para este cartão.",
+  "originalAmountLabel": "Valor original",
+  "financedAmountLabel": "Total com juros",
+  "installmentCountLabel": "Quantidade de parcelas",
+  "firstInstallmentDateLabel": "Data da primeira parcela",
+  "interestRateLabel": "Taxa de juros (opcional)",
+  "descriptionLabel": "Descrição",
+  "currentInstallmentLabel": "Parcela atual",
+  "remainingAmountLabel": "Valor restante",
+  "cancelInstallmentAction": "Cancelar e estornar plano",
+  "cardLoadFailedMessage": "Não foi possível carregar os cartões do cofre local.",
+  "futureStatementStatus": "Futura",
+  "openStatementStatus": "Aberta",
+  "closedStatementStatus": "Fechada",
+  "paidStatementStatus": "Paga",
+  "overdueStatementStatus": "Vencida",
+  "saveAction": "Salvar",
+  "budgetsNavigationLabel": "Orçamentos",
+  "budgetsTitle": "Orçamentos",
+  "addBudgetAction": "Adicionar orçamento",
+  "editBudgetAction": "Editar orçamento",
+  "deleteBudgetAction": "Excluir orçamento",
+  "noBudgetsMessage": "Nenhum orçamento ainda. Crie um para começar a acompanhar seu plano.",
+  "budgetLoadFailedMessage": "Não foi possível carregar os orçamentos do cofre local.",
+  "budgetNameLabel": "Nome do orçamento",
+  "budgetLimitLabel": "Limite",
+  "budgetPeriodLabel": "Período",
+  "weeklyBudgetPeriod": "Semanal",
+  "monthlyBudgetPeriod": "Mensal",
+  "yearlyBudgetPeriod": "Anual",
+  "customBudgetPeriod": "Intervalo personalizado",
+  "budgetWarningThresholdLabel": "Limite do alerta (%)",
+  "budgetScopeLabel": "Escopo",
+  "overallSpendingScope": "Gastos gerais",
+  "budgetCategoriesScope": "Categorias",
+  "budgetAccountsScope": "Contas",
+  "budgetTagsScope": "Etiquetas",
+  "includeDescendantsLabel": "Incluir categorias descendentes",
+  "customStartDateLabel": "Data inicial",
+  "customEndDateLabel": "Data final",
+  "budgetUsedLabel": "Usado",
+  "budgetRemainingLabel": "Restante",
+  "budgetProjectedLabel": "Projetado",
+  "budgetSafeState": "Seguro",
+  "budgetApproachingState": "Próximo do limite",
+  "budgetReachedState": "Limite atingido",
+  "budgetExceededState": "Excedido",
+  "budgetLikelyExceedMessage": "No ritmo atual, este orçamento provavelmente será excedido.",
+  "budgetIncompleteFxMessage": "Alguns gastos foram omitidos porque uma taxa de câmbio local não está disponível.",
+  "budgetEstimatedFxMessage": "Este orçamento usa uma taxa de câmbio local estimada.",
+  "confirmDeleteBudgetBody": "Excluir este orçamento? As transações e o histórico de gastos não serão alterados.",
+  "activeBudgetsCount": "{count, plural, =0{Nenhum orçamento ativo} =1{1 orçamento ativo} other{{count} orçamentos ativos}}",
+  "@activeBudgetsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetUsagePercent": "{percent}% usado",
+  "@budgetUsagePercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsNavigationLabel": "Metas",
+  "goalsTitle": "Metas e fluxo de caixa futuro",
+  "goalsTabLabel": "Metas",
+  "cashFlowProjectionTabLabel": "Fluxo de caixa futuro",
+  "addGoalAction": "Adicionar meta",
+  "editGoalAction": "Editar meta",
+  "deleteGoalAction": "Excluir meta",
+  "noGoalsMessage": "Nenhuma meta ainda. Crie uma para planejar seu próximo objetivo.",
+  "goalLoadFailedMessage": "Não foi possível carregar as metas e projeções do cofre local.",
+  "goalNameLabel": "Nome da meta",
+  "goalTypeLabel": "Tipo da meta",
+  "emergencyFundGoalType": "Reserva de emergência",
+  "vacationGoalType": "Viagem",
+  "vehicleGoalType": "Veículo",
+  "homeGoalType": "Imóvel",
+  "debtPayoffGoalType": "Quitar dívida",
+  "investmentGoalType": "Investimento",
+  "retirementGoalType": "Aposentadoria",
+  "educationGoalType": "Educação",
+  "customGoalType": "Personalizada",
+  "goalTargetLabel": "Objetivo",
+  "goalCurrentLabel": "Atual",
+  "plannedMonthlyContributionLabel": "Aporte mensal planejado",
+  "requiredMonthlyContributionLabel": "Aporte mensal necessário",
+  "expectedCompletionLabel": "Conclusão estimada",
+  "goalTargetDateLabel": "Data-alvo",
+  "goalPriorityLabel": "Prioridade",
+  "goalTrackingModeLabel": "Acompanhamento do progresso",
+  "manualGoalTracking": "Aportes manuais",
+  "linkedAccountsGoalTracking": "Saldos de contas vinculadas",
+  "transactionsGoalTracking": "Aportes vinculados",
+  "linkedGoalAccountsLabel": "Bolsos vinculados",
+  "addGoalContributionAction": "Adicionar aporte",
+  "goalContributionAmountLabel": "Valor do aporte",
+  "goalContributionDateLabel": "Data do aporte",
+  "goalContributionTransactionLabel": "Transação associada (opcional)",
+  "goalContributionNotesLabel": "Observações (opcional)",
+  "goalReachedLabel": "Objetivo atingido",
+  "cashFlowEstimateDisclaimer": "Esta é uma estimativa baseada nos dados locais conhecidos, não uma garantia de saldo futuro.",
+  "openingAvailableLabel": "Disponível inicial",
+  "projectedClosingLabel": "Saldo final projetado",
+  "noProjectedEventsMessage": "Nenhum evento conhecido nesta janela de projeção.",
+  "projectedBalanceLabel": "Saldo após o evento",
+  "recurringIncomeProjectionType": "Receita recorrente",
+  "recurringExpenseProjectionType": "Despesa recorrente",
+  "installmentProjectionType": "Parcela futura",
+  "cardStatementProjectionType": "Fatura do cartão",
+  "goalContributionProjectionType": "Aporte planejado para meta",
+  "goalIncompleteFxMessage": "Alguns saldos vinculados foram omitidos porque uma taxa de câmbio local não está disponível.",
+  "goalEstimatedFxMessage": "Esta meta usa uma taxa de câmbio local estimada.",
+  "confirmDeleteGoalBody": "Excluir esta meta? Contas vinculadas, transações e o histórico do ledger não serão alterados.",
+  "activeGoalsCount": "{count, plural, =0{Nenhuma meta ativa} =1{1 meta ativa} other{{count} metas ativas}}",
+  "@activeGoalsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "investmentsNavigationLabel": "Investimentos",
+  "investmentsTitle": "Investimentos",
+  "portfolioValueLabel": "Valor da carteira",
+  "portfolioCostLabel": "Custo de aquisição",
+  "unrealizedResultLabel": "Ganho/perda não realizado",
+  "realizedResultLabel": "Ganho/perda realizado",
+  "investmentIncomeLabel": "Rendimentos recebidos",
+  "allocationLabel": "Alocação",
+  "addInstrumentAction": "Adicionar instrumento",
+  "noInvestmentsMessage": "Nenhum instrumento de investimento cadastrado.",
+  "investmentLoadFailedMessage": "Não foi possível carregar os investimentos do cofre local.",
+  "instrumentNameLabel": "Nome do instrumento",
+  "instrumentSymbolLabel": "Símbolo",
+  "instrumentExchangeLabel": "Bolsa",
+  "assetClassLabel": "Classe de ativo",
+  "quantityLabel": "Quantidade",
+  "averageCostLabel": "Custo médio",
+  "unitPriceLabel": "Preço unitário",
+  "feesLabel": "Taxas",
+  "taxesLabel": "Impostos",
+  "investmentDateLabel": "Data",
+  "cashAccountLabel": "Conta de caixa do investimento",
+  "buyInvestmentAction": "Comprar",
+  "sellInvestmentAction": "Vender",
+  "dividendInvestmentAction": "Dividendo",
+  "interestInvestmentAction": "Juros",
+  "feeInvestmentAction": "Tarifa",
+  "depositInvestmentAction": "Depositar",
+  "withdrawInvestmentAction": "Retirar",
+  "investmentAmountLabel": "Valor",
+  "missingMarketPriceMessage": "Adicione uma cotação para calcular valor de mercado e resultado não realizado.",
+  "insufficientLotsMessage": "A quantidade vendida excede os lotes disponíveis.",
+  "wealthNavigationLabel": "Patrimônio",
+  "wealthTitle": "Patrimônio líquido e bens",
+  "netWorthLabel": "Patrimônio líquido",
+  "totalAssetsLabel": "Ativos",
+  "totalLiabilitiesLabel": "Passivos",
+  "physicalAssetsLabel": "Bens físicos",
+  "includedAccountsLabel": "Contas incluídas",
+  "addAssetAction": "Adicionar bem",
+  "deleteAssetAction": "Excluir bem",
+  "addValuationAction": "Atualizar valor",
+  "noAssetsMessage": "Nenhum bem físico cadastrado.",
+  "wealthLoadFailedMessage": "Não foi possível carregar o patrimônio do cofre local.",
+  "assetNameLabel": "Nome do bem",
+  "assetTypeLabel": "Tipo de bem",
+  "assetCostLabel": "Preço de compra",
+  "assetDateLabel": "Data da compra",
+  "valuationMethodLabel": "Método de avaliação",
+  "annualRateLabel": "Taxa anual (%)",
+  "usefulLifeMonthsLabel": "Vida útil (meses)",
+  "salvageValueLabel": "Valor residual",
+  "includeInNetWorthLabel": "Incluir no patrimônio",
+  "currentValueLabel": "Valor atual",
+  "valuationDateLabel": "Data da avaliação",
+  "manualValuationMethod": "Manual",
+  "straightLineValuationMethod": "Depreciação linear",
+  "depreciationValuationMethod": "Depreciação percentual fixa",
+  "appreciationValuationMethod": "Valorização percentual fixa",
+  "customValuationMethod": "Agenda personalizada",
+  "wealthIncompleteFxMessage": "Alguns valores foram omitidos porque não há taxa de câmbio local.",
+  "wealthEstimatedFxMessage": "Este relatório usa taxas de câmbio locais estimadas.",
+  "confirmDeleteAssetBody": "Excluir este bem? O histórico de avaliações também será removido.",
+  "customIntervalLabel": "A cada {interval} {unit}",
+  "@customIntervalLabel": {
+    "placeholders": {
+      "interval": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshPricesAction": "Atualizar cotações",
+  "manualPriceAction": "Definir preço manual",
+  "stalePriceMessage": "A cotação em cache está desatualizada.",
+  "priceRefreshFailedMessage": "A atualização falhou. O último valor local continua em uso.",
+  "intelligenceTitle": "Análises financeiras",
+  "intelligenceSubtitle": "Estimativas locais baseadas nos seus dados registrados",
+  "intelligencePrivacyMessage": "Estas análises são calculadas neste dispositivo. O histórico de transações não é enviado a um serviço externo de IA.",
+  "intelligenceLoadFailedMessage": "Não foi possível calcular as análises financeiras do cofre local.",
+  "intelligenceDisabledMessage": "As análises financeiras estão desativadas. O livro-razão e os recursos normais não são afetados.",
+  "noInsightsMessage": "Ainda não há histórico local suficiente para gerar análises.",
+  "refreshInsightsAction": "Recalcular análises",
+  "calculationTraceTitle": "Como esta estimativa foi calculada",
+  "spendingTrendInsight": "A despesa projetada está em {percent}% em comparação com o mês anterior.",
+  "@spendingTrendInsight": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "expenseAnomalyInsight": "A projeção de {category} é {projected}, {percent}% em comparação com o mês anterior.",
+  "@expenseAnomalyInsight": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "projected": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetForecastInsight": "No ritmo atual, {name} está projetado em {projected} para um limite de {limit}.",
+  "@budgetForecastInsight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "projected": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "cashFlowForecastInsight": "A estimativa local de fluxo de caixa para {days} dias termina em {closing}.",
+  "@cashFlowForecastInsight": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "closing": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringCommitmentsInsight": "Há previsão de {count} despesas recorrentes, somando {total}, neste período.",
+  "@recurringCommitmentsInsight": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "goalContributionInsight": "Para manter o prazo de {name}, a contribuição mensal pode precisar de mais {gap}.",
+  "@goalContributionInsight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "emergencyFundInsight": "Os recursos líquidos cobrem cerca de {months} meses pela média recente de despesas de {average}.",
+  "@emergencyFundInsight": {
+    "placeholders": {
+      "months": {
+        "type": "String"
+      },
+      "average": {
+        "type": "String"
+      }
+    }
+  },
+  "debtOverviewInsight": "A dívida registrada é {debt}, equivalente a {percent}% dos ativos registrados.",
+  "@debtOverviewInsight": {
+    "placeholders": {
+      "debt": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "netWorthTrendInsight": "O patrimônio variou {change} ({percent}%) em {months} pontos do relatório.",
+  "@netWorthTrendInsight": {
+    "placeholders": {
+      "change": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "investmentConcentrationInsight": "{name} representa {percent}% dos investimentos com cotação.",
+  "@investmentConcentrationInsight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "cloudAccountTitle": "Conta Equis na nuvem",
+  "cloudAccountSettingsSubtitle": "Login opcional, verificação e identidade do dispositivo",
+  "createEquisAccountAction": "Criar Conta Equis",
+  "continueOfflineAction": "Continuar Offline",
+  "cloudAccountIntro": "A identidade na nuvem é opcional. Seu cofre atual continua local e mantém o mesmo identificador.",
+  "emailLabel": "E-mail",
+  "passwordLabel": "Senha",
+  "signInAction": "Entrar",
+  "signOutAction": "Sair",
+  "awaitingVerificationTitle": "Verifique seu e-mail",
+  "awaitingVerificationBody": "Uma mensagem de verificação foi enviada para {email}. Depois de verificar, entre para vincular este cofre local.",
+  "@awaitingVerificationBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "resendVerificationAction": "Reenviar e-mail de verificação",
+  "cloudSignedInTitle": "Conta na nuvem conectada",
+  "cloudSignedInBody": "Conectado como {email}. O identificador do cofre local foi preservado.",
+  "@cloudSignedInBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "localAccessPreservedMessage": "A sessão na nuvem está indisponível ou desconectada. O acesso ao cofre local continua disponível.",
+  "cloudNotConfiguredMessage": "O Supabase não está configurado nesta versão. Você pode continuar usando todos os recursos locais offline.",
+  "cloudSyncEncryptionPendingMessage": "A sincronização segura fica desligada até você exportar e confirmar a chave de recuperação do cofre.",
+  "secureSyncTitle": "Sincronização segura",
+  "secureSyncDisabledBody": "Seus dados permanecem locais até você ativar a sincronização criptografada de ponta a ponta.",
+  "enableSecureSyncAction": "Ativar sincronização segura",
+  "recoverySecretTitle": "Salve sua chave de recuperação",
+  "recoverySecretBody": "Guarde esta chave em um local seguro. Ela é necessária para abrir o cofre criptografado em um novo dispositivo e a Equis não consegue recuperá-la por você.",
+  "copyRecoverySecretAction": "Copiar chave de recuperação",
+  "recoverySecretCopiedMessage": "Chave de recuperação copiada",
+  "confirmRecoverySavedAction": "Salvei a chave de recuperação",
+  "syncStatusSynced": "Sincronizado",
+  "syncStatusOffline": "Offline — as alterações pendentes continuam seguras neste dispositivo",
+  "syncStatusError": "A sincronização precisa de atenção",
+  "syncStatusReady": "Pronto para sincronizar",
+  "syncDiagnostics": "Últimas 24 horas: {pushed} enviados · {pulled} recebidos · {conflicts} conflitos",
+  "@syncDiagnostics": {
+    "placeholders": {
+      "pushed": {
+        "type": "int"
+      },
+      "pulled": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
+  "retrySyncAction": "Sincronizar agora",
+  "syncConflictsTitle": "Conflitos que exigem revisão",
+  "syncConflictBody": "{entityType} · {recordId} · revisão local {localRevision}, revisão remota {remoteRevision}",
+  "@syncConflictBody": {
+    "placeholders": {
+      "entityType": {
+        "type": "String"
+      },
+      "recordId": {
+        "type": "String"
+      },
+      "localRevision": {
+        "type": "int"
+      },
+      "remoteRevision": {
+        "type": "int"
+      }
+    }
+  },
+  "keepLocalAction": "Manter local",
+  "keepRemoteAction": "Manter remoto",
+  "deviceIdentityLabel": "Dispositivo: {name} · {platform} · {identifier}",
+  "@deviceIdentityLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "platform": {
+        "type": "String"
+      },
+      "identifier": {
+        "type": "String"
+      }
+    }
+  },
+  "authInvalidCredentialsMessage": "O e-mail ou a senha está incorreto.",
+  "authEmailNotVerifiedMessage": "Verifique seu e-mail antes de entrar.",
+  "authWeakPasswordMessage": "Escolha uma senha mais forte.",
+  "authAccountExistsMessage": "Já existe uma conta para este e-mail. Tente entrar.",
+  "authRateLimitedMessage": "Muitas tentativas. Aguarde um momento e tente novamente.",
+  "authNetworkMessage": "O serviço de nuvem está inacessível. O acesso local não foi afetado.",
+  "authVaultMismatchMessage": "Este cofre já está vinculado a outra conta na nuvem.",
+  "authUnknownMessage": "Não foi possível concluir a operação da conta na nuvem.",
+  "portabilityTitle": "Backup e exportação",
+  "portabilitySubtitle": "Backups criptografados e exportações abertas com confirmação",
+  "createEncryptedBackupAction": "Criar backup criptografado",
+  "encryptedBackupDescription": "Cria um arquivo .equis protegido por senha com os dados e anexos do cofre.",
+  "validateBackupAction": "Validar um backup",
+  "validateBackupDescription": "Confere senha, formato, integridade e compatibilidade sem restaurar.",
+  "restoreBackupAction": "Restaurar backup",
+  "restoreBackupDescription": "Reconstrói um cofre e os vínculos dos anexos neste perfil vazio.",
+  "restoreRequiresCleanProfileMessage": "A restauração só fica disponível antes de criar um cofre neste perfil.",
+  "exportJsonAction": "Exportar cofre como JSON",
+  "exportCsvAction": "Exportar transações como CSV",
+  "plaintextExportDescription": "Exporta os dados lógicos do cofre sem criptografia.",
+  "transactionCsvDescription": "Exporta valores mínimos exatos, moedas, movimentos, divisões, etiquetas e conversões.",
+  "backupCreatedMessage": "Backup criptografado criado.",
+  "backupValidMessage": "O backup é autêntico e compatível.",
+  "backupRestoredMessage": "Backup restaurado com sucesso.",
+  "restoreBackupConfirmation": "Restaurar este backup no perfil local vazio? Identificadores e relações serão preservados.",
+  "plaintextPrivacyWarningTitle": "Dados financeiros sem criptografia",
+  "plaintextPrivacyWarningBody": "Esta exportação não é criptografada. Ela pode conter valores, descrições, contas e outros dados financeiros privados. Guarde-a em local seguro.",
+  "continueExportAction": "Exportar mesmo assim",
+  "exportCompletedMessage": "Exportação aberta criada.",
+  "backupPasswordTitle": "Senha do backup",
+  "confirmPasswordLabel": "Confirmar senha",
+  "backupPasswordValidationMessage": "Use pelo menos 12 caracteres e digite senhas iguais.",
+  "portabilityErrorMessage": "Não foi possível concluir a operação. Confira o arquivo, a senha e o destino.",
+  "receiptAttachmentsTitle": "Comprovantes e anexos",
+  "addAttachmentAction": "Anexar comprovante ou arquivo",
+  "noAttachmentsMessage": "Nenhum arquivo anexado a esta transação.",
+  "exportAttachmentAction": "Descriptografar e salvar uma cópia",
+  "attachmentSizeLabel": "{bytes} bytes · criptografado neste dispositivo",
+  "attachmentAddedMessage": "O arquivo foi criptografado e anexado.",
+  "attachmentExportedMessage": "Cópia descriptografada salva.",
+  "attachmentErrorMessage": "Não foi possível concluir a operação com o anexo.",
+  "accountNatureLabel": "{nature, select, asset{Ativo} liability{Passivo} other{Conta}}",
+  "@accountNatureLabel": {
+    "placeholders": {
+      "nature": {
+        "type": "String"
+      }
+    }
+  },
+  "physicalAssetTypeLabel": "{type, select, property{Imóvel} vehicle{Veículo} collectible{Colecionável} equipment{Equipamento} valuablePossession{Bem valioso} other{Outro}}",
+  "@physicalAssetTypeLabel": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentAssetClassLabel": "{assetClass, select, stock{Ação} etf{ETF} fund{Fundo} reit{REIT} fii{FII} bond{Título} fixedIncome{Renda fixa} crypto{Criptomoeda} commodity{Commodity} cashEquivalent{Equivalente de caixa} other{Outro}}",
+  "@investmentAssetClassLabel": {
+    "placeholders": {
+      "assetClass": {
+        "type": "String"
+      }
+    }
+  },
+  "syncEntityTypeLabel": "{entityType, select, vault{Cofre} account{Conta} category{Categoria} counterparty{Contraparte} tag{Etiqueta} transaction{Transação} recurring_rule{Regra recorrente} installment_plan{Plano de parcelas} credit_card_statement{Fatura de cartão} budget{Orçamento} goal{Meta} asset{Bem} investment_instrument{Instrumento de investimento} manual_fx_rate{Câmbio manual} manual_market_price{Preço manual} attachment{Anexo} other{Registro}}",
+  "@syncEntityTypeLabel": {
+    "placeholders": {
+      "entityType": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshAction": "Atualizar",
+  "clearValueAction": "Limpar valor",
+  "lastBackupLabel": "Último backup",
+  "spendingByTagTitle": "Despesas por tag",
+  "withoutTagsLabel": "Sem tags",
+  "tagOverlapMessage": "Cada despesa conta integralmente em cada tag. Os totais das tags podem se sobrepor.",
+  "syncRunningLabel": "Sincronizando...",
+  "syncPendingLabel": "Alterações pendentes",
+  "syncAutomaticPolicy": "As alterações sincronizam automaticamente enquanto o app está aberto. Conflitos mantêm a maior revisão; revisões iguais usam a data da edição e, em novo empate, um critério consistente pelo conteúdo.",
+  "syncLastSuccessLabel": "Última sincronização concluída",
+  "syncNeverLabel": "Ainda não concluída",
+  "syncNetworkHelp": "Verifique a conexão e tente novamente. Suas alterações continuam neste dispositivo.",
+  "syncSessionHelp": "Sua sessão expirou. Entre novamente com a mesma conta.",
+  "syncAccessHelp": "Esta conta ou dispositivo não tem acesso ao cofre na nuvem. Confira se está usando a conta original.",
+  "syncCompatibilityHelp": "O app e o servidor de sincronização são incompatíveis. Confira a versão do app e as migrações do servidor.",
+  "syncPayloadHelp": "Um registro pendente não pôde ser processado. Mantenha seus dados e informe o código de diagnóstico.",
+  "syncCryptoHelp": "Não foi possível descriptografar os dados da nuvem. Guarde sua chave de recuperação e informe o código de diagnóstico.",
+  "syncLocalHelp": "Uma operação local de sincronização falhou. Tente novamente; se persistir, informe o código de diagnóstico.",
+  "syncRemoteHelp": "O servidor não conseguiu concluir a solicitação. Tente novamente mais tarde.",
+  "vaultsTitle": "Cofres e conta",
+  "localVaultsLabel": "Cofres neste aparelho",
+  "newVaultAction": "Novo cofre",
+  "legacyVaultNotice": "Cópia local da versão de testes. Use seu cofre já migrado para sincronizar.",
+  "vaultKeyLabel": "Chave do cofre",
+  "vaultKeyExplanation": "Esta chave abre este cofre. Guarde-a em local seguro. Ela não é a senha da conta nem a senha do backup.",
+  "showVaultKeyAction": "Mostrar chave do cofre",
+  "vaultSyncAction": "Sincronizar cofre ativo",
+  "accountCloudVaultsLabel": "Conta e cofres na nuvem",
+  "vaultOwnerExplanation": "Você pode abrir backups offline. Para sincronizar, entre na conta proprietária. O primeiro envio vincula permanentemente o cofre à conta.",
+  "accountEmailLabel": "E-mail da conta",
+  "accountPasswordLabel": "Senha da conta",
+  "accountSignInAction": "Entrar na conta",
+  "accountSignOutAction": "Sair da conta",
+  "refreshVaultsAction": "Atualizar lista de cofres",
+  "noCloudVaultsMessage": "Nenhum cofre do novo formato nesta conta.",
+  "restoreCloudVaultAction": "Restaurar cofre da nuvem",
+  "vaultOperationFailed": "Não foi possível concluir. Confira a conta proprietária, a chave do cofre, a senha do backup e a conexão. Seus cofres existentes foram preservados.",
+  "restoreAddsVaultMessage": "Adiciona o cofre do backup sem substituir os cofres locais existentes.",
+  "legacyBackupUnsupportedMessage": "Use o backup do cofre que você já migrou. Este arquivo antigo pertence à versão de testes.",
+  "updatesTitle": "Atualizações do aplicativo",
+  "updateAvailable": "Versão disponível",
+  "updateChecking": "Verificando atualizações…",
+  "updateWaitingWifi": "Aguardando Wi-Fi",
+  "updateDownloading": "Baixando atualização…",
+  "updateReady": "Atualização verificada e pronta para instalar.",
+  "updateFailed": "Atualização indisponível ou falha na verificação. Tente novamente; seus dados foram preservados.",
+  "updateInstalling": "Preparando instalação…",
+  "updateCheckHint": "As verificações acontecem com o Equis aberto, a cada seis horas.",
+  "updateAutomatic": "Baixar atualizações automaticamente",
+  "updateCheck": "Verificar atualizações",
+  "updateDownloadNow": "Baixar agora (qualquer conexão)",
+  "updateInstall": "Instalar atualização",
+  "updateInstallConfirm": "Instalar a atualização verificada? No Windows, o Equis será fechado e reaberto. Guarde seu backup; não desinstale o app.",
+  "updateLater": "Mais tarde",
+  "updatePermission": "Permita instalar pelo Equis nas configurações do Android e toque novamente em Instalar atualização.",
+  "updateRecoveryRequired": "Uma substituição de arquivos do Equis está em andamento ou foi interrompida. Feche esta janela. Se a atualização não concluir, use o auxiliar de recuperação conforme as instruções da versão. Seus cofres não foram abertos."
+}

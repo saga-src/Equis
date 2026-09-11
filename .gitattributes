@@ -1,0 +1,39 @@
+* text=auto
+.gitattributes text eol=lf
+LICENSE text eol=lf
+
+*.dart text eol=lf
+*.drift text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.toml text eol=lf
+*.sql text eol=lf
+*.kts text eol=lf
+*.gradle text eol=lf
+*.xml text eol=lf
+*.cmake text eol=lf
+*.cpp text eol=lf
+*.cc text eol=lf
+*.h text eol=lf
+*.ps1 text eol=lf
+*.iss text eol=lf
+*.arb text eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.ttf binary
+*.otf binary
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.jar binary
+*.jks binary
+*.keystore binary
+*.apk binary
+*.exe binary
+*.dll binary

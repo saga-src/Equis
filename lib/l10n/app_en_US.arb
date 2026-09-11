@@ -1,0 +1,749 @@
+{
+  "@@locale": "en_US",
+  "appTitle": "Equis",
+  "homeNavigationLabel": "Home",
+  "settingsNavigationLabel": "Settings",
+  "availableMoneyTitle": "Available money",
+  "availableMoneyPlaceholder": "Your local financial overview will appear here.",
+  "addTransactionAction": "Add transaction",
+  "foundationStatusTitle": "Local-first foundation",
+  "foundationStatusBody": "Your financial data will be committed locally before optional synchronization.",
+  "languageTitle": "Language",
+  "appearanceTitle": "Appearance",
+  "themeTitle": "Theme",
+  "themeObsidianName": "Obsidian Mode",
+  "themeObsidianDescription": "Stable dark theme with translucent surfaces and emerald accents.",
+  "themeTrueLightName": "True Light",
+  "themeTrueLightDescription": "Clean, high-contrast light theme for daytime use.",
+  "themeLegacyName": "Legacy",
+  "themeLegacyDescription": "The original Equis v1 appearance without glass effects.",
+  "englishLanguage": "English (United States)",
+  "portugueseLanguage": "Portuguese (Brazil)",
+  "offlineReadyLabel": "Offline ready",
+  "transactionTypeLabel": "Type",
+  "expenseTypeLabel": "Expense",
+  "incomeTypeLabel": "Income",
+  "transferTypeLabel": "Transfer",
+  "amountLabel": "Amount",
+  "accountLabel": "Account",
+  "categoryLabel": "Category",
+  "saveLocallyAction": "Save locally",
+  "optionalDetailsLabel": "Optional details",
+  "transactionSavedMessage": "Transaction saved locally",
+  "transactionSaveFailedMessage": "Could not save the transaction",
+  "editTransactionAction": "Edit transaction",
+  "deleteTransactionAction": "Delete transaction",
+  "reconcileTransactionAction": "Reconcile transaction",
+  "fromAccountLabel": "From account",
+  "toAccountLabel": "To account",
+  "dateLabel": "Date",
+  "payeeLabel": "Merchant or payee",
+  "notesLabel": "Notes",
+  "requiredFieldMessage": "Required field",
+  "localVaultErrorMessage": "The encrypted local vault could not be opened.",
+  "setupRequiredMessage": "Set up the local vault before adding transactions.",
+  "transactionNotFoundMessage": "Transaction not found.",
+  "setupLocalVaultTitle": "Set up your local vault",
+  "setupLocalVaultBody": "Your data stays encrypted on this device and works offline.",
+  "profileNameLabel": "Profile name",
+  "firstAccountNameLabel": "First account name",
+  "reportingCurrencyLabel": "Reporting currency",
+  "createLocalVaultAction": "Create encrypted vault",
+  "recentTransactionsTitle": "Recent transactions",
+  "noRecentTransactionsMessage": "No transactions yet.",
+  "confirmDeleteTitle": "Delete transaction?",
+  "confirmDeleteTransactionBody": "This removes the transaction from balances while preserving a local deletion record.",
+  "cancelAction": "Cancel",
+  "deleteAction": "Delete",
+  "statusPendingLabel": "Pending",
+  "statusClearedLabel": "Cleared",
+  "statusReconciledLabel": "Reconciled",
+  "statusCancelledLabel": "Cancelled",
+  "categoryExpensesLabel": "Expenses",
+  "categoryIncomeLabel": "Income",
+  "categoryFoodLabel": "Food",
+  "categoryHousingLabel": "Housing",
+  "categoryTransportLabel": "Transport",
+  "categorySalaryLabel": "Salary",
+  "categoryOtherIncomeLabel": "Other income",
+  "manageCategoriesTagsAction": "Manage categories and tags",
+  "manageCategoriesTagsSubtitle": "Create, translate, and organize your categories and tags.",
+  "alreadyHaveAccountAction": "I already have an account",
+  "restoreExistingVaultTitle": "Sign in and restore your data",
+  "restoreExistingVaultBody": "Use your Equis account and the recovery key saved on your first device to download and decrypt your vault.",
+  "recoverySecretLabel": "Recovery key",
+  "recoverySecretRestoreHint": "It starts with equis-recovery-v1_.",
+  "restoreAndSyncAction": "Restore and sync",
+  "restoreLocalDataSafetyMessage": "Restoration is only allowed before a local vault is created, so existing device data is never overwritten.",
+  "restoreNoVaultMessage": "No synchronized vault was found for this account.",
+  "restoreMultipleVaultsMessage": "This account has more than one vault. Vault selection is not available yet.",
+  "restoreInvalidSecretMessage": "The recovery key is invalid for this vault.",
+  "restoreLocalVaultExistsMessage": "This device already has a local vault and it cannot be overwritten.",
+  "restoreSyncFailedMessage": "The vault was recovered, but synchronization could not finish. Check your connection and retry.",
+  "editTranslationsAction": "Edit names and translations",
+  "englishNameLabel": "English name (optional)",
+  "portugueseNameLabel": "Brazilian Portuguese name (optional)",
+  "localizedNamesHint": "When a translation is empty, the main name is used.",
+  "categoriesTitle": "Categories",
+  "tagsTitle": "Tags",
+  "addCategoryAction": "Add category",
+  "addTagAction": "Add tag",
+  "categoryNameLabel": "Category name",
+  "parentCategoryLabel": "Parent category",
+  "noParentLabel": "No parent",
+  "tagNameLabel": "Tag name",
+  "noTagsMessage": "No tags yet.",
+  "systemCategoryLabel": "System category",
+  "archiveCategoryAction": "Archive category",
+  "categoryArchiveFailedMessage": "Archive child categories first.",
+  "expenseCategoriesTitle": "Expense categories",
+  "incomeCategoriesTitle": "Income categories",
+  "addAccountAction": "Add account",
+  "accountNameLabel": "Account name",
+  "accountTypeLabel": "Account type",
+  "currencyLabel": "Currency",
+  "checkingAccountType": "Checking",
+  "savingsAccountType": "Savings",
+  "cashAccountType": "Cash",
+  "walletAccountType": "Digital wallet",
+  "creditCardAccountType": "Credit card",
+  "historyNavigationLabel": "History",
+  "transactionHistoryTitle": "Transaction history",
+  "filtersAction": "Filters",
+  "historyFiltersTitle": "Search and filters",
+  "minimumAmountLabel": "Minimum amount",
+  "maximumAmountLabel": "Maximum amount",
+  "fromDateLabel": "From date",
+  "toDateLabel": "To date",
+  "anyValueLabel": "Any",
+  "includeDescendantCategoriesLabel": "Include child categories",
+  "tagFilterLabel": "Tag",
+  "statusFilterLabel": "Status",
+  "clearFiltersAction": "Clear",
+  "applyFiltersAction": "Apply filters",
+  "loadMoreAction": "Load more",
+  "noHistoryResultsMessage": "No transactions match these filters.",
+  "historySearchFailedMessage": "Could not search the local transaction history.",
+  "invalidFiltersMessage": "Check the amount and date ranges.",
+  "transactionTypeName": "{type, select, opening_balance{Opening balance} expense{Expense} income{Income} transfer{Transfer} currency_exchange{Currency exchange} credit_card_purchase{Credit card purchase} credit_card_payment{Credit card payment} refund{Refund} loan_payment{Loan payment} investment_buy{Investment purchase} investment_sell{Investment sale} dividend{Dividend} interest{Interest} fee{Fee} adjustment{Adjustment} other{Transaction}}",
+  "@transactionTypeName": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringNavigationLabel": "Scheduled",
+  "recurringTitle": "Recurring activity",
+  "upcomingTabLabel": "Upcoming",
+  "recurringRulesTabLabel": "Rules",
+  "addRecurringAction": "Add recurring",
+  "createRecurringAction": "Create schedule",
+  "recurringLoadFailedMessage": "Could not load recurring activity from the local vault.",
+  "noUpcomingOccurrencesMessage": "No scheduled activity in the next 90 days.",
+  "noRecurringRulesMessage": "No recurrence rules yet.",
+  "confirmOccurrenceAction": "Confirm",
+  "skipOccurrenceAction": "Skip",
+  "rescheduleOccurrenceAction": "Reschedule",
+  "modifyOneOccurrenceAction": "Modify this occurrence",
+  "modifyFutureOccurrencesAction": "Modify this and future occurrences",
+  "endRecurrenceAction": "End recurrence",
+  "endedRecurrenceLabel": "Ended",
+  "recurrenceNameLabel": "Schedule name",
+  "recurrenceStartsLabel": "Starts on",
+  "recurrenceEndsLabel": "Ends on (optional)",
+  "frequencyLabel": "Frequency",
+  "intervalLabel": "Every",
+  "dailyFrequencyLabel": "Daily",
+  "weeklyFrequencyLabel": "Weekly",
+  "monthlyFrequencyLabel": "Monthly",
+  "yearlyFrequencyLabel": "Yearly",
+  "scheduledOccurrenceLabel": "Scheduled",
+  "pendingOccurrenceLabel": "Changed",
+  "confirmedOccurrenceLabel": "Confirmed",
+  "skippedOccurrenceLabel": "Skipped",
+  "applyAction": "Apply",
+  "thisMonthTitle": "This month",
+  "incomeReportLabel": "Income",
+  "expensesReportLabel": "Expenses",
+  "netCashFlowLabel": "Net cash flow",
+  "budgetDashboardTitle": "Budget",
+  "budgetNextPhaseMessage": "Budget tracking becomes available in the next phase.",
+  "upcomingDashboardTitle": "Upcoming",
+  "upcomingNext30DaysLabel": "Scheduled in the next 30 days",
+  "spendingByCategoryTitle": "Spending by category",
+  "cashFlowChartTitle": "Cash flow over time",
+  "accountBalancesTitle": "Account balances",
+  "reportsSectionTitle": "Reports",
+  "reportingIncompleteMessage": "Some currencies are omitted because no local exchange rate is available.",
+  "reportingEstimatedMessage": "Includes estimated cached exchange rates.",
+  "noSpendingDataMessage": "No classified activity in this period.",
+  "originalCurrencyAmountLabel": "Original currency",
+  "reportingAmountLabel": "Reporting currency",
+  "cardsNavigationLabel": "Cards",
+  "creditCardsTitle": "Credit cards",
+  "noCreditCardsMessage": "Create a credit-card account on Home to get started.",
+  "selectCardLabel": "Card and currency",
+  "configureCardAction": "Configure card",
+  "closingDayLabel": "Closing day",
+  "dueDayLabel": "Due day",
+  "creditLimitLabel": "Credit limit",
+  "availableCreditLabel": "Available credit",
+  "statementsTabLabel": "Statements",
+  "installmentsTabLabel": "Installments",
+  "addCardPurchaseAction": "Add purchase",
+  "addInstallmentAction": "Add installment purchase",
+  "feeInterestAction": "Add fee or interest",
+  "payStatementAction": "Pay statement",
+  "refundPurchaseAction": "Refund purchase",
+  "noStatementsMessage": "No statements for this card.",
+  "noInstallmentsMessage": "No installment plans for this card.",
+  "originalAmountLabel": "Original amount",
+  "financedAmountLabel": "Total with interest",
+  "installmentCountLabel": "Installment count",
+  "firstInstallmentDateLabel": "First installment date",
+  "interestRateLabel": "Interest rate (optional)",
+  "descriptionLabel": "Description",
+  "currentInstallmentLabel": "Current installment",
+  "remainingAmountLabel": "Remaining amount",
+  "cancelInstallmentAction": "Cancel and refund plan",
+  "cardLoadFailedMessage": "Could not load credit-card data from the local vault.",
+  "futureStatementStatus": "Future",
+  "openStatementStatus": "Open",
+  "closedStatementStatus": "Closed",
+  "paidStatementStatus": "Paid",
+  "overdueStatementStatus": "Overdue",
+  "saveAction": "Save",
+  "budgetsNavigationLabel": "Budgets",
+  "budgetsTitle": "Budgets",
+  "addBudgetAction": "Add budget",
+  "editBudgetAction": "Edit budget",
+  "deleteBudgetAction": "Delete budget",
+  "noBudgetsMessage": "No budgets yet. Create one to start tracking your plan.",
+  "budgetLoadFailedMessage": "Could not load budgets from the local vault.",
+  "budgetNameLabel": "Budget name",
+  "budgetLimitLabel": "Limit",
+  "budgetPeriodLabel": "Period",
+  "weeklyBudgetPeriod": "Weekly",
+  "monthlyBudgetPeriod": "Monthly",
+  "yearlyBudgetPeriod": "Yearly",
+  "customBudgetPeriod": "Custom range",
+  "budgetWarningThresholdLabel": "Warning threshold (%)",
+  "budgetScopeLabel": "Scope",
+  "overallSpendingScope": "Overall spending",
+  "budgetCategoriesScope": "Categories",
+  "budgetAccountsScope": "Accounts",
+  "budgetTagsScope": "Tags",
+  "includeDescendantsLabel": "Include descendant categories",
+  "customStartDateLabel": "Start date",
+  "customEndDateLabel": "End date",
+  "budgetUsedLabel": "Used",
+  "budgetRemainingLabel": "Remaining",
+  "budgetProjectedLabel": "Projected",
+  "budgetSafeState": "Safe",
+  "budgetApproachingState": "Approaching limit",
+  "budgetReachedState": "Limit reached",
+  "budgetExceededState": "Exceeded",
+  "budgetLikelyExceedMessage": "At the current pace, this budget is likely to be exceeded.",
+  "budgetIncompleteFxMessage": "Some spending is omitted because a local exchange rate is unavailable.",
+  "budgetEstimatedFxMessage": "This budget uses an estimated local exchange rate.",
+  "confirmDeleteBudgetBody": "Delete this budget? Transactions and spending history will not be changed.",
+  "activeBudgetsCount": "{count, plural, =0{No active budgets} =1{1 active budget} other{{count} active budgets}}",
+  "@activeBudgetsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetUsagePercent": "{percent}% used",
+  "@budgetUsagePercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsNavigationLabel": "Goals",
+  "goalsTitle": "Goals and future cash flow",
+  "goalsTabLabel": "Goals",
+  "cashFlowProjectionTabLabel": "Future cash flow",
+  "addGoalAction": "Add goal",
+  "editGoalAction": "Edit goal",
+  "deleteGoalAction": "Delete goal",
+  "noGoalsMessage": "No goals yet. Create one to plan your next milestone.",
+  "goalLoadFailedMessage": "Could not load goals and projections from the local vault.",
+  "goalNameLabel": "Goal name",
+  "goalTypeLabel": "Goal type",
+  "emergencyFundGoalType": "Emergency fund",
+  "vacationGoalType": "Vacation",
+  "vehicleGoalType": "Vehicle",
+  "homeGoalType": "Home",
+  "debtPayoffGoalType": "Debt payoff",
+  "investmentGoalType": "Investment",
+  "retirementGoalType": "Retirement",
+  "educationGoalType": "Education",
+  "customGoalType": "Custom",
+  "goalTargetLabel": "Target",
+  "goalCurrentLabel": "Current",
+  "plannedMonthlyContributionLabel": "Planned monthly contribution",
+  "requiredMonthlyContributionLabel": "Required monthly contribution",
+  "expectedCompletionLabel": "Estimated completion",
+  "goalTargetDateLabel": "Target date",
+  "goalPriorityLabel": "Priority",
+  "goalTrackingModeLabel": "Progress tracking",
+  "manualGoalTracking": "Manual contributions",
+  "linkedAccountsGoalTracking": "Linked account balances",
+  "transactionsGoalTracking": "Linked contributions",
+  "linkedGoalAccountsLabel": "Linked pockets",
+  "addGoalContributionAction": "Add contribution",
+  "goalContributionAmountLabel": "Contribution amount",
+  "goalContributionDateLabel": "Contribution date",
+  "goalContributionTransactionLabel": "Associated transaction (optional)",
+  "goalContributionNotesLabel": "Notes (optional)",
+  "goalReachedLabel": "Target reached",
+  "cashFlowEstimateDisclaimer": "This is an estimate based on known local data, not a guaranteed future balance.",
+  "openingAvailableLabel": "Opening available",
+  "projectedClosingLabel": "Projected closing",
+  "noProjectedEventsMessage": "No known events in this projection window.",
+  "projectedBalanceLabel": "Balance after event",
+  "recurringIncomeProjectionType": "Recurring income",
+  "recurringExpenseProjectionType": "Recurring expense",
+  "installmentProjectionType": "Future installment",
+  "cardStatementProjectionType": "Card statement",
+  "goalContributionProjectionType": "Planned goal contribution",
+  "goalIncompleteFxMessage": "Some linked balances are omitted because a local exchange rate is unavailable.",
+  "goalEstimatedFxMessage": "This goal uses an estimated local exchange rate.",
+  "confirmDeleteGoalBody": "Delete this goal? Linked accounts, transactions, and ledger history will not be changed.",
+  "activeGoalsCount": "{count, plural, =0{No active goals} =1{1 active goal} other{{count} active goals}}",
+  "@activeGoalsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "investmentsNavigationLabel": "Investments",
+  "investmentsTitle": "Investments",
+  "portfolioValueLabel": "Portfolio value",
+  "portfolioCostLabel": "Cost basis",
+  "unrealizedResultLabel": "Unrealized gain/loss",
+  "realizedResultLabel": "Realized gain/loss",
+  "investmentIncomeLabel": "Income received",
+  "allocationLabel": "Allocation",
+  "addInstrumentAction": "Add instrument",
+  "noInvestmentsMessage": "No investment instruments yet.",
+  "investmentLoadFailedMessage": "Could not load investments from the local vault.",
+  "instrumentNameLabel": "Instrument name",
+  "instrumentSymbolLabel": "Symbol",
+  "instrumentExchangeLabel": "Exchange",
+  "assetClassLabel": "Asset class",
+  "quantityLabel": "Quantity",
+  "averageCostLabel": "Average cost",
+  "unitPriceLabel": "Unit price",
+  "feesLabel": "Fees",
+  "taxesLabel": "Taxes",
+  "investmentDateLabel": "Date",
+  "cashAccountLabel": "Investment cash account",
+  "buyInvestmentAction": "Buy",
+  "sellInvestmentAction": "Sell",
+  "dividendInvestmentAction": "Dividend",
+  "interestInvestmentAction": "Interest",
+  "feeInvestmentAction": "Fee",
+  "depositInvestmentAction": "Deposit",
+  "withdrawInvestmentAction": "Withdraw",
+  "investmentAmountLabel": "Amount",
+  "missingMarketPriceMessage": "Add a market price to calculate market value and unrealized result.",
+  "insufficientLotsMessage": "The sale quantity exceeds the available lots.",
+  "wealthNavigationLabel": "Wealth",
+  "wealthTitle": "Net worth and assets",
+  "netWorthLabel": "Net worth",
+  "totalAssetsLabel": "Assets",
+  "totalLiabilitiesLabel": "Liabilities",
+  "physicalAssetsLabel": "Physical assets",
+  "includedAccountsLabel": "Included accounts",
+  "addAssetAction": "Add asset",
+  "deleteAssetAction": "Delete asset",
+  "addValuationAction": "Update value",
+  "noAssetsMessage": "No physical assets yet.",
+  "wealthLoadFailedMessage": "Could not load net worth from the local vault.",
+  "assetNameLabel": "Asset name",
+  "assetTypeLabel": "Asset type",
+  "assetCostLabel": "Purchase price",
+  "assetDateLabel": "Purchase date",
+  "valuationMethodLabel": "Valuation method",
+  "annualRateLabel": "Annual rate (%)",
+  "usefulLifeMonthsLabel": "Useful life (months)",
+  "salvageValueLabel": "Salvage value",
+  "includeInNetWorthLabel": "Include in net worth",
+  "currentValueLabel": "Current value",
+  "valuationDateLabel": "Valuation date",
+  "manualValuationMethod": "Manual",
+  "straightLineValuationMethod": "Straight-line depreciation",
+  "depreciationValuationMethod": "Fixed percentage depreciation",
+  "appreciationValuationMethod": "Fixed percentage appreciation",
+  "customValuationMethod": "Custom schedule",
+  "wealthIncompleteFxMessage": "Some values are omitted because a local exchange rate is unavailable.",
+  "wealthEstimatedFxMessage": "This report uses estimated local exchange rates.",
+  "confirmDeleteAssetBody": "Delete this asset? Its valuation history will also be removed.",
+  "customIntervalLabel": "Every {interval} {unit}",
+  "@customIntervalLabel": {
+    "placeholders": {
+      "interval": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshPricesAction": "Refresh market prices",
+  "manualPriceAction": "Set manual price",
+  "stalePriceMessage": "The cached market price is out of date.",
+  "priceRefreshFailedMessage": "Price refresh failed. The last local value is still in use.",
+  "intelligenceTitle": "Financial insights",
+  "intelligenceSubtitle": "Local estimates based on your recorded data",
+  "intelligencePrivacyMessage": "These insights are calculated on this device. Transaction history is not sent to an external AI service.",
+  "intelligenceLoadFailedMessage": "Could not calculate financial insights from the local vault.",
+  "intelligenceDisabledMessage": "Financial insights are disabled. Ledger and normal app features are unaffected.",
+  "noInsightsMessage": "There is not enough local history for insights yet.",
+  "refreshInsightsAction": "Recalculate insights",
+  "calculationTraceTitle": "How this was estimated",
+  "spendingTrendInsight": "Projected spending is {percent}% compared with last month.",
+  "@spendingTrendInsight": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "expenseAnomalyInsight": "{category} is projected at {projected}, {percent}% compared with last month.",
+  "@expenseAnomalyInsight": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "projected": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetForecastInsight": "At the current pace, {name} is projected at {projected} against a {limit} limit.",
+  "@budgetForecastInsight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "projected": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "cashFlowForecastInsight": "The {days}-day local cash-flow estimate ends at {closing}.",
+  "@cashFlowForecastInsight": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "closing": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringCommitmentsInsight": "{count} recurring expenses totaling {total} are expected in this forecast.",
+  "@recurringCommitmentsInsight": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "goalContributionInsight": "To stay on schedule for {name}, the monthly contribution may need {gap} more.",
+  "@goalContributionInsight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "emergencyFundInsight": "Liquid funds cover about {months} months at the recent {average} monthly expense average.",
+  "@emergencyFundInsight": {
+    "placeholders": {
+      "months": {
+        "type": "String"
+      },
+      "average": {
+        "type": "String"
+      }
+    }
+  },
+  "debtOverviewInsight": "Recorded debt is {debt}, or {percent}% of recorded assets.",
+  "@debtOverviewInsight": {
+    "placeholders": {
+      "debt": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "netWorthTrendInsight": "Net worth changed {change} ({percent}%) across {months} report points.",
+  "@netWorthTrendInsight": {
+    "placeholders": {
+      "change": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "investmentConcentrationInsight": "{name} represents {percent}% of priced investments.",
+  "@investmentConcentrationInsight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "cloudAccountTitle": "Equis cloud account",
+  "cloudAccountSettingsSubtitle": "Optional sign-in, verification, and device identity",
+  "createEquisAccountAction": "Create Equis Account",
+  "continueOfflineAction": "Continue Offline",
+  "cloudAccountIntro": "Cloud identity is optional. Your current vault stays local and keeps the same identifier.",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "signInAction": "Sign in",
+  "signOutAction": "Sign out",
+  "awaitingVerificationTitle": "Verify your email",
+  "awaitingVerificationBody": "A verification message was sent to {email}. After verification, sign in to link this local vault.",
+  "@awaitingVerificationBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "resendVerificationAction": "Resend verification email",
+  "cloudSignedInTitle": "Cloud account connected",
+  "cloudSignedInBody": "Signed in as {email}. The local vault identifier was preserved.",
+  "@cloudSignedInBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "localAccessPreservedMessage": "The cloud session is unavailable or signed out. Local vault access remains available.",
+  "cloudNotConfiguredMessage": "Supabase is not configured in this build. You can continue using every local feature offline.",
+  "cloudSyncEncryptionPendingMessage": "Secure synchronization is off until you export and confirm the vault recovery key.",
+  "secureSyncTitle": "Secure synchronization",
+  "secureSyncDisabledBody": "Your data stays local until you enable end-to-end encrypted synchronization.",
+  "enableSecureSyncAction": "Enable secure sync",
+  "recoverySecretTitle": "Save your recovery key",
+  "recoverySecretBody": "Store this key somewhere safe. It is required to open the encrypted vault on a new device and Equis cannot recover it for you.",
+  "copyRecoverySecretAction": "Copy recovery key",
+  "recoverySecretCopiedMessage": "Recovery key copied",
+  "confirmRecoverySavedAction": "I saved the recovery key",
+  "syncStatusSynced": "Synchronized",
+  "syncStatusOffline": "Offline — pending changes remain safely on this device",
+  "syncStatusError": "Synchronization needs attention",
+  "syncStatusReady": "Ready to synchronize",
+  "syncDiagnostics": "Last 24 hours: {pushed} sent · {pulled} received · {conflicts} conflicts",
+  "@syncDiagnostics": {
+    "placeholders": {
+      "pushed": {
+        "type": "int"
+      },
+      "pulled": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
+  "retrySyncAction": "Sync now",
+  "syncConflictsTitle": "Conflicts requiring review",
+  "syncConflictBody": "{entityType} · {recordId} · local revision {localRevision}, remote revision {remoteRevision}",
+  "@syncConflictBody": {
+    "placeholders": {
+      "entityType": {
+        "type": "String"
+      },
+      "recordId": {
+        "type": "String"
+      },
+      "localRevision": {
+        "type": "int"
+      },
+      "remoteRevision": {
+        "type": "int"
+      }
+    }
+  },
+  "keepLocalAction": "Keep local",
+  "keepRemoteAction": "Keep remote",
+  "deviceIdentityLabel": "Device: {name} · {platform} · {identifier}",
+  "@deviceIdentityLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "platform": {
+        "type": "String"
+      },
+      "identifier": {
+        "type": "String"
+      }
+    }
+  },
+  "authInvalidCredentialsMessage": "Email or password is incorrect.",
+  "authEmailNotVerifiedMessage": "Verify your email before signing in.",
+  "authWeakPasswordMessage": "Choose a stronger password.",
+  "authAccountExistsMessage": "An account already exists for this email. Try signing in.",
+  "authRateLimitedMessage": "Too many attempts. Wait a moment and try again.",
+  "authNetworkMessage": "The cloud service is unreachable. Local access is unaffected.",
+  "authVaultMismatchMessage": "This vault is already linked to a different cloud account.",
+  "authUnknownMessage": "The cloud account operation could not be completed.",
+  "portabilityTitle": "Backup and export",
+  "portabilitySubtitle": "Encrypted backups and explicit plaintext exports",
+  "createEncryptedBackupAction": "Create encrypted backup",
+  "encryptedBackupDescription": "Creates a password-protected .equis file with vault data and attachments.",
+  "validateBackupAction": "Validate a backup",
+  "validateBackupDescription": "Checks the password, format, integrity, and compatibility without restoring.",
+  "restoreBackupAction": "Restore backup",
+  "restoreBackupDescription": "Reconstruct a vault and its attachment links in this empty profile.",
+  "restoreRequiresCleanProfileMessage": "Restore is available only before creating a vault in this profile.",
+  "exportJsonAction": "Export vault as JSON",
+  "exportCsvAction": "Export transactions as CSV",
+  "plaintextExportDescription": "Exports logical vault data without encryption.",
+  "transactionCsvDescription": "Exports exact minor values, currencies, movements, splits, tags, and conversions.",
+  "backupCreatedMessage": "Encrypted backup created.",
+  "backupValidMessage": "The backup is authentic and compatible.",
+  "backupRestoredMessage": "Backup restored successfully.",
+  "restoreBackupConfirmation": "Restore this backup into the empty local profile? Identifiers and relationships will be preserved.",
+  "plaintextPrivacyWarningTitle": "Unencrypted financial data",
+  "plaintextPrivacyWarningBody": "This export is not encrypted. It may contain amounts, descriptions, accounts, and other private financial data. Keep it in a secure location.",
+  "continueExportAction": "Export anyway",
+  "exportCompletedMessage": "Plaintext export created.",
+  "backupPasswordTitle": "Backup password",
+  "confirmPasswordLabel": "Confirm password",
+  "backupPasswordValidationMessage": "Use at least 12 characters and enter matching passwords.",
+  "portabilityErrorMessage": "The operation could not be completed. Check the file, password, and destination.",
+  "receiptAttachmentsTitle": "Receipts and attachments",
+  "addAttachmentAction": "Attach receipt or file",
+  "noAttachmentsMessage": "No files attached to this transaction.",
+  "exportAttachmentAction": "Decrypt and save a copy",
+  "attachmentSizeLabel": "{bytes} bytes · encrypted on this device",
+  "attachmentAddedMessage": "The file was encrypted and attached.",
+  "attachmentExportedMessage": "Decrypted copy saved.",
+  "attachmentErrorMessage": "The attachment operation could not be completed.",
+  "accountNatureLabel": "{nature, select, asset{Asset} liability{Liability} other{Account}}",
+  "@accountNatureLabel": {
+    "placeholders": {
+      "nature": {
+        "type": "String"
+      }
+    }
+  },
+  "physicalAssetTypeLabel": "{type, select, property{Property} vehicle{Vehicle} collectible{Collectible} equipment{Equipment} valuablePossession{Valuable possession} other{Other}}",
+  "@physicalAssetTypeLabel": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentAssetClassLabel": "{assetClass, select, stock{Stock} etf{ETF} fund{Fund} reit{REIT} fii{FII} bond{Bond} fixedIncome{Fixed income} crypto{Cryptocurrency} commodity{Commodity} cashEquivalent{Cash equivalent} other{Other}}",
+  "@investmentAssetClassLabel": {
+    "placeholders": {
+      "assetClass": {
+        "type": "String"
+      }
+    }
+  },
+  "syncEntityTypeLabel": "{entityType, select, vault{Vault} account{Account} category{Category} counterparty{Counterparty} tag{Tag} transaction{Transaction} recurring_rule{Recurring rule} installment_plan{Installment plan} credit_card_statement{Credit-card statement} budget{Budget} goal{Goal} asset{Asset} investment_instrument{Investment instrument} manual_fx_rate{Manual exchange rate} manual_market_price{Manual market price} attachment{Attachment} other{Record}}",
+  "@syncEntityTypeLabel": {
+    "placeholders": {
+      "entityType": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshAction": "Refresh",
+  "clearValueAction": "Clear value",
+  "lastBackupLabel": "Last backup",
+  "spendingByTagTitle": "Spending by tag",
+  "withoutTagsLabel": "Without tags",
+  "tagOverlapMessage": "Each expense counts in full for every tag. Tag totals may overlap.",
+  "syncRunningLabel": "Synchronizing...",
+  "syncPendingLabel": "Pending changes",
+  "syncAutomaticPolicy": "Changes sync automatically while the app is open. Conflicts keep the higher revision; equal revisions use the edit time, then a consistent content tie-break.",
+  "syncLastSuccessLabel": "Last completed synchronization",
+  "syncNeverLabel": "Not yet completed",
+  "syncNetworkHelp": "Check your connection and try again. Your changes remain on this device.",
+  "syncSessionHelp": "Your session has expired. Sign in again with the same account.",
+  "syncAccessHelp": "This account or device cannot access the cloud vault. Check that you are using the original account.",
+  "syncCompatibilityHelp": "The app and sync server are incompatible. Check the app version and server migrations.",
+  "syncPayloadHelp": "A pending record could not be processed. Keep your data and report the diagnostic code.",
+  "syncCryptoHelp": "The cloud data could not be decrypted. Keep your recovery key and report the diagnostic code.",
+  "syncLocalHelp": "A local sync operation failed. Try again; if it persists, report the diagnostic code.",
+  "syncRemoteHelp": "The sync server could not complete the request. Try again later.",
+  "vaultsTitle": "Vaults and account",
+  "localVaultsLabel": "Vaults on this device",
+  "newVaultAction": "New vault",
+  "legacyVaultNotice": "Local copy from the test release. Use your already migrated vault for synchronization.",
+  "vaultKeyLabel": "Vault key",
+  "vaultKeyExplanation": "This key unlocks this vault. Keep it safe. It is neither your account password nor your backup password.",
+  "showVaultKeyAction": "Show vault key",
+  "vaultSyncAction": "Synchronize active vault",
+  "accountCloudVaultsLabel": "Account and cloud vaults",
+  "vaultOwnerExplanation": "You can open backups offline. To synchronize, sign in to the owner account. The first upload permanently binds the vault to that account.",
+  "accountEmailLabel": "Account email",
+  "accountPasswordLabel": "Account password",
+  "accountSignInAction": "Sign in",
+  "accountSignOutAction": "Sign out",
+  "refreshVaultsAction": "Refresh vault list",
+  "noCloudVaultsMessage": "No new-format vaults in this account.",
+  "restoreCloudVaultAction": "Restore cloud vault",
+  "vaultOperationFailed": "Could not complete. Check the owner account, vault key, backup password and connection. Existing vaults were preserved.",
+  "restoreAddsVaultMessage": "Adds the backup vault without replacing existing local vaults.",
+  "legacyBackupUnsupportedMessage": "Use the backup of your already migrated vault. This old file belongs to the test release.",
+  "updatesTitle": "App updates",
+  "updateAvailable": "Available version",
+  "updateChecking": "Checking for updates…",
+  "updateWaitingWifi": "Waiting for Wi-Fi",
+  "updateDownloading": "Downloading update…",
+  "updateReady": "Update verified and ready to install.",
+  "updateFailed": "Update unavailable or verification failed. You can try again; your data is unchanged.",
+  "updateInstalling": "Preparing installation…",
+  "updateCheckHint": "Checks run while Equis is open, at most every six hours.",
+  "updateAutomatic": "Download updates automatically",
+  "updateCheck": "Check for updates",
+  "updateDownloadNow": "Download now (any connection)",
+  "updateInstall": "Install update",
+  "updateInstallConfirm": "Install the verified update? On Windows, Equis will close and reopen. Keep your backup; do not uninstall the app.",
+  "updateLater": "Later",
+  "updatePermission": "Allow installation from Equis in Android settings, then tap Install update again.",
+  "updateRecoveryRequired": "Equis file replacement is running or was interrupted. Close this window. If the update does not finish, use the recovery helper as described in the release instructions. Your vaults have not been opened."
+}

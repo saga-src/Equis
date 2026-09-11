@@ -1,0 +1,43 @@
+# Machine-local SDKs, agent state and private working notes.
+.tooling/
+.codex/
+.claude/
+.workflow/
+# Local documentation and original-app references; intentionally not published.
+docs/
+
+# Regenerable Dart/Flutter dependencies and build intermediates.
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+build/
+coverage/
+# Distributable artifacts are kept locally or published as release assets.
+dist/
+
+# Logs, signing credentials and private backup files.
+*.log
+*.jks
+*.keystore
+*.pfx
+*.p12
+*.equis
+key.properties
+.env
+.env.*
+!.env.example
+.dart-defines.local.json
+.dart-defines.*.local.json
+
+# Editor and operating-system state.
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
+pubspec_overrides.yaml
+supabase/.temp/
+# Private update signing seed (never commit or package).
+/.update-signing/

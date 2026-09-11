@@ -1,0 +1,2 @@
+[functions.market-quotes]
+verify_jwt = true
