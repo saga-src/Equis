@@ -1,6 +1,7 @@
 import 'package:equis/application/services/local_finance_session_service.dart';
 import 'package:equis/domain/entities/account_profile.dart';
 import 'package:equis/domain/entities/category_node.dart';
+import 'package:equis/domain/entities/vault_profile.dart';
 import 'package:equis/domain/reporting/dashboard_models.dart';
 import 'package:equis/domain/shared/currency.dart';
 import 'package:equis/domain/shared/local_date.dart';
@@ -30,6 +31,25 @@ void main() {
       createdAt: const UtcInstant.fromEpochMicroseconds(1),
       updatedAt: const UtcInstant.fromEpochMicroseconds(1),
     );
+    final extraCategories = List.generate(
+      5,
+      (index) => CategoryNode(
+        id: EntityId.generate(),
+        vaultId: vault,
+        type: CategoryType.expense,
+        customName: 'Expense $index',
+        createdAt: const UtcInstant.fromEpochMicroseconds(1),
+        updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+      ),
+    );
+    final incomeCategory = CategoryNode(
+      id: EntityId.generate(),
+      vaultId: vault,
+      type: CategoryType.income,
+      customName: 'Salary',
+      createdAt: const UtcInstant.fromEpochMicroseconds(1),
+      updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+    );
     final account = EntityId.generate();
     final pocket = EntityId.generate();
     final report = DashboardSnapshot(
@@ -42,6 +62,14 @@ void main() {
       spendingByTag: const [TagSpending(tagId: null, amountMinor: 20000)],
       spendingByCategory: [
         CategorySpending(categoryId: category.id, amountMinor: 20000),
+        for (var index = 0; index < extraCategories.length; index++)
+          CategorySpending(
+            categoryId: extraCategories[index].id,
+            amountMinor: 5000 - index * 500,
+          ),
+      ],
+      incomeByCategory: [
+        CategorySpending(categoryId: incomeCategory.id, amountMinor: 50000),
       ],
       cashFlow: [
         CashFlowPoint(
@@ -86,8 +114,16 @@ void main() {
             body: SingleChildScrollView(
               child: DashboardOverview(
                 finance: LocalFinanceSnapshot(
-                  vault: null,
-                  categories: [category],
+                  vault: VaultProfile(
+                    id: vault,
+                    name: 'Local',
+                    baseCurrency: CurrencyCode.brl,
+                    locale: 'en-US',
+                    timezone: 'UTC',
+                    createdAt: const UtcInstant.fromEpochMicroseconds(1),
+                    updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+                  ),
+                  categories: [category, ...extraCategories, incomeCategory],
                 ),
                 reportOverride: report,
               ),
@@ -100,10 +136,11 @@ void main() {
 
     expect(find.text('Available money'), findsOneWidget);
     expect(find.text('This month'), findsOneWidget);
-    expect(find.text('Spending by category'), findsOneWidget);
+    expect(find.text('By category'), findsOneWidget);
     expect(find.text('Cash flow over time'), findsOneWidget);
     expect(find.text('Account balances'), findsOneWidget);
     expect(find.text('Food'), findsOneWidget);
+    expect(find.text('Other'), findsOneWidget);
     expect(find.byType(BarChart), findsOneWidget);
     expect(find.byType(PieChart), findsOneWidget);
     expect(find.byType(LineChart), findsOneWidget);
@@ -111,13 +148,26 @@ void main() {
       find.bySemanticsLabel(RegExp(r'Income:.*Expenses:', dotAll: true)),
       findsOneWidget,
     );
-    expect(find.bySemanticsLabel('Spending by category'), findsOneWidget);
+    expect(find.bySemanticsLabel('By category: Expenses'), findsOneWidget);
     expect(find.bySemanticsLabel('Cash flow over time'), findsAtLeast(1));
+    expect(find.byKey(const Key('dashboard-wide-pair')), findsNWidgets(3));
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('category-classification-selector')),
+        matching: find.text('Income'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Salary'), findsOneWidget);
+    expect(find.bySemanticsLabel('By category: Income'), findsOneWidget);
     await tester.tap(find.text('Tags'));
     await tester.pumpAndSettle();
     expect(find.text('Spending by tag'), findsOneWidget);
     expect(find.text('Without tags'), findsOneWidget);
     expect(find.byType(PieChart), findsNothing);
+    await tester.binding.setSurfaceSize(const Size(700, 1200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('dashboard-wide-pair')), findsNothing);
     semantics.dispose();
   });
 }

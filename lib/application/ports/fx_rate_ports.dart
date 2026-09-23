@@ -1,6 +1,7 @@
 import '../../domain/fx/fx_models.dart';
 import '../../domain/shared/currency.dart';
 import '../../domain/shared/local_date.dart';
+import '../../domain/shared/utc_instant.dart';
 import '../../domain/shared/uuid_v7.dart';
 
 abstract interface class FxRateProvider {
@@ -37,5 +38,9 @@ abstract interface class FxRateCacheRepository {
     required CurrencyCode base,
     required CurrencyCode quote,
     required LocalDate requestedDate,
+  });
+  Future<UtcInstant?> latestFetchedAt({
+    required CurrencyCode base,
+    required CurrencyCode quote,
   });
 }

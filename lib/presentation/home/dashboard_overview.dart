@@ -1,4 +1,5 @@
 import '../../domain/ledger/transaction_search.dart';
+import '../../domain/ledger/ledger_models.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ import '../../application/services/local_finance_session_service.dart';
 import '../../domain/entities/account_profile.dart';
 import '../../domain/reporting/dashboard_models.dart';
 import '../../domain/shared/currency.dart';
+import '../../domain/shared/uuid_v7.dart';
 import '../../l10n/app_localizations.dart';
 import '../formatting/taxonomy_labels.dart';
 import '../budgets/budget_controller.dart';
@@ -76,39 +78,14 @@ class DashboardOverview extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: 16),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 900;
-            final width = wide
-                ? (constraints.maxWidth - 16) / 2
-                : constraints.maxWidth;
-            return Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                SizedBox(
-                  width: width,
-                  child: _ThisMonth(report: report),
-                ),
-                SizedBox(
-                  width: width,
-                  child: _Planning(
-                    report: report,
-                    budgets: budgets,
-                    goals: goals,
-                  ),
-                ),
-                SizedBox(
-                  width: width,
-                  child: _NetWorthSummary(state: wealth),
-                ),
-                SizedBox(
-                  width: width,
-                  child: _InvestmentSummary(state: investments),
-                ),
-              ],
-            );
-          },
+        _ResponsivePair(
+          first: _ThisMonth(report: report),
+          second: _Planning(report: report, budgets: budgets, goals: goals),
+        ),
+        const SizedBox(height: 16),
+        _ResponsivePair(
+          first: _NetWorthSummary(state: wealth),
+          second: _InvestmentSummary(state: investments),
         ),
         const SizedBox(height: 24),
         Text(
@@ -116,35 +93,44 @@ class DashboardOverview extends ConsumerWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 900;
-            final width = wide
-                ? (constraints.maxWidth - 16) / 2
-                : constraints.maxWidth;
-            return Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                SizedBox(
-                  width: width,
-                  child: _SpendingReport(report: report, finance: finance),
-                ),
-                SizedBox(
-                  width: width,
-                  child: _CashFlowReport(report: report),
-                ),
-                SizedBox(
-                  width: constraints.maxWidth,
-                  child: _AccountBalances(report: report),
-                ),
-              ],
-            );
-          },
+        _ResponsivePair(
+          first: _SpendingReport(report: report, finance: finance),
+          second: _CashFlowReport(report: report),
         ),
+        const SizedBox(height: 16),
+        _AccountBalances(report: report),
       ],
     );
   }
+}
+
+class _ResponsivePair extends StatelessWidget {
+  const _ResponsivePair({required this.first, required this.second});
+  final Widget first;
+  final Widget second;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (constraints.maxWidth < 900) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [first, const SizedBox(height: 16), second],
+        );
+      }
+      return IntrinsicHeight(
+        child: Row(
+          key: const Key('dashboard-wide-pair'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: first),
+            const SizedBox(width: 16),
+            Expanded(child: second),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 class _NetWorthSummary extends StatelessWidget {
@@ -535,22 +521,36 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
   }
 }
 
-class _CategoryReport extends StatelessWidget {
+class _CategoryReport extends StatefulWidget {
   const _CategoryReport({required this.report, required this.finance});
   final DashboardSnapshot report;
   final LocalFinanceSnapshot finance;
 
   @override
+  State<_CategoryReport> createState() => _CategoryReportState();
+}
+
+class _CategoryReportState extends State<_CategoryReport> {
+  var classification = ReportClassification.expense;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final values = report.spendingByCategory.take(6).toList();
+    final report = widget.report;
+    final source = classification == ReportClassification.expense
+        ? report.spendingByCategory
+        : report.incomeByCategory;
+    final values = _categorySlices(source);
+    final classificationLabel = classification == ReportClassification.expense
+        ? l10n.expensesReportLabel
+        : l10n.incomeReportLabel;
     final colors = [
       Theme.of(context).colorScheme.primary,
-      Color(0xFF38BDF8),
-      Color(0xFFF59E0B),
-      Color(0xFFA78BFA),
-      Color(0xFFF472B6),
-      Color(0xFF94A3B8),
+      const Color(0xFF38BDF8),
+      const Color(0xFFF59E0B),
+      const Color(0xFFA78BFA),
+      const Color(0xFFF472B6),
+      const Color(0xFF94A3B8),
     ];
     return EquisGlassCard(
       margin: EdgeInsets.zero,
@@ -560,8 +560,25 @@ class _CategoryReport extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.spendingByCategoryTitle,
+              l10n.categoryBreakdownTitle,
               style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<ReportClassification>(
+              key: const Key('category-classification-selector'),
+              segments: [
+                ButtonSegment(
+                  value: ReportClassification.expense,
+                  label: Text(l10n.expensesReportLabel),
+                ),
+                ButtonSegment(
+                  value: ReportClassification.income,
+                  label: Text(l10n.incomeReportLabel),
+                ),
+              ],
+              selected: {classification},
+              onSelectionChanged: (value) =>
+                  setState(() => classification = value.single),
             ),
             const SizedBox(height: 12),
             if (values.isEmpty)
@@ -576,7 +593,8 @@ class _CategoryReport extends StatelessWidget {
                   children: [
                     Expanded(
                       child: AccessibleChart(
-                        label: l10n.spendingByCategoryTitle,
+                        label:
+                            '${l10n.categoryBreakdownTitle}: $classificationLabel',
                         child: PieChart(
                           PieChartData(
                             centerSpaceRadius: 42,
@@ -604,38 +622,54 @@ class _CategoryReport extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           for (var index = 0; index < values.length; index++)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 3),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      color: colors[index],
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _categoryName(
+                            Semantics(
+                              button: values[index].categoryId != null,
+                              child: InkWell(
+                                onTap: values[index].categoryId == null
+                                    ? null
+                                    : () => _openCategory(
                                         context,
-                                        finance,
-                                        values[index].categoryId,
+                                        values[index].categoryId!,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 5,
                                   ),
-                                  Text(
-                                    _money(
-                                      context,
-                                      report.reportingCurrency,
-                                      values[index].amountMinor,
-                                    ),
-                                    style: EquisTypography.numeric,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: colors[index],
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          values[index].categoryId == null
+                                              ? l10n.otherCategoriesLabel
+                                              : _categoryName(
+                                                  context,
+                                                  widget.finance,
+                                                  values[index].categoryId!,
+                                                ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Text(
+                                        _money(
+                                          context,
+                                          report.reportingCurrency,
+                                          values[index].amountMinor,
+                                        ),
+                                        style: EquisTypography.numeric,
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                         ],
@@ -649,6 +683,69 @@ class _CategoryReport extends StatelessWidget {
       ),
     );
   }
+
+  void _openCategory(BuildContext context, EntityId categoryId) {
+    final vault = widget.finance.vault;
+    if (vault == null) return;
+    final report = widget.report;
+    context.go(
+      '/history',
+      extra: dashboardCategoryHistoryFilter(
+        vaultId: vault.id,
+        categoryId: categoryId,
+        report: report,
+        classification: classification,
+      ),
+    );
+  }
+}
+
+TransactionSearchFilter dashboardCategoryHistoryFilter({
+  required EntityId vaultId,
+  required EntityId categoryId,
+  required DashboardSnapshot report,
+  required ReportClassification classification,
+}) => TransactionSearchFilter(
+  vaultId: vaultId,
+  categoryId: categoryId,
+  fromDate: report.periodStart,
+  toDate: report.cashFlow.isEmpty
+      ? report.periodEnd
+      : report.cashFlow.last.date,
+  reportingExpensesOnly: classification == ReportClassification.expense,
+  types: classification == ReportClassification.income
+      ? const {
+          LedgerTransactionType.income,
+          LedgerTransactionType.dividend,
+          LedgerTransactionType.interest,
+        }
+      : const {},
+);
+
+List<_CategorySlice> _categorySlices(List<CategorySpending> values) {
+  final top = values
+      .take(5)
+      .map(
+        (value) => _CategorySlice(
+          categoryId: value.categoryId,
+          amountMinor: value.amountMinor,
+        ),
+      );
+  if (values.length <= 5) return top.toList();
+  return [
+    ...top,
+    _CategorySlice(
+      amountMinor: values
+          .skip(5)
+          .fold(0, (sum, value) => sum + value.amountMinor),
+    ),
+  ];
+}
+
+final class _CategorySlice {
+  const _CategorySlice({this.categoryId, required this.amountMinor});
+  final EntityId? categoryId;
+  final int amountMinor;
 }
 
 class _CashFlowReport extends StatelessWidget {

@@ -35,6 +35,11 @@ abstract final class EquisFormatters {
     Localizations.localeOf(context).toLanguageTag(),
   ).format(value.toUtcDate());
 
+  static String monthYear(BuildContext context, LocalDate value) =>
+      DateFormat.yMMM(
+        Localizations.localeOf(context).toLanguageTag(),
+      ).format(value.toUtcDate());
+
   static String dateRange(
     BuildContext context,
     LocalDate start,

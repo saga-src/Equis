@@ -53,7 +53,7 @@ void main() {
       updatedAt: now,
     );
     await investments.saveInstrument(instrument);
-    prices = DriftMarketPriceRepository(database);
+    prices = DriftMarketPriceRepository(database, clock: () => now);
     provider = _FakeProvider();
     service = MarketDataService(
       instruments: investments,
@@ -83,6 +83,11 @@ void main() {
       );
       expect(fresh.single.quote?.price.toString(), '42.125');
       expect(provider.requests.single.provider, MarketProvider.brapi);
+      expect(
+        provider.requests.single.purpose,
+        MarketQuotePurpose.manualRefresh,
+      );
+      expect(await prices.latestAutomaticFetchedAt(instrument.id), now);
 
       provider.fail = true;
       final offline = await service.load(
@@ -130,12 +135,85 @@ void main() {
       automatic.price,
     );
   });
+
+  test(
+    'central stale fallback is shown but not persisted as a fresh fetch',
+    () async {
+      final local = MarketQuote(
+        instrumentId: instrument.id,
+        price: Decimal.parse('40.5'),
+        currency: CurrencyCode.brl,
+        timestamp: now,
+        provider: 'brapi',
+      );
+      await prices.saveAutomatic(local);
+      provider.next = MarketQuote(
+        instrumentId: instrument.id,
+        price: Decimal.parse('41.25'),
+        currency: CurrencyCode.brl,
+        timestamp: now,
+        provider: 'brapi',
+        stale: true,
+        refreshFailed: true,
+        refreshFailure: MarketRefreshFailureKind.rateLimited,
+      );
+
+      final selected = await service.load(
+        vaultId: vaultId,
+        asOf: asOf,
+        now: now,
+        refresh: true,
+      );
+
+      expect(selected.single.quote?.price.toString(), '41.25');
+      expect(selected.single.refreshFailed, isTrue);
+      expect(
+        selected.single.refreshFailure,
+        MarketRefreshFailureKind.rateLimited,
+      );
+      expect(selected.single.stale, isTrue);
+      expect((await prices.latestAutomatic(instrument.id))?.price, local.price);
+    },
+  );
+
+  test('stale candidate preview is not persisted as a fresh quote', () async {
+    await service.savePreview(
+      instrument,
+      MarketQuotePreview(
+        price: Decimal.parse('39.75'),
+        currency: CurrencyCode.brl,
+        timestamp: now,
+        provider: 'brapi',
+        stale: true,
+        refreshFailed: true,
+        refreshFailure: MarketRefreshFailureKind.rateLimited,
+      ),
+    );
+
+    expect(await prices.latestAutomatic(instrument.id), isNull);
+  });
 }
 
 final class _FakeProvider implements MarketDataProvider {
   MarketQuote? next;
   bool fail = false;
   final requests = <MarketQuoteRequest>[];
+
+  @override
+  Future<void> heartbeat(List<MarketQuoteRequest> assets) async {}
+
+  @override
+  Future<List<MarketInstrumentCandidate>> search({
+    required String query,
+    required InvestmentAssetClass assetClass,
+    required CurrencyCode currency,
+    int limit = 10,
+  }) async => const [];
+
+  @override
+  Future<MarketQuotePreview?> quoteCandidate(
+    MarketInstrumentCandidate candidate,
+  ) async => null;
 
   @override
   Future<MarketQuote?> quote(MarketQuoteRequest request) async {

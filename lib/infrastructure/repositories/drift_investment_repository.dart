@@ -105,6 +105,33 @@ final class DriftInvestmentRepository implements InvestmentRepository {
     }
   });
 
+  @override
+  Future<bool> hasProtectedHistory(EntityId instrumentId) async {
+    final row = await database
+        .customSelect(
+          'SELECT 1 AS present FROM investment_events WHERE instrument_id=? '
+          'UNION ALL SELECT 1 FROM investment_lots WHERE instrument_id=? '
+          'UNION ALL SELECT 1 FROM investment_lot_disposals disposal '
+          'INNER JOIN investment_lots lot ON lot.id=disposal.lot_id '
+          'WHERE lot.instrument_id=? '
+          "UNION ALL SELECT 1 FROM attachment_links WHERE entity_type='investment_instrument' AND entity_id=? "
+          'LIMIT 1',
+          variables: List.filled(
+            4,
+            Variable<String>(instrumentId.value),
+            growable: false,
+          ),
+          readsFrom: {
+            database.investmentEvents,
+            database.investmentLots,
+            database.investmentLotDisposals,
+            database.attachmentLinks,
+          },
+        )
+        .getSingleOrNull();
+    return row != null;
+  }
+
   List<Object?> _instrumentValues(InvestmentInstrument v) => [
     v.id.value,
     v.vaultId.value,

@@ -742,6 +742,12 @@ abstract class AppLocalizations {
   /// **'Credit card'**
   String get creditCardAccountType;
 
+  /// No description provided for @quickCardPurchaseNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This expense will be saved as a credit-card purchase in the statement for its date.'**
+  String get quickCardPurchaseNotice;
+
   /// No description provided for @historyNavigationLabel.
   ///
   /// In en, this message translates to:
@@ -1089,6 +1095,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Spending by category'**
   String get spendingByCategoryTitle;
+
+  /// No description provided for @categoryBreakdownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'By category'**
+  String get categoryBreakdownTitle;
+
+  /// No description provided for @otherCategoriesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherCategoriesLabel;
 
   /// No description provided for @cashFlowChartTitle.
   ///
@@ -1816,6 +1834,12 @@ abstract class AppLocalizations {
   /// **'Balance after event'**
   String get projectedBalanceLabel;
 
+  /// No description provided for @selectedProjectedMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'{month}: projected closing balance {amount}'**
+  String selectedProjectedMonth(String month, String amount);
+
   /// No description provided for @recurringIncomeProjectionType.
   ///
   /// In en, this message translates to:
@@ -1882,6 +1906,42 @@ abstract class AppLocalizations {
   /// **'Investments'**
   String get investmentsTitle;
 
+  /// No description provided for @marketDataInfoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'About market data'**
+  String get marketDataInfoTooltip;
+
+  /// No description provided for @marketDataInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Market data'**
+  String get marketDataInfoTitle;
+
+  /// No description provided for @marketDataInfoProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic prices use BRAPI for Brazilian assets, Twelve Data for international assets, and CoinGecko for cryptoassets. Exchange rates use Frankfurter.'**
+  String get marketDataInfoProviders;
+
+  /// No description provided for @marketDataInfoDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Values may be delayed and are not real-time quotes. If a service is unavailable, Equis keeps the latest cached value.'**
+  String get marketDataInfoDelay;
+
+  /// No description provided for @marketDataInfoManualPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual prices always take precedence over automatic prices.'**
+  String get marketDataInfoManualPriority;
+
+  /// No description provided for @marketDataAttribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Data provided by Twelve Data. Powered by CoinGecko.'**
+  String get marketDataAttribution;
+
   /// No description provided for @portfolioValueLabel.
   ///
   /// In en, this message translates to:
@@ -1921,13 +1981,13 @@ abstract class AppLocalizations {
   /// No description provided for @addInstrumentAction.
   ///
   /// In en, this message translates to:
-  /// **'Add instrument'**
+  /// **'Add asset'**
   String get addInstrumentAction;
 
   /// No description provided for @noInvestmentsMessage.
   ///
   /// In en, this message translates to:
-  /// **'No investment instruments yet.'**
+  /// **'No investment assets yet.'**
   String get noInvestmentsMessage;
 
   /// No description provided for @investmentLoadFailedMessage.
@@ -1936,11 +1996,83 @@ abstract class AppLocalizations {
   /// **'Could not load investments from the local vault.'**
   String get investmentLoadFailedMessage;
 
+  /// No description provided for @investmentAccountSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up an investment account'**
+  String get investmentAccountSetupTitle;
+
+  /// No description provided for @investmentAccountSetupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an investment cash account in {currency} to deposit funds and record trades.'**
+  String investmentAccountSetupBody(String currency);
+
+  /// No description provided for @createInvestmentAccountAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create investment account'**
+  String get createInvestmentAccountAction;
+
+  /// No description provided for @brokerageNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Brokerage account name'**
+  String get brokerageNameLabel;
+
+  /// No description provided for @investmentAccountCreatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Investment account created.'**
+  String get investmentAccountCreatedMessage;
+
+  /// No description provided for @investmentActionFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The investment action could not be completed. Check the values and required accounts.'**
+  String get investmentActionFailedMessage;
+
+  /// No description provided for @missingRegularInvestmentAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a regular asset account before moving cash to or from investments.'**
+  String get missingRegularInvestmentAccountMessage;
+
+  /// No description provided for @missingInvestmentCategoryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a matching income or expense category before recording this investment action.'**
+  String get missingInvestmentCategoryMessage;
+
   /// No description provided for @instrumentNameLabel.
   ///
   /// In en, this message translates to:
-  /// **'Instrument name'**
+  /// **'Asset name'**
   String get instrumentNameLabel;
+
+  /// No description provided for @deleteInvestmentAssetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete asset'**
+  String get deleteInvestmentAssetAction;
+
+  /// No description provided for @confirmDeleteInvestmentAssetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}? This is allowed only when the asset has no transactions, lots, or linked files.'**
+  String confirmDeleteInvestmentAssetBody(String name);
+
+  /// No description provided for @investmentAssetDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Investment asset deleted.'**
+  String get investmentAssetDeletedMessage;
+
+  /// No description provided for @investmentAssetDeleteBlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This asset cannot be deleted because it already has financial history or linked files.'**
+  String get investmentAssetDeleteBlockedMessage;
 
   /// No description provided for @instrumentSymbolLabel.
   ///
@@ -2277,6 +2409,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Price refresh failed. The last local value is still in use.'**
   String get priceRefreshFailedMessage;
+
+  /// No description provided for @assetSearchLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search symbol or name'**
+  String get assetSearchLabel;
+
+  /// No description provided for @assetSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type at least two characters'**
+  String get assetSearchHint;
+
+  /// No description provided for @assetSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching market assets found.'**
+  String get assetSearchNoResults;
+
+  /// No description provided for @assetSearchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Market search failed. You can still add the asset manually.'**
+  String get assetSearchFailed;
+
+  /// No description provided for @addAssetManuallyAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add manually'**
+  String get addAssetManuallyAction;
+
+  /// No description provided for @clearAssetSelectionAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another asset'**
+  String get clearAssetSelectionAction;
+
+  /// No description provided for @currentMarketPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current market price'**
+  String get currentMarketPriceLabel;
+
+  /// No description provided for @addInitialPositionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an initial position'**
+  String get addInitialPositionLabel;
+
+  /// No description provided for @initialPositionModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial position mode'**
+  String get initialPositionModeLabel;
+
+  /// No description provided for @historicalBuyMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Historical purchase'**
+  String get historicalBuyMode;
+
+  /// No description provided for @openingPositionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Import without changing cash'**
+  String get openingPositionMode;
+
+  /// No description provided for @openingPositionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Creates the quantity and cost basis while keeping the investment account cash balance unchanged.'**
+  String get openingPositionDescription;
+
+  /// No description provided for @linkMarketAssetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Link market quote'**
+  String get linkMarketAssetAction;
+
+  /// No description provided for @linkMarketAssetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link asset to market data'**
+  String get linkMarketAssetTitle;
+
+  /// No description provided for @marketRefreshSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{updated} updated, {failed} failed.'**
+  String marketRefreshSummary(int updated, int failed);
 
   /// No description provided for @intelligenceTitle.
   ///

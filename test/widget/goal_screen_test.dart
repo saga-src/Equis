@@ -75,6 +75,28 @@ void main() {
           name: 'Course',
         ),
       ],
+      monthlyBalances: [
+        ProjectedCashFlowMonth(
+          month: LocalDate(2026, 8, 1),
+          through: LocalDate(2026, 8, 31),
+          closingBalanceMinor: 100000,
+        ),
+        ProjectedCashFlowMonth(
+          month: LocalDate(2026, 9, 1),
+          through: LocalDate(2026, 9, 30),
+          closingBalanceMinor: 95000,
+        ),
+        ProjectedCashFlowMonth(
+          month: LocalDate(2026, 10, 1),
+          through: LocalDate(2026, 10, 31),
+          closingBalanceMinor: 95000,
+        ),
+        ProjectedCashFlowMonth(
+          month: LocalDate(2026, 11, 1),
+          through: LocalDate(2026, 11, 17),
+          closingBalanceMinor: 95000,
+        ),
+      ],
       missingRates: const {},
       usesEstimatedRates: false,
     );
@@ -112,6 +134,12 @@ void main() {
     expect(find.text('Course'), findsOneWidget);
     expect(find.textContaining('Future installment'), findsOneWidget);
     expect(find.byType(LineChart), findsOneWidget);
+    expect(find.byKey(const Key('selected-cash-flow-month')), findsOneWidget);
+    expect(find.textContaining('projected closing balance'), findsOneWidget);
+    final chart = tester.widget<LineChart>(find.byType(LineChart));
+    expect(chart.data.lineTouchData.handleBuiltInTouches, isTrue);
+    expect(chart.data.lineTouchData.touchCallback, isNotNull);
+    expect(chart.data.lineBarsData.single.spots, hasLength(4));
 
     await tester.tap(find.text('Add goal'));
     await tester.pumpAndSettle();

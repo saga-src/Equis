@@ -58,6 +58,38 @@ void main() {
     expect(find.text('Category'), findsNothing);
     expect(find.text('To account'), findsOneWidget);
   });
+
+  testWidgets('card account discloses purchase routing and is expense-only', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: QuickTransactionScreen(
+          accounts: [..._accounts, _cardAccount],
+          categories: _categories,
+          tags: const [],
+          onSave: _discard,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Checking · BRL'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Visa · BRL').last);
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'This expense will be saved as a credit-card purchase in the statement for its date.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Income'));
+    await tester.pumpAndSettle();
+    expect(find.text('Visa · BRL'), findsNothing);
+  });
 }
 
 final _sourceId = EntityId.parse('01900000-0000-7000-8000-000000000101');
@@ -69,6 +101,7 @@ final _expenseCategoryId = EntityId.parse(
 final _accounts = [
   QuickAccountOption(
     label: 'Checking · BRL',
+    accountType: AccountType.checking,
     pocket: LedgerPocket(
       id: _sourceId,
       currency: CurrencyCode.brl,
@@ -77,6 +110,7 @@ final _accounts = [
   ),
   QuickAccountOption(
     label: 'Wallet · BRL',
+    accountType: AccountType.digitalWallet,
     pocket: LedgerPocket(
       id: _destinationId,
       currency: CurrencyCode.brl,
@@ -84,6 +118,16 @@ final _accounts = [
     ),
   ),
 ];
+
+final _cardAccount = QuickAccountOption(
+  label: 'Visa · BRL',
+  accountType: AccountType.creditCard,
+  pocket: LedgerPocket(
+    id: EntityId.parse('01900000-0000-7000-8000-000000000105'),
+    currency: CurrencyCode.brl,
+    nature: AccountNature.liability,
+  ),
+);
 
 final _categories = [
   QuickCategoryOption(

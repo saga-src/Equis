@@ -1,4 +1,6 @@
 import 'package:equis/domain/entities/category_node.dart';
+import 'package:equis/domain/entities/account_profile.dart';
+import 'package:equis/domain/credit_cards/credit_card_models.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/shared/local_date.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
@@ -9,9 +11,16 @@ import '../formatting/equis_formatters.dart';
 enum QuickTransactionType { expense, income, transfer }
 
 final class QuickAccountOption {
-  const QuickAccountOption({required this.label, required this.pocket});
+  const QuickAccountOption({
+    required this.label,
+    required this.pocket,
+    required this.accountType,
+    this.card,
+  });
   final String label;
   final LedgerPocket pocket;
+  final AccountType accountType;
+  final CreditCardContext? card;
 }
 
 final class QuickCategoryOption {
@@ -123,6 +132,7 @@ class _QuickTransactionScreenState extends State<QuickTransactionScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final categories = _categoriesForType;
+    final sources = _sourceAccounts;
     final destinations = _compatibleDestinations;
     return Scaffold(
       appBar: AppBar(
@@ -175,14 +185,17 @@ class _QuickTransactionScreenState extends State<QuickTransactionScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               key: const ValueKey('source-account'),
-              initialValue: _sourceId,
+              initialValue:
+                  sources.any((option) => option.pocket.id.value == _sourceId)
+                  ? _sourceId
+                  : null,
               decoration: InputDecoration(
                 labelText: _type == QuickTransactionType.transfer
                     ? l10n.fromAccountLabel
                     : l10n.accountLabel,
               ),
               items: [
-                for (final account in widget.accounts)
+                for (final account in sources)
                   DropdownMenuItem(
                     value: account.pocket.id.value,
                     child: Text(account.label),
@@ -195,6 +208,16 @@ class _QuickTransactionScreenState extends State<QuickTransactionScreen> {
               }),
               validator: _required,
             ),
+            if (_isNewCardPurchase) ...[
+              const SizedBox(height: 12),
+              Card(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: ListTile(
+                  leading: const Icon(Icons.credit_card_outlined),
+                  title: Text(l10n.quickCardPurchaseNotice),
+                ),
+              ),
+            ],
             if (_type == QuickTransactionType.transfer) ...[
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -310,10 +333,23 @@ class _QuickTransactionScreenState extends State<QuickTransactionScreen> {
       )
       .toList(growable: false);
 
+  List<QuickAccountOption> get _sourceAccounts => widget.accounts
+      .where(
+        (account) =>
+            account.accountType != AccountType.creditCard ||
+            _type == QuickTransactionType.expense,
+      )
+      .toList(growable: false);
+
+  bool get _isNewCardPurchase =>
+      widget.initialDraft == null &&
+      _type == QuickTransactionType.expense &&
+      _account(_sourceId)?.accountType == AccountType.creditCard;
+
   List<QuickAccountOption> get _compatibleDestinations {
     final source = _account(_sourceId);
     if (source == null) return const [];
-    return widget.accounts
+    return _sourceAccounts
         .where(
           (candidate) =>
               candidate.pocket.id != source.pocket.id &&
@@ -324,6 +360,10 @@ class _QuickTransactionScreenState extends State<QuickTransactionScreen> {
   }
 
   void _ensureCompatibleDefaults() {
+    final sources = _sourceAccounts;
+    if (!sources.any((option) => option.pocket.id.value == _sourceId)) {
+      _sourceId = sources.isEmpty ? null : sources.first.pocket.id.value;
+    }
     if (_type == QuickTransactionType.transfer) {
       final destinations = _compatibleDestinations;
       _destinationId ??= destinations.isEmpty

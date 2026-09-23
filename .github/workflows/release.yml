@@ -10,8 +10,8 @@ permissions:
 
 env:
   FLUTTER_VERSION: 3.44.7
-  RELEASE_VERSION: 1.0.0
-  RELEASE_BUILD: 6
+  RELEASE_VERSION: 1.1.0
+  RELEASE_BUILD: 11
 
 jobs:
   quality:

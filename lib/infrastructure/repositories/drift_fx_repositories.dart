@@ -149,6 +149,26 @@ final class DriftFxRateCacheRepository implements FxRateCacheRepository {
     source: FxRateSource.latestCached,
   );
 
+  @override
+  Future<UtcInstant?> latestFetchedAt({
+    required CurrencyCode base,
+    required CurrencyCode quote,
+  }) async {
+    final row = await database
+        .customSelect(
+          'SELECT MAX(fetched_at) fetched_at FROM fx_rate_cache '
+          'WHERE base_currency=? AND quote_currency=?',
+          variables: [
+            Variable<String>(base.value),
+            Variable<String>(quote.value),
+          ],
+          readsFrom: {database.fxRateCache},
+        )
+        .getSingle();
+    final value = row.readNullable<int>('fetched_at');
+    return value == null ? null : UtcInstant.fromEpochMicroseconds(value);
+  }
+
   Future<FxRateQuote?> _find({
     required CurrencyCode base,
     required CurrencyCode quote,

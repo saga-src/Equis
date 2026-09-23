@@ -21,6 +21,7 @@ final class FxRateSelector {
     required CurrencyCode quote,
     required LocalDate date,
     String? transactionManualRate,
+    bool refresh = false,
   }) async {
     if (base == quote) {
       return FxRateQuote(
@@ -62,7 +63,7 @@ final class FxRateSelector {
       );
     }
     final exact = await cache.findExact(base: base, quote: quote, date: date);
-    if (exact != null) return exact;
+    if (!refresh && exact != null) return exact;
 
     try {
       final remote = await provider.quote(base: base, quote: quote, date: date);
@@ -73,6 +74,8 @@ final class FxRateSelector {
     } on Exception {
       // Offline operation intentionally falls through to durable local cache.
     }
+
+    if (exact != null) return exact;
 
     final previous = await cache.findPrevious(
       base: base,

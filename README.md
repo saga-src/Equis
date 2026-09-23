@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/branding/logo.png" width="128" alt="Equis logo" />
   <h1>EQUIS</h1>
-  <p><strong>v1.0.0 | Personal Finance for Windows & Android</strong></p>
+  <p><strong>v1.1.0 | Personal Finance for Windows & Android</strong></p>
   <p>
     <a href="#features">Features</a> &middot;
     <a href="#tech-stack">Tech Stack</a> &middot;
@@ -29,15 +29,18 @@ To share a vault between devices, enable optional Supabase synchronization. Reco
 
 ### Everyday finances
 
-- Accounts, multiple currencies, income, expenses, transfers, and transaction splits.
+- Accounts, multiple currencies, income, expenses, transfers, and transaction splits. Quick expenses made from a credit-card account enter its statement as one-time purchases.
 - Categories and tags, searchable history, receipts and attachments.
 - Credit cards, statements, installments, and recurring transactions.
+- Transaction lists use consistent semantic colors and expose the same eligible edit, reconcile, and delete actions in recent activity and full history.
 
 ### Reports and planning
 
-- Available money, cash flow, account balances, and spending by category.
+- Available money, cash flow, account balances, and income or spending by category.
 - Switch to **Tags** for horizontal spending bars; tap a tag to open matching expenses. Untagged expenses have their own group. Each tag receives the full expense amount, so totals across tags can overlap.
-- Budgets, savings goals, cash-flow projections, assets, net worth, and investments.
+- Budgets, savings goals, selectable monthly cash-flow projections, assets, net worth, and investments.
+- Guided brokerage-account setup, currency-safe portfolio actions, and deletion of investment assets that have never been used.
+- Market prices and required exchange rates refresh when the app opens, at most once per vault every three hours, while manual values keep priority and cached values remain available offline.
 - Financial insights calculated locally, without sending transaction history to an external AI service.
 
 ### Portability and personalization
@@ -97,6 +100,12 @@ flutter run --dart-define-from-file=.dart-defines.local.json
 
 Never include a service-role key in the app. The server schema and guarded synchronization functions are versioned in `supabase/migrations/`.
 
+Automatic market quotes and asset discovery use the Supabase `market-quotes` Edge Function. Configure `BRAPI_API_TOKEN`, `TWELVE_DATA_API_KEY`, and `COINGECKO_API_KEY` only in the Edge Function environment; never add them to Flutter build defines. The client uses the current Supabase user token when available and retries gateway authorization with the configured public key, so a local-only vault does not require a cloud login. Frankfurter exchange rates require no client secret. Missing or temporarily unavailable providers degrade to manual or cached data instead of blocking the app.
+
+The optional central asset catalog is created by `supabase/migrations/20260922164311_central_asset_catalog.sql`. Its tables contain only public asset metadata, anonymous demand counters, provider usage and quotes; portfolio quantities, balances, vault identifiers and user identifiers remain local. RLS blocks `anon` and `authenticated` access, so Flutter continues to use only `market-quotes`. The `sync-market-data` administrative function uses the service role internally and requires `MARKET_SYNC_SECRET` in addition to the provider secrets.
+
+Catalog persistence is disabled by default until the provider storage and redistribution terms have been confirmed. `MARKET_CATALOG_READ_ENABLED` and `MARKET_SCHEDULED_QUOTES_ENABLED` also default to `false`, allowing catalog reads and scheduled prices to be rolled out independently. The Cron dispatcher reads `project_url` and `market_sync_secret` from Vault. `sync-market-data` disables gateway JWT verification because it is an administrative webhook authenticated with a constant-time comparison of that dedicated secret; `market-quotes` continues to require a valid JWT. Deploy in this order: apply the migration, deploy `sync-market-data`, run the initial catalog sync, deploy `market-quotes`, enable catalog reads and heartbeat, then enable scheduled quotes after observing provider errors, quotas and duration. Cron runs catalog sync daily at 04:30 UTC, quote dispatch hourly and five-year history cleanup daily.
+
 ### Validation
 
 ```sh
@@ -127,11 +136,11 @@ Restore a `.equis` backup with its password to add a local vault. Its identity a
 4. Open the new APK on your phone and choose **Update**. Don't uninstall the existing app or clear its storage.
 5. Open Equis and check your accounts, transactions, attachments and settings.
 
-The current version is **1.0.0**, application ID `app.saga.equis`. If Android rejects the update, check the package, build number and signing certificate. Keep the release keystore: future updates need the same signing key.
+The current version is **1.1.0** (build 11), application ID `app.saga.equis`. If Android rejects the update, check the package, build number and signing certificate. Keep the release keystore: future updates need the same signing key.
 
 The Android package uses `app.saga.equis`. If you used the earlier development app, export and validate an encrypted backup there first. Install this app separately, restore the backup, sign in, and check your data before removing the old installation. The two package identifiers cannot update each other in place.
 
-Public releases use one tag per version, such as **v1.0.0**. Internal build numbers remain in package metadata; a new public update requires a higher public version.
+Public releases use one tag per version, such as **v1.1.0**. Internal build numbers remain in package metadata; a new public update requires a higher public version.
 
 Android release signing reads the ignored `android/key.properties` file or the `EQUIS_ANDROID_*` environment variables declared in `android/app/build.gradle.kts`. Windows packaging uses `installer/equis.iss` and `tool/package_windows_release.ps1`.
 
@@ -156,3 +165,7 @@ AI tools help with implementation, investigation, documentation and testing. You
 ## License
 
 Equis is licensed under **GNU GPL version 3 only (`GPL-3.0-only`)**. See [LICENSE](LICENSE) for the complete terms. Third-party components retain their own licenses.
+
+### Commercial licensing
+
+The GPL remains the default license for personal use and modification. If you need to redistribute Equis under different terms, such as incorporating it into proprietary software, distributing closed-source modifications, whether free or paid, or any use for multiple users, please contact me via github to discuss a separate commercial license.

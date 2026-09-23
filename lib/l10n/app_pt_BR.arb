@@ -107,6 +107,7 @@
   "cashAccountType": "Dinheiro",
   "walletAccountType": "Carteira digital",
   "creditCardAccountType": "Cartão de crédito",
+  "quickCardPurchaseNotice": "Esta despesa será salva como compra no cartão na fatura correspondente à data.",
   "historyNavigationLabel": "Histórico",
   "transactionHistoryTitle": "Histórico de transações",
   "filtersAction": "Filtros",
@@ -172,6 +173,8 @@
   "upcomingDashboardTitle": "Próximos",
   "upcomingNext30DaysLabel": "Agendados nos próximos 30 dias",
   "spendingByCategoryTitle": "Despesas por categoria",
+  "categoryBreakdownTitle": "Por categoria",
+  "otherCategoriesLabel": "Outros",
   "cashFlowChartTitle": "Fluxo de caixa ao longo do tempo",
   "accountBalancesTitle": "Saldos das contas",
   "reportsSectionTitle": "Relatórios",
@@ -307,6 +310,17 @@
   "projectedClosingLabel": "Saldo final projetado",
   "noProjectedEventsMessage": "Nenhum evento conhecido nesta janela de projeção.",
   "projectedBalanceLabel": "Saldo após o evento",
+  "selectedProjectedMonth": "{month}: saldo projetado de fechamento {amount}",
+  "@selectedProjectedMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "recurringIncomeProjectionType": "Receita recorrente",
   "recurringExpenseProjectionType": "Despesa recorrente",
   "installmentProjectionType": "Parcela futura",
@@ -325,16 +339,48 @@
   },
   "investmentsNavigationLabel": "Investimentos",
   "investmentsTitle": "Investimentos",
+  "marketDataInfoTooltip": "Sobre os dados de mercado",
+  "marketDataInfoTitle": "Dados de mercado",
+  "marketDataInfoProviders": "As cotações automáticas usam a BRAPI para ativos brasileiros, a Twelve Data para ativos internacionais e a CoinGecko para criptoativos. As taxas de câmbio usam o Frankfurter.",
+  "marketDataInfoDelay": "Os valores podem ter atraso e não representam cotações em tempo real. Se um serviço estiver indisponível, o Equis preserva o último valor em cache.",
+  "marketDataInfoManualPriority": "Preços manuais sempre têm prioridade sobre preços automáticos.",
+  "marketDataAttribution": "Dados fornecidos pela Twelve Data. Powered by CoinGecko.",
   "portfolioValueLabel": "Valor da carteira",
   "portfolioCostLabel": "Custo de aquisição",
   "unrealizedResultLabel": "Ganho/perda não realizado",
   "realizedResultLabel": "Ganho/perda realizado",
   "investmentIncomeLabel": "Rendimentos recebidos",
   "allocationLabel": "Alocação",
-  "addInstrumentAction": "Adicionar instrumento",
-  "noInvestmentsMessage": "Nenhum instrumento de investimento cadastrado.",
+  "addInstrumentAction": "Adicionar ativo",
+  "noInvestmentsMessage": "Nenhum ativo de investimento cadastrado.",
   "investmentLoadFailedMessage": "Não foi possível carregar os investimentos do cofre local.",
-  "instrumentNameLabel": "Nome do instrumento",
+  "investmentAccountSetupTitle": "Configure uma conta de investimento",
+  "investmentAccountSetupBody": "Crie uma conta de caixa de investimento em {currency} para depositar recursos e registrar operações.",
+  "@investmentAccountSetupBody": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "createInvestmentAccountAction": "Criar conta de investimento",
+  "brokerageNameLabel": "Nome da conta na corretora",
+  "investmentAccountCreatedMessage": "Conta de investimento criada.",
+  "investmentActionFailedMessage": "Não foi possível concluir a ação de investimento. Confira os valores e as contas necessárias.",
+  "missingRegularInvestmentAccountMessage": "Adicione uma conta patrimonial comum antes de movimentar dinheiro entre ela e os investimentos.",
+  "missingInvestmentCategoryMessage": "Crie uma categoria de receita ou despesa compatível antes de registrar esta ação de investimento.",
+  "instrumentNameLabel": "Nome do ativo",
+  "deleteInvestmentAssetAction": "Excluir ativo",
+  "confirmDeleteInvestmentAssetBody": "Excluir {name}? Isso só é permitido quando o ativo não tem transações, lotes ou arquivos vinculados.",
+  "@confirmDeleteInvestmentAssetBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentAssetDeletedMessage": "Ativo de investimento excluído.",
+  "investmentAssetDeleteBlockedMessage": "Este ativo não pode ser excluído porque já possui histórico financeiro ou arquivos vinculados.",
   "instrumentSymbolLabel": "Símbolo",
   "instrumentExchangeLabel": "Bolsa",
   "assetClassLabel": "Classe de ativo",
@@ -401,6 +447,22 @@
   "manualPriceAction": "Definir preço manual",
   "stalePriceMessage": "A cotação em cache está desatualizada.",
   "priceRefreshFailedMessage": "A atualização falhou. O último valor local continua em uso.",
+  "assetSearchLabel": "Buscar símbolo ou nome",
+  "assetSearchHint": "Digite pelo menos dois caracteres",
+  "assetSearchNoResults": "Nenhum ativo de mercado correspondente foi encontrado.",
+  "assetSearchFailed": "A busca de mercado falhou. Você ainda pode adicionar o ativo manualmente.",
+  "addAssetManuallyAction": "Adicionar manualmente",
+  "clearAssetSelectionAction": "Escolher outro ativo",
+  "currentMarketPriceLabel": "Cotação atual",
+  "addInitialPositionLabel": "Adicionar uma posição inicial",
+  "initialPositionModeLabel": "Modo da posição inicial",
+  "historicalBuyMode": "Compra histórica",
+  "openingPositionMode": "Importar sem alterar o caixa",
+  "openingPositionDescription": "Cria a quantidade e o custo da posição sem alterar o saldo de caixa da conta de investimento.",
+  "linkMarketAssetAction": "Vincular cotação",
+  "linkMarketAssetTitle": "Vincular ativo aos dados de mercado",
+  "marketRefreshSummary": "{updated} atualizados, {failed} com falha.",
+  "@marketRefreshSummary": {"placeholders": {"updated": {"type": "int"}, "failed": {"type": "int"}}},
   "intelligenceTitle": "Análises financeiras",
   "intelligenceSubtitle": "Estimativas locais baseadas nos seus dados registrados",
   "intelligencePrivacyMessage": "Estas análises são calculadas neste dispositivo. O histórico de transações não é enviado a um serviço externo de IA.",

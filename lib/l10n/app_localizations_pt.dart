@@ -350,6 +350,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get creditCardAccountType => 'Cartão de crédito';
 
   @override
+  String get quickCardPurchaseNotice =>
+      'Esta despesa será salva como compra no cartão na fatura correspondente à data.';
+
+  @override
   String get historyNavigationLabel => 'Histórico';
 
   @override
@@ -548,6 +552,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get spendingByCategoryTitle => 'Despesas por categoria';
+
+  @override
+  String get categoryBreakdownTitle => 'Por categoria';
+
+  @override
+  String get otherCategoriesLabel => 'Outros';
 
   @override
   String get cashFlowChartTitle => 'Fluxo de caixa ao longo do tempo';
@@ -940,6 +950,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get projectedBalanceLabel => 'Saldo após o evento';
 
   @override
+  String selectedProjectedMonth(String month, String amount) {
+    return '$month: saldo projetado de fechamento $amount';
+  }
+
+  @override
   String get recurringIncomeProjectionType => 'Receita recorrente';
 
   @override
@@ -985,6 +1000,28 @@ class AppLocalizationsPt extends AppLocalizations {
   String get investmentsTitle => 'Investimentos';
 
   @override
+  String get marketDataInfoTooltip => 'Sobre os dados de mercado';
+
+  @override
+  String get marketDataInfoTitle => 'Dados de mercado';
+
+  @override
+  String get marketDataInfoProviders =>
+      'As cotações automáticas usam a BRAPI para ativos brasileiros, a Twelve Data para ativos internacionais e a CoinGecko para criptoativos. As taxas de câmbio usam o Frankfurter.';
+
+  @override
+  String get marketDataInfoDelay =>
+      'Os valores podem ter atraso e não representam cotações em tempo real. Se um serviço estiver indisponível, o Equis preserva o último valor em cache.';
+
+  @override
+  String get marketDataInfoManualPriority =>
+      'Preços manuais sempre têm prioridade sobre preços automáticos.';
+
+  @override
+  String get marketDataAttribution =>
+      'Dados fornecidos pela Twelve Data. Powered by CoinGecko.';
+
+  @override
   String get portfolioValueLabel => 'Valor da carteira';
 
   @override
@@ -1003,18 +1040,62 @@ class AppLocalizationsPt extends AppLocalizations {
   String get allocationLabel => 'Alocação';
 
   @override
-  String get addInstrumentAction => 'Adicionar instrumento';
+  String get addInstrumentAction => 'Adicionar ativo';
 
   @override
-  String get noInvestmentsMessage =>
-      'Nenhum instrumento de investimento cadastrado.';
+  String get noInvestmentsMessage => 'Nenhum ativo de investimento cadastrado.';
 
   @override
   String get investmentLoadFailedMessage =>
       'Não foi possível carregar os investimentos do cofre local.';
 
   @override
-  String get instrumentNameLabel => 'Nome do instrumento';
+  String get investmentAccountSetupTitle =>
+      'Configure uma conta de investimento';
+
+  @override
+  String investmentAccountSetupBody(String currency) {
+    return 'Crie uma conta de caixa de investimento em $currency para depositar recursos e registrar operações.';
+  }
+
+  @override
+  String get createInvestmentAccountAction => 'Criar conta de investimento';
+
+  @override
+  String get brokerageNameLabel => 'Nome da conta na corretora';
+
+  @override
+  String get investmentAccountCreatedMessage => 'Conta de investimento criada.';
+
+  @override
+  String get investmentActionFailedMessage =>
+      'Não foi possível concluir a ação de investimento. Confira os valores e as contas necessárias.';
+
+  @override
+  String get missingRegularInvestmentAccountMessage =>
+      'Adicione uma conta patrimonial comum antes de movimentar dinheiro entre ela e os investimentos.';
+
+  @override
+  String get missingInvestmentCategoryMessage =>
+      'Crie uma categoria de receita ou despesa compatível antes de registrar esta ação de investimento.';
+
+  @override
+  String get instrumentNameLabel => 'Nome do ativo';
+
+  @override
+  String get deleteInvestmentAssetAction => 'Excluir ativo';
+
+  @override
+  String confirmDeleteInvestmentAssetBody(String name) {
+    return 'Excluir $name? Isso só é permitido quando o ativo não tem transações, lotes ou arquivos vinculados.';
+  }
+
+  @override
+  String get investmentAssetDeletedMessage => 'Ativo de investimento excluído.';
+
+  @override
+  String get investmentAssetDeleteBlockedMessage =>
+      'Este ativo não pode ser excluído porque já possui histórico financeiro ou arquivos vinculados.';
 
   @override
   String get instrumentSymbolLabel => 'Símbolo';
@@ -1192,6 +1273,56 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get priceRefreshFailedMessage =>
       'A atualização falhou. O último valor local continua em uso.';
+
+  @override
+  String get assetSearchLabel => 'Buscar símbolo ou nome';
+
+  @override
+  String get assetSearchHint => 'Digite pelo menos dois caracteres';
+
+  @override
+  String get assetSearchNoResults =>
+      'Nenhum ativo de mercado correspondente foi encontrado.';
+
+  @override
+  String get assetSearchFailed =>
+      'A busca de mercado falhou. Você ainda pode adicionar o ativo manualmente.';
+
+  @override
+  String get addAssetManuallyAction => 'Adicionar manualmente';
+
+  @override
+  String get clearAssetSelectionAction => 'Escolher outro ativo';
+
+  @override
+  String get currentMarketPriceLabel => 'Cotação atual';
+
+  @override
+  String get addInitialPositionLabel => 'Adicionar uma posição inicial';
+
+  @override
+  String get initialPositionModeLabel => 'Modo da posição inicial';
+
+  @override
+  String get historicalBuyMode => 'Compra histórica';
+
+  @override
+  String get openingPositionMode => 'Importar sem alterar o caixa';
+
+  @override
+  String get openingPositionDescription =>
+      'Cria a quantidade e o custo da posição sem alterar o saldo de caixa da conta de investimento.';
+
+  @override
+  String get linkMarketAssetAction => 'Vincular cotação';
+
+  @override
+  String get linkMarketAssetTitle => 'Vincular ativo aos dados de mercado';
+
+  @override
+  String marketRefreshSummary(int updated, int failed) {
+    return '$updated atualizados, $failed com falha.';
+  }
 
   @override
   String get intelligenceTitle => 'Análises financeiras';
@@ -2154,6 +2285,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get creditCardAccountType => 'Cartão de crédito';
 
   @override
+  String get quickCardPurchaseNotice =>
+      'Esta despesa será salva como compra no cartão na fatura correspondente à data.';
+
+  @override
   String get historyNavigationLabel => 'Histórico';
 
   @override
@@ -2352,6 +2487,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get spendingByCategoryTitle => 'Despesas por categoria';
+
+  @override
+  String get categoryBreakdownTitle => 'Por categoria';
+
+  @override
+  String get otherCategoriesLabel => 'Outros';
 
   @override
   String get cashFlowChartTitle => 'Fluxo de caixa ao longo do tempo';
@@ -2744,6 +2885,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get projectedBalanceLabel => 'Saldo após o evento';
 
   @override
+  String selectedProjectedMonth(String month, String amount) {
+    return '$month: saldo projetado de fechamento $amount';
+  }
+
+  @override
   String get recurringIncomeProjectionType => 'Receita recorrente';
 
   @override
@@ -2789,6 +2935,28 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get investmentsTitle => 'Investimentos';
 
   @override
+  String get marketDataInfoTooltip => 'Sobre os dados de mercado';
+
+  @override
+  String get marketDataInfoTitle => 'Dados de mercado';
+
+  @override
+  String get marketDataInfoProviders =>
+      'As cotações automáticas usam a BRAPI para ativos brasileiros, a Twelve Data para ativos internacionais e a CoinGecko para criptoativos. As taxas de câmbio usam o Frankfurter.';
+
+  @override
+  String get marketDataInfoDelay =>
+      'Os valores podem ter atraso e não representam cotações em tempo real. Se um serviço estiver indisponível, o Equis preserva o último valor em cache.';
+
+  @override
+  String get marketDataInfoManualPriority =>
+      'Preços manuais sempre têm prioridade sobre preços automáticos.';
+
+  @override
+  String get marketDataAttribution =>
+      'Dados fornecidos pela Twelve Data. Powered by CoinGecko.';
+
+  @override
   String get portfolioValueLabel => 'Valor da carteira';
 
   @override
@@ -2807,18 +2975,62 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get allocationLabel => 'Alocação';
 
   @override
-  String get addInstrumentAction => 'Adicionar instrumento';
+  String get addInstrumentAction => 'Adicionar ativo';
 
   @override
-  String get noInvestmentsMessage =>
-      'Nenhum instrumento de investimento cadastrado.';
+  String get noInvestmentsMessage => 'Nenhum ativo de investimento cadastrado.';
 
   @override
   String get investmentLoadFailedMessage =>
       'Não foi possível carregar os investimentos do cofre local.';
 
   @override
-  String get instrumentNameLabel => 'Nome do instrumento';
+  String get investmentAccountSetupTitle =>
+      'Configure uma conta de investimento';
+
+  @override
+  String investmentAccountSetupBody(String currency) {
+    return 'Crie uma conta de caixa de investimento em $currency para depositar recursos e registrar operações.';
+  }
+
+  @override
+  String get createInvestmentAccountAction => 'Criar conta de investimento';
+
+  @override
+  String get brokerageNameLabel => 'Nome da conta na corretora';
+
+  @override
+  String get investmentAccountCreatedMessage => 'Conta de investimento criada.';
+
+  @override
+  String get investmentActionFailedMessage =>
+      'Não foi possível concluir a ação de investimento. Confira os valores e as contas necessárias.';
+
+  @override
+  String get missingRegularInvestmentAccountMessage =>
+      'Adicione uma conta patrimonial comum antes de movimentar dinheiro entre ela e os investimentos.';
+
+  @override
+  String get missingInvestmentCategoryMessage =>
+      'Crie uma categoria de receita ou despesa compatível antes de registrar esta ação de investimento.';
+
+  @override
+  String get instrumentNameLabel => 'Nome do ativo';
+
+  @override
+  String get deleteInvestmentAssetAction => 'Excluir ativo';
+
+  @override
+  String confirmDeleteInvestmentAssetBody(String name) {
+    return 'Excluir $name? Isso só é permitido quando o ativo não tem transações, lotes ou arquivos vinculados.';
+  }
+
+  @override
+  String get investmentAssetDeletedMessage => 'Ativo de investimento excluído.';
+
+  @override
+  String get investmentAssetDeleteBlockedMessage =>
+      'Este ativo não pode ser excluído porque já possui histórico financeiro ou arquivos vinculados.';
 
   @override
   String get instrumentSymbolLabel => 'Símbolo';
@@ -2996,6 +3208,56 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get priceRefreshFailedMessage =>
       'A atualização falhou. O último valor local continua em uso.';
+
+  @override
+  String get assetSearchLabel => 'Buscar símbolo ou nome';
+
+  @override
+  String get assetSearchHint => 'Digite pelo menos dois caracteres';
+
+  @override
+  String get assetSearchNoResults =>
+      'Nenhum ativo de mercado correspondente foi encontrado.';
+
+  @override
+  String get assetSearchFailed =>
+      'A busca de mercado falhou. Você ainda pode adicionar o ativo manualmente.';
+
+  @override
+  String get addAssetManuallyAction => 'Adicionar manualmente';
+
+  @override
+  String get clearAssetSelectionAction => 'Escolher outro ativo';
+
+  @override
+  String get currentMarketPriceLabel => 'Cotação atual';
+
+  @override
+  String get addInitialPositionLabel => 'Adicionar uma posição inicial';
+
+  @override
+  String get initialPositionModeLabel => 'Modo da posição inicial';
+
+  @override
+  String get historicalBuyMode => 'Compra histórica';
+
+  @override
+  String get openingPositionMode => 'Importar sem alterar o caixa';
+
+  @override
+  String get openingPositionDescription =>
+      'Cria a quantidade e o custo da posição sem alterar o saldo de caixa da conta de investimento.';
+
+  @override
+  String get linkMarketAssetAction => 'Vincular cotação';
+
+  @override
+  String get linkMarketAssetTitle => 'Vincular ativo aos dados de mercado';
+
+  @override
+  String marketRefreshSummary(int updated, int failed) {
+    return '$updated atualizados, $failed com falha.';
+  }
 
   @override
   String get intelligenceTitle => 'Análises financeiras';

@@ -6,6 +6,7 @@ import '../../domain/shared/uuid_v7.dart';
 
 abstract interface class InvestmentRepository {
   Future<void> saveInstrument(InvestmentInstrument instrument);
+  Future<bool> hasProtectedHistory(EntityId instrumentId);
   Future<InvestmentInstrument?> findInstrument(EntityId id);
   Future<List<InvestmentInstrument>> listInstruments(EntityId vaultId);
   Future<int> currencyMinorUnits(CurrencyCode currency);
@@ -44,5 +45,19 @@ final class InstrumentRevisionConflict implements Exception {
 
 final class InsufficientLotQuantity implements Exception {
   const InsufficientLotQuantity(this.instrumentId);
+  final EntityId instrumentId;
+}
+
+final class InvestmentCurrencyMismatch implements Exception {
+  const InvestmentCurrencyMismatch({
+    required this.expected,
+    required this.actual,
+  });
+  final CurrencyCode expected;
+  final CurrencyCode actual;
+}
+
+final class InvestmentAssetInUse implements Exception {
+  const InvestmentAssetInUse(this.instrumentId);
   final EntityId instrumentId;
 }

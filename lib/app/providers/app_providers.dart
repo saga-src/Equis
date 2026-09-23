@@ -5,6 +5,8 @@ import 'package:equis/app/theme/equis_theme.dart';
 import 'package:equis/app/theme/equis_theme_controller.dart';
 import 'package:equis/application/services/everyday_transaction_service.dart';
 import 'package:equis/application/services/local_finance_session_service.dart';
+import 'package:equis/application/services/credit_card_service.dart';
+import 'package:equis/application/services/quick_transaction_routing.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/credit_cards/credit_card_models.dart';
 import 'package:equis/domain/entities/category_node.dart';
@@ -65,7 +67,10 @@ final localFinanceControllerProvider =
       AsyncValue<LocalFinanceSnapshot?>
     >((ref) {
       final dependencies = ref.watch(localAppDependenciesProvider);
-      final controller = LocalFinanceController(dependencies?.session);
+      final controller = LocalFinanceController(
+        dependencies?.session,
+        dependencies?.creditCards,
+      );
       final subscription = dependencies?.syncCoordinator?.results.listen((
         result,
       ) {
@@ -75,6 +80,26 @@ final localFinanceControllerProvider =
       unawaited(controller.reload());
       return controller;
     });
+
+final startupRefreshProvider = FutureProvider<void>((ref) async {
+  final dependencies = ref.watch(localAppDependenciesProvider);
+  final vaultId = ref.watch(
+    localFinanceControllerProvider.select(
+      (state) => state.valueOrNull?.vault?.id,
+    ),
+  );
+  if (dependencies == null || vaultId == null) return;
+  final result = await dependencies.startupRefresh.refreshOnOpen(
+    UtcInstant.now(),
+  );
+  if (!result.attempted) return;
+  ref.invalidate(investmentControllerProvider);
+  ref.invalidate(dashboardControllerProvider);
+  ref.invalidate(wealthControllerProvider);
+  ref.invalidate(goalControllerProvider);
+  ref.invalidate(budgetControllerProvider);
+  ref.invalidate(financialIntelligenceControllerProvider);
+});
 
 final transactionHistoryControllerProvider =
     StateNotifierProvider.autoDispose<
@@ -237,6 +262,11 @@ final investmentControllerProvider =
         market: dependencies?.marketData,
         vaultId: vault?.id,
         reportingCurrency: vault?.baseCurrency,
+        onChanged: () async {
+          await ref.read(localFinanceControllerProvider.notifier).reload();
+          await ref.read(dashboardControllerProvider.notifier).reload();
+          await ref.read(wealthControllerProvider.notifier).reload();
+        },
       );
       unawaited(controller.reload());
       return controller;
@@ -289,9 +319,11 @@ final cloudAccountControllerProvider =
 
 final class LocalFinanceController
     extends StateNotifier<AsyncValue<LocalFinanceSnapshot?>> {
-  LocalFinanceController(this._session) : super(const AsyncValue.loading());
+  LocalFinanceController(this._session, this._creditCards)
+    : super(const AsyncValue.loading());
 
   final LocalFinanceSessionService? _session;
+  final CreditCardService? _creditCards;
 
   Future<void> reload() async {
     if (_session == null) {
@@ -325,27 +357,57 @@ final class LocalFinanceController
   Future<void> createTransaction({
     required EverydayTransactionType type,
     required LedgerPocket source,
+    required AccountType sourceAccountType,
     required String amountText,
     required LocalDate date,
+    CreditCardContext? card,
     EntityId? categoryId,
     LedgerPocket? destination,
     List<EntityId> tagIds = const [],
     String? title,
     String? notes,
-  }) => _mutate(
-    () => _requiredSession.createEverydayTransaction(
+  }) {
+    final route = quickTransactionRoute(
       type: type,
-      source: source,
-      destination: destination,
-      amount: _money(amountText, source.currency),
-      categoryId: categoryId,
-      date: date,
-      now: UtcInstant.now(),
-      tagIds: tagIds,
-      title: title,
-      notes: notes,
-    ),
-  );
+      accountType: sourceAccountType,
+    );
+    if (route == QuickTransactionRoute.creditCardPurchase) {
+      if (card == null) {
+        throw ArgumentError('Credit-card context is required.');
+      }
+      final resolvedCategory = categoryId;
+      if (resolvedCategory == null) {
+        throw ArgumentError('A card purchase requires a category.');
+      }
+      return _mutate(() async {
+        await _requiredCreditCards.purchase(
+          card: card,
+          amount: _money(amountText, source.currency),
+          categoryId: resolvedCategory,
+          date: date,
+          now: UtcInstant.now(),
+          tagIds: tagIds,
+          title: title,
+          notes: notes,
+        );
+        return _requiredSession.load();
+      });
+    }
+    return _mutate(
+      () => _requiredSession.createEverydayTransaction(
+        type: type,
+        source: source,
+        destination: destination,
+        amount: _money(amountText, source.currency),
+        categoryId: categoryId,
+        date: date,
+        now: UtcInstant.now(),
+        tagIds: tagIds,
+        title: title,
+        notes: notes,
+      ),
+    );
+  }
 
   Future<void> updateTransaction({
     required LedgerTransaction existing,
@@ -478,6 +540,9 @@ final class LocalFinanceController
 
   LocalFinanceSessionService get _requiredSession =>
       _session ?? (throw StateError('Local services are not available.'));
+  CreditCardService get _requiredCreditCards =>
+      _creditCards ??
+      (throw StateError('Credit-card services are unavailable.'));
 
   Future<void> _mutate(Future<LocalFinanceSnapshot> Function() action) async {
     final previous = state.valueOrNull;

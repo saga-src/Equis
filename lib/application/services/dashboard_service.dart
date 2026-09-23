@@ -38,7 +38,8 @@ final class DashboardService {
     var estimated = false;
     var income = 0;
     var expense = 0;
-    final categories = <EntityId, int>{};
+    final expenseCategories = <EntityId, int>{};
+    final incomeCategories = <EntityId, int>{};
     final tags = <EntityId?, int>{};
     final dailyIncome = <LocalDate, int>{};
     final dailyExpense = <LocalDate, int>{};
@@ -60,6 +61,11 @@ final class DashboardService {
       switch (row.classification) {
         case ReportClassification.income:
           income += converted.minorUnits;
+          incomeCategories.update(
+            row.categoryId,
+            (value) => value + converted.minorUnits,
+            ifAbsent: () => converted.minorUnits,
+          );
           dailyIncome.update(
             row.date,
             (value) => value + converted.minorUnits,
@@ -77,7 +83,7 @@ final class DashboardService {
               ifAbsent: () => converted.minorUnits,
             );
           }
-          categories.update(
+          expenseCategories.update(
             row.categoryId,
             (value) => value + converted.minorUnits,
             ifAbsent: () => converted.minorUnits,
@@ -149,11 +155,17 @@ final class DashboardService {
         ),
       );
     }
-    final categoryValues = [
-      for (final entry in categories.entries)
-        if (entry.value > 0)
-          CategorySpending(categoryId: entry.key, amountMinor: entry.value),
-    ]..sort((a, b) => b.amountMinor.compareTo(a.amountMinor));
+    List<CategorySpending> categoryValues(Map<EntityId, int> source) =>
+        [
+          for (final entry in source.entries)
+            if (entry.value > 0)
+              CategorySpending(categoryId: entry.key, amountMinor: entry.value),
+        ]..sort((a, b) {
+          final amount = b.amountMinor.compareTo(a.amountMinor);
+          return amount != 0
+              ? amount
+              : a.categoryId.value.compareTo(b.categoryId.value);
+        });
 
     return DashboardSnapshot(
       reportingCurrency: reportingCurrency,
@@ -172,7 +184,8 @@ final class DashboardService {
                 ? amount
                 : (a.tagId?.value ?? '').compareTo(b.tagId?.value ?? '');
           }),
-      spendingByCategory: categoryValues,
+      spendingByCategory: categoryValues(expenseCategories),
+      incomeByCategory: categoryValues(incomeCategories),
       cashFlow: trend,
       accountBalances: balances,
       missingRates: missing,

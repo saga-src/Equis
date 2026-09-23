@@ -12,9 +12,14 @@ import '../../application/sync/sync_models.dart';
 import '../sync/drift_sync_mutation_recorder.dart';
 
 final class DriftMarketPriceRepository implements MarketPriceRepository {
-  const DriftMarketPriceRepository(this.database, {this.syncRecorder});
+  DriftMarketPriceRepository(
+    this.database, {
+    this.syncRecorder,
+    UtcInstant Function()? clock,
+  }) : _clock = clock ?? UtcInstant.now;
   final EquisDatabase database;
   final DriftSyncMutationRecorder? syncRecorder;
+  final UtcInstant Function() _clock;
   @override
   Future<void> saveAutomatic(MarketQuote quote) => database.customStatement(
     'INSERT OR REPLACE INTO market_price_cache '
@@ -25,7 +30,7 @@ final class DriftMarketPriceRepository implements MarketPriceRepository {
       DecimalValue.canonical(quote.price),
       quote.currency.value,
       quote.provider,
-      UtcInstant.now().epochMicroseconds,
+      _clock().epochMicroseconds,
     ],
   );
   @override
@@ -131,5 +136,19 @@ final class DriftMarketPriceRepository implements MarketPriceRepository {
       ),
       provider: row.read<String>('provider'),
     );
+  }
+
+  @override
+  Future<UtcInstant?> latestAutomaticFetchedAt(EntityId instrumentId) async {
+    final row = await database
+        .customSelect(
+          'SELECT MAX(fetched_at) fetched_at FROM market_price_cache '
+          'WHERE instrument_id=?',
+          variables: [Variable<String>(instrumentId.value)],
+          readsFrom: {database.marketPriceCache},
+        )
+        .getSingle();
+    final value = row.readNullable<int>('fetched_at');
+    return value == null ? null : UtcInstant.fromEpochMicroseconds(value);
   }
 }

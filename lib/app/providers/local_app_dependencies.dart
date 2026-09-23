@@ -14,6 +14,7 @@ import '../../application/services/wealth_service.dart';
 import '../../application/services/investment_service.dart';
 import '../../application/services/market_data_service.dart';
 import '../../application/services/fx_rate_selector.dart';
+import '../../application/services/startup_refresh_service.dart';
 import '../../application/services/financial_intelligence_service.dart';
 import '../../core/config/app_config.dart';
 import '../../domain/cloud/cloud_identity_models.dart';
@@ -33,6 +34,7 @@ import '../../infrastructure/repositories/drift_wealth_repository.dart';
 import '../../infrastructure/repositories/drift_investment_repository.dart';
 import '../../infrastructure/repositories/drift_market_price_repository.dart';
 import '../../infrastructure/repositories/drift_fx_repositories.dart';
+import '../../infrastructure/repositories/drift_startup_refresh_gate.dart';
 import '../../infrastructure/market/edge_market_data_provider.dart';
 import '../../infrastructure/fx/frankfurter_fx_provider.dart';
 import '../../infrastructure/cloud/supabase_cloud_auth_gateway.dart';
@@ -87,6 +89,7 @@ final class LocalAppDependencies {
     required this.investments,
     required this.marketData,
     required this.fxRates,
+    required this.startupRefresh,
     required this.intelligence,
     required this.cloudAccounts,
     required this.existingVaultRestore,
@@ -117,6 +120,7 @@ final class LocalAppDependencies {
   final InvestmentService investments;
   final MarketDataService marketData;
   final FxRateSelector fxRates;
+  final StartupRefreshService startupRefresh;
   final FinancialIntelligenceService intelligence;
   final CloudAccountService cloudAccounts;
   final ExistingVaultRestoreService? existingVaultRestore;
@@ -300,6 +304,7 @@ final class LocalAppDependencies {
     final investmentService = InvestmentService(
       repository: investmentRepository,
       reporting: reportingRepository,
+      unitOfWork: unitOfWork,
     );
     final marketData = MarketDataService(
       instruments: investmentRepository,
@@ -313,6 +318,14 @@ final class LocalAppDependencies {
             ? null
             : () async => cloudAuth.currentAccessToken,
       ),
+    );
+    final fxRates = FxRateSelector(
+      manualRates: DriftManualFxRateRepository(
+        database,
+        syncRecorder: syncRecorder,
+      ),
+      cache: DriftFxRateCacheRepository(database),
+      provider: FrankfurterFxProvider(),
     );
     final recurringService = RecurringTransactionService(
       repository: recurringRepository,
@@ -364,6 +377,17 @@ final class LocalAppDependencies {
       unitOfWork: unitOfWork,
     );
     final taxonomy = TaxonomyService(categories: categories, tags: tags);
+    final sessionService = LocalFinanceSessionService(
+      vaults: vaults,
+      accounts: accounts,
+      categories: categories,
+      tags: tags,
+      ledger: ledger,
+      unitOfWork: unitOfWork,
+      containers: containers,
+      taxonomy: taxonomy,
+      everydayTransactions: EverydayTransactionService(ledger: ledger),
+    );
     final cloudAccounts = CloudAccountService(
       repository: DriftCloudIdentityRepository(database),
       auth: cloudAuth,
@@ -406,13 +430,12 @@ final class LocalAppDependencies {
       wealth: wealthService,
       investments: investmentService,
       marketData: marketData,
-      fxRates: FxRateSelector(
-        manualRates: DriftManualFxRateRepository(
-          database,
-          syncRecorder: syncRecorder,
-        ),
-        cache: DriftFxRateCacheRepository(database),
-        provider: FrankfurterFxProvider(),
+      fxRates: fxRates,
+      startupRefresh: StartupRefreshService(
+        session: sessionService,
+        marketData: marketData,
+        fxRates: fxRates,
+        gate: DriftStartupRefreshGate(database),
       ),
       intelligence: intelligenceService,
       cloudAccounts: cloudAccounts,
@@ -433,17 +456,7 @@ final class LocalAppDependencies {
       syncConflicts: syncAggregates,
       syncEnrollment: syncEnrollment,
       syncMutationNotifications: syncMutationNotifications,
-      session: LocalFinanceSessionService(
-        vaults: vaults,
-        accounts: accounts,
-        categories: categories,
-        tags: tags,
-        ledger: ledger,
-        unitOfWork: unitOfWork,
-        containers: containers,
-        taxonomy: taxonomy,
-        everydayTransactions: EverydayTransactionService(ledger: ledger),
-      ),
+      session: sessionService,
     );
   }
 

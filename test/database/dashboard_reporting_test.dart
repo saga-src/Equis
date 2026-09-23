@@ -148,6 +148,8 @@ void main() {
       expect(report.spendingByTag.single.amountMinor, 20000);
       expect(report.netCashFlowMinor, 30000);
       expect(report.spendingByCategory.single.amountMinor, 20000);
+      expect(report.incomeByCategory.single.categoryId, fixture.incomeCategory);
+      expect(report.incomeByCategory.single.amountMinor, 50000);
       expect(report.upcomingCount, 1);
       expect(report.isComplete, isTrue);
       expect(report.usesEstimatedRates, isFalse);
@@ -244,6 +246,7 @@ Future<_Fixture> _seed(
   final usdWalletId = EntityId.generate();
   final cardId = EntityId.generate();
   final category = EntityId.generate();
+  final incomeCategory = EntityId.generate();
   await database.customStatement(
     'INSERT INTO vaults (id, name, base_currency_code, timezone, created_at, updated_at) '
     'VALUES (?, ?, ?, ?, 1, 1)',
@@ -283,6 +286,12 @@ Future<_Fixture> _seed(
     '(id, vault_id, category_type, custom_name, created_at, updated_at) '
     'VALUES (?, ?, ?, ?, 1, 1)',
     [category.value, vault.value, 'expense', 'Daily'],
+  );
+  await database.customStatement(
+    'INSERT INTO categories '
+    '(id, vault_id, category_type, custom_name, created_at, updated_at) '
+    'VALUES (?, ?, ?, ?, 1, 1)',
+    [incomeCategory.value, vault.value, 'income', 'Salary'],
   );
   await database.customStatement(
     'INSERT INTO fx_rate_cache '
@@ -338,7 +347,7 @@ Future<_Fixture> _seed(
       vaultId: vault,
       pocket: bank,
       amount: brl(50000),
-      categoryId: category,
+      categoryId: incomeCategory,
       date: date,
       now: now,
     ),
@@ -434,6 +443,7 @@ Future<_Fixture> _seed(
     usdWallet: usdWallet,
     card: card,
     category: category,
+    incomeCategory: incomeCategory,
   );
 }
 
@@ -455,6 +465,7 @@ final class _Fixture {
     required this.usdWallet,
     required this.card,
     required this.category,
+    required this.incomeCategory,
   });
 
   final EntityId vault;
@@ -462,4 +473,5 @@ final class _Fixture {
   final LedgerPocket usdWallet;
   final LedgerPocket card;
   final EntityId category;
+  final EntityId incomeCategory;
 }

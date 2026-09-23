@@ -19,11 +19,19 @@ final class InvestmentState {
     this.prices = const [],
     this.loading = false,
     this.error,
+    this.lastRefresh,
   });
   final PortfolioReport? report;
   final List<MarketPriceState> prices;
   final bool loading;
   final Object? error;
+  final MarketRefreshSummary? lastRefresh;
+}
+
+final class MarketRefreshSummary {
+  const MarketRefreshSummary({required this.updated, required this.failed});
+  final int updated;
+  final int failed;
 }
 
 final class InvestmentController extends StateNotifier<InvestmentState> {
@@ -32,17 +40,20 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
     required MarketDataService? market,
     required EntityId? vaultId,
     required CurrencyCode? reportingCurrency,
-  }) : this._(service, market, vaultId, reportingCurrency);
+    Future<void> Function()? onChanged,
+  }) : this._(service, market, vaultId, reportingCurrency, onChanged);
   InvestmentController._(
     this._service,
     this._market,
     this._vaultId,
     this._currency,
+    this._onChanged,
   ) : super(const InvestmentState());
   final InvestmentService? _service;
   final MarketDataService? _market;
   final EntityId? _vaultId;
   final CurrencyCode? _currency;
+  final Future<void> Function()? _onChanged;
 
   Future<void> reload() async {
     if (_service == null || _vaultId == null || _currency == null) return;
@@ -50,6 +61,7 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
       report: state.report,
       prices: state.prices,
       loading: true,
+      lastRefresh: state.lastRefresh,
     );
     try {
       final today = _today();
@@ -63,12 +75,14 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
       state = InvestmentState(
         report: values[0] as PortfolioReport,
         prices: values[1] as List<MarketPriceState>,
+        lastRefresh: state.lastRefresh,
       );
     } catch (error) {
       state = InvestmentState(
         report: state.report,
         prices: state.prices,
         error: error,
+        lastRefresh: state.lastRefresh,
       );
     }
   }
@@ -78,17 +92,85 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
     required String symbol,
     required String exchange,
     required InvestmentAssetClass assetClass,
+    required CurrencyCode currency,
+    MarketInstrumentCandidate? candidate,
+    MarketQuotePreview? preview,
+    InitialPositionMode? initialMode,
+    LedgerPocket? initialPocket,
+    String quantity = '',
+    String unitPrice = '',
+    String fees = '',
+    String taxes = '',
+    LocalDate? date,
   }) => _mutate(() async {
-    await _required.createInstrument(
+    final selected = candidate;
+    final initial = initialMode == null
+        ? null
+        : InitialPositionDraft(
+            mode: initialMode,
+            cashPocket:
+                initialPocket ??
+                (throw ArgumentError('An investment account is required.')),
+            quantity: _decimal(quantity),
+            unitPrice: _decimal(unitPrice),
+            date: date ?? _today(),
+            feesMinor: fees.trim().isEmpty
+                ? 0
+                : _minor(fees, selected?.currency ?? currency),
+            taxesMinor: taxes.trim().isEmpty
+                ? 0
+                : _minor(taxes, selected?.currency ?? currency),
+          );
+    final instrument = await _required.createInstrumentWithInitialPosition(
       vaultId: _requiredVault,
-      name: name,
-      symbol: symbol,
-      exchange: exchange,
-      assetClass: assetClass,
-      currency: _requiredCurrency,
-      customInstrument: true,
+      name: selected?.name ?? name,
+      symbol: selected?.symbol ?? symbol,
+      exchange: selected?.exchange ?? exchange,
+      assetClass: selected?.assetClass ?? assetClass,
+      currency: selected?.currency ?? currency,
+      providerSymbol: selected?.providerSymbol,
+      providerName: selected?.provider.name,
+      customInstrument: selected == null,
+      initialPosition: initial,
       now: UtcInstant.now(),
     );
+    if (preview != null && _market != null) {
+      try {
+        await _market.savePreview(instrument, preview);
+      } on Exception {
+        // The financial aggregate is already committed; a later refresh can rebuild this cache.
+      }
+    }
+  });
+
+  Future<List<MarketInstrumentCandidate>> searchInstruments({
+    required String query,
+    required InvestmentAssetClass assetClass,
+    required CurrencyCode currency,
+  }) => (_market ?? (throw StateError('Market service unavailable.'))).search(
+    query: query,
+    assetClass: assetClass,
+    currency: currency,
+  );
+
+  Future<MarketQuotePreview?> quoteCandidate(
+    MarketInstrumentCandidate candidate,
+  ) => (_market ?? (throw StateError('Market service unavailable.')))
+      .quoteCandidate(candidate);
+
+  Future<void> linkMarketCandidate({
+    required InvestmentInstrument instrument,
+    required MarketInstrumentCandidate candidate,
+    MarketQuotePreview? preview,
+  }) => _mutate(() async {
+    final linked = await _required.linkMarketCandidate(
+      instrument: instrument,
+      candidate: candidate,
+      now: UtcInstant.now(),
+    );
+    if (preview != null && _market != null) {
+      await _market.savePreview(linked, preview);
+    }
   });
   Future<void> trade({
     required InvestmentInstrument instrument,
@@ -186,6 +268,7 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
       report: state.report,
       prices: state.prices,
       loading: true,
+      lastRefresh: state.lastRefresh,
     );
     try {
       final today = _today();
@@ -200,13 +283,22 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
         currency: _requiredCurrency,
         asOf: today,
       );
-      state = InvestmentState(report: report, prices: prices);
-    } catch (error) {
+      state = InvestmentState(
+        report: report,
+        prices: prices,
+        lastRefresh: MarketRefreshSummary(
+          updated: prices.where((item) => item.refreshed).length,
+          failed: prices.where((item) => item.refreshFailed).length,
+        ),
+      );
+    } catch (error, stackTrace) {
       state = InvestmentState(
         report: state.report,
         prices: state.prices,
         error: error,
+        lastRefresh: state.lastRefresh,
       );
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 
@@ -230,16 +322,20 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
       report: state.report,
       prices: state.prices,
       loading: true,
+      lastRefresh: state.lastRefresh,
     );
     try {
       await action();
+      await _onChanged?.call();
       await reload();
-    } catch (error) {
+    } catch (error, stackTrace) {
       state = InvestmentState(
         report: state.report,
         prices: state.prices,
         error: error,
+        lastRefresh: state.lastRefresh,
       );
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 

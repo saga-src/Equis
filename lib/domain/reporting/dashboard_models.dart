@@ -107,6 +107,7 @@ final class DashboardSnapshot {
     required this.incomeMinor,
     required this.expenseMinor,
     required List<CategorySpending> spendingByCategory,
+    List<CategorySpending> incomeByCategory = const [],
     List<TagSpending> spendingByTag = const [],
     required List<CashFlowPoint> cashFlow,
     required List<AccountReportBalance> accountBalances,
@@ -115,6 +116,7 @@ final class DashboardSnapshot {
     required this.upcomingCount,
   }) : spendingByTag = List.unmodifiable(spendingByTag),
        spendingByCategory = List.unmodifiable(spendingByCategory),
+       incomeByCategory = List.unmodifiable(incomeByCategory),
        cashFlow = List.unmodifiable(cashFlow),
        accountBalances = List.unmodifiable(accountBalances),
        missingRates = Set.unmodifiable(missingRates);
@@ -126,6 +128,7 @@ final class DashboardSnapshot {
   final int incomeMinor;
   final int expenseMinor;
   final List<CategorySpending> spendingByCategory;
+  final List<CategorySpending> incomeByCategory;
   final List<TagSpending> spendingByTag;
   final List<CashFlowPoint> cashFlow;
   final List<AccountReportBalance> accountBalances;

@@ -58,6 +58,7 @@ void main() {
         base: CurrencyCode.usd,
         quote: CurrencyCode.brl,
         date: date,
+        refresh: true,
       );
       expect(dateManual?.source, FxRateSource.datePairManual);
       expect(dateManual?.rate, '5.4');
@@ -105,9 +106,17 @@ void main() {
       base: CurrencyCode.usd,
       quote: CurrencyCode.brl,
       date: date,
+      refresh: true,
     );
     expect(cached?.source, FxRateSource.automaticExact);
     expect(cached?.isEstimated, isFalse);
+    expect(
+      await cache.latestFetchedAt(
+        base: CurrencyCode.usd,
+        quote: CurrencyCode.brl,
+      ),
+      now,
+    );
   });
 
   test(

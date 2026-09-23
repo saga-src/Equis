@@ -107,6 +107,7 @@
   "cashAccountType": "Cash",
   "walletAccountType": "Digital wallet",
   "creditCardAccountType": "Credit card",
+  "quickCardPurchaseNotice": "This expense will be saved as a credit-card purchase in the statement for its date.",
   "historyNavigationLabel": "History",
   "transactionHistoryTitle": "Transaction history",
   "filtersAction": "Filters",
@@ -172,6 +173,8 @@
   "upcomingDashboardTitle": "Upcoming",
   "upcomingNext30DaysLabel": "Scheduled in the next 30 days",
   "spendingByCategoryTitle": "Spending by category",
+  "categoryBreakdownTitle": "By category",
+  "otherCategoriesLabel": "Other",
   "cashFlowChartTitle": "Cash flow over time",
   "accountBalancesTitle": "Account balances",
   "reportsSectionTitle": "Reports",
@@ -307,6 +310,17 @@
   "projectedClosingLabel": "Projected closing",
   "noProjectedEventsMessage": "No known events in this projection window.",
   "projectedBalanceLabel": "Balance after event",
+  "selectedProjectedMonth": "{month}: projected closing balance {amount}",
+  "@selectedProjectedMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "recurringIncomeProjectionType": "Recurring income",
   "recurringExpenseProjectionType": "Recurring expense",
   "installmentProjectionType": "Future installment",
@@ -325,16 +339,48 @@
   },
   "investmentsNavigationLabel": "Investments",
   "investmentsTitle": "Investments",
+  "marketDataInfoTooltip": "About market data",
+  "marketDataInfoTitle": "Market data",
+  "marketDataInfoProviders": "Automatic prices use BRAPI for Brazilian assets, Twelve Data for international assets, and CoinGecko for cryptoassets. Exchange rates use Frankfurter.",
+  "marketDataInfoDelay": "Values may be delayed and are not real-time quotes. If a service is unavailable, Equis keeps the latest cached value.",
+  "marketDataInfoManualPriority": "Manual prices always take precedence over automatic prices.",
+  "marketDataAttribution": "Data provided by Twelve Data. Powered by CoinGecko.",
   "portfolioValueLabel": "Portfolio value",
   "portfolioCostLabel": "Cost basis",
   "unrealizedResultLabel": "Unrealized gain/loss",
   "realizedResultLabel": "Realized gain/loss",
   "investmentIncomeLabel": "Income received",
   "allocationLabel": "Allocation",
-  "addInstrumentAction": "Add instrument",
-  "noInvestmentsMessage": "No investment instruments yet.",
+  "addInstrumentAction": "Add asset",
+  "noInvestmentsMessage": "No investment assets yet.",
   "investmentLoadFailedMessage": "Could not load investments from the local vault.",
-  "instrumentNameLabel": "Instrument name",
+  "investmentAccountSetupTitle": "Set up an investment account",
+  "investmentAccountSetupBody": "Create an investment cash account in {currency} to deposit funds and record trades.",
+  "@investmentAccountSetupBody": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "createInvestmentAccountAction": "Create investment account",
+  "brokerageNameLabel": "Brokerage account name",
+  "investmentAccountCreatedMessage": "Investment account created.",
+  "investmentActionFailedMessage": "The investment action could not be completed. Check the values and required accounts.",
+  "missingRegularInvestmentAccountMessage": "Add a regular asset account before moving cash to or from investments.",
+  "missingInvestmentCategoryMessage": "Create a matching income or expense category before recording this investment action.",
+  "instrumentNameLabel": "Asset name",
+  "deleteInvestmentAssetAction": "Delete asset",
+  "confirmDeleteInvestmentAssetBody": "Delete {name}? This is allowed only when the asset has no transactions, lots, or linked files.",
+  "@confirmDeleteInvestmentAssetBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentAssetDeletedMessage": "Investment asset deleted.",
+  "investmentAssetDeleteBlockedMessage": "This asset cannot be deleted because it already has financial history or linked files.",
   "instrumentSymbolLabel": "Symbol",
   "instrumentExchangeLabel": "Exchange",
   "assetClassLabel": "Asset class",
@@ -401,6 +447,22 @@
   "manualPriceAction": "Set manual price",
   "stalePriceMessage": "The cached market price is out of date.",
   "priceRefreshFailedMessage": "Price refresh failed. The last local value is still in use.",
+  "assetSearchLabel": "Search symbol or name",
+  "assetSearchHint": "Type at least two characters",
+  "assetSearchNoResults": "No matching market assets found.",
+  "assetSearchFailed": "Market search failed. You can still add the asset manually.",
+  "addAssetManuallyAction": "Add manually",
+  "clearAssetSelectionAction": "Choose another asset",
+  "currentMarketPriceLabel": "Current market price",
+  "addInitialPositionLabel": "Add an initial position",
+  "initialPositionModeLabel": "Initial position mode",
+  "historicalBuyMode": "Historical purchase",
+  "openingPositionMode": "Import without changing cash",
+  "openingPositionDescription": "Creates the quantity and cost basis while keeping the investment account cash balance unchanged.",
+  "linkMarketAssetAction": "Link market quote",
+  "linkMarketAssetTitle": "Link asset to market data",
+  "marketRefreshSummary": "{updated} updated, {failed} failed.",
+  "@marketRefreshSummary": {"placeholders": {"updated": {"type": "int"}, "failed": {"type": "int"}}},
   "intelligenceTitle": "Financial insights",
   "intelligenceSubtitle": "Local estimates based on your recorded data",
   "intelligencePrivacyMessage": "These insights are calculated on this device. Transaction history is not sent to an external AI service.",

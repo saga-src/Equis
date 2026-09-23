@@ -10,8 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'dashboard_overview.dart';
-import '../formatting/equis_formatters.dart';
 import '../shared/equis_glass.dart';
+import '../transactions/transaction_presentation.dart';
 
 class LocalFinanceHomeScreen extends ConsumerWidget {
   const LocalFinanceHomeScreen({super.key});
@@ -419,7 +419,7 @@ class _RecentTransactions extends ConsumerWidget {
             else
               for (final transaction in snapshot.recentTransactions)
                 ListTile(
-                  leading: Icon(_icon(transaction.type)),
+                  leading: TransactionSemanticIcon(transaction: transaction),
                   title: Text(_title(context, transaction)),
                   subtitle: Text(
                     '${transaction.financialDate} · ${_status(context, transaction.status)}',
@@ -427,34 +427,15 @@ class _RecentTransactions extends ConsumerWidget {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        _amount(context, transaction),
-                        style: EquisTypography.numeric,
-                      ),
-                      PopupMenuButton<_TransactionAction>(
+                      TransactionAmountText(transaction: transaction),
+                      TransactionActionMenu(
+                        transaction: transaction,
                         onSelected: (action) =>
                             _act(context, ref, transaction, action),
-                        itemBuilder: (context) => [
-                          if (_editable(transaction))
-                            PopupMenuItem(
-                              value: _TransactionAction.edit,
-                              child: Text(l10n.editTransactionAction),
-                            ),
-                          if (transaction.status ==
-                              LedgerTransactionStatus.cleared)
-                            PopupMenuItem(
-                              value: _TransactionAction.reconcile,
-                              child: Text(l10n.reconcileTransactionAction),
-                            ),
-                          PopupMenuItem(
-                            value: _TransactionAction.delete,
-                            child: Text(l10n.deleteTransactionAction),
-                          ),
-                        ],
                       ),
                     ],
                   ),
-                  onTap: _editable(transaction)
+                  onTap: transactionIsEditable(transaction)
                       ? () => context.push(
                           '/transactions/${transaction.id.value}',
                         )
@@ -470,15 +451,15 @@ class _RecentTransactions extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     LedgerTransaction transaction,
-    _TransactionAction action,
+    TransactionAction action,
   ) async {
     final controller = ref.read(localFinanceControllerProvider.notifier);
     switch (action) {
-      case _TransactionAction.edit:
+      case TransactionAction.edit:
         await context.push('/transactions/${transaction.id.value}');
-      case _TransactionAction.reconcile:
+      case TransactionAction.reconcile:
         await controller.reconcileTransaction(transaction);
-      case _TransactionAction.delete:
+      case TransactionAction.delete:
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
@@ -503,24 +484,6 @@ class _RecentTransactions extends ConsumerWidget {
   }
 }
 
-enum _TransactionAction { edit, reconcile, delete }
-
-bool _editable(LedgerTransaction transaction) =>
-    transaction.status != LedgerTransactionStatus.reconciled &&
-    transaction.status != LedgerTransactionStatus.cancelled &&
-    const {
-      LedgerTransactionType.expense,
-      LedgerTransactionType.income,
-      LedgerTransactionType.transfer,
-    }.contains(transaction.type);
-
-IconData _icon(LedgerTransactionType type) => switch (type) {
-  LedgerTransactionType.expense => Icons.arrow_upward,
-  LedgerTransactionType.income => Icons.arrow_downward,
-  LedgerTransactionType.transfer => Icons.swap_horiz,
-  _ => Icons.receipt_long_outlined,
-};
-
 String _title(BuildContext context, LedgerTransaction transaction) {
   if (transaction.title?.trim().isNotEmpty ?? false) return transaction.title!;
   final l10n = AppLocalizations.of(context);
@@ -540,11 +503,4 @@ String _status(BuildContext context, LedgerTransactionStatus status) {
     LedgerTransactionStatus.reconciled => l10n.statusReconciledLabel,
     LedgerTransactionStatus.cancelled => l10n.statusCancelledLabel,
   };
-}
-
-String _amount(BuildContext context, LedgerTransaction transaction) {
-  if (transaction.type == LedgerTransactionType.transfer) return '↔';
-  final movement = transaction.movements.first;
-  final sign = transaction.type == LedgerTransactionType.expense ? '−' : '+';
-  return '$sign ${EquisFormatters.moneyMinor(context, currency: movement.pocket.currency, minor: movement.amountMinor.abs())}';
 }

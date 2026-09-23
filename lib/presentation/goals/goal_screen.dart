@@ -292,15 +292,27 @@ class _GoalList extends StatelessWidget {
 
 enum _GoalAction { edit, delete }
 
-class _CashFlowView extends StatelessWidget {
+class _CashFlowView extends StatefulWidget {
   const _CashFlowView({required this.projection});
   final CashFlowProjection? projection;
 
   @override
+  State<_CashFlowView> createState() => _CashFlowViewState();
+}
+
+class _CashFlowViewState extends State<_CashFlowView> {
+  var selectedMonth = 0;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final value = projection;
+    final value = widget.projection;
     if (value == null) return const Center(child: CircularProgressIndicator());
+    final months = value.monthlyBalances;
+    final selectedIndex = months.isEmpty
+        ? 0
+        : selectedMonth.clamp(0, months.length - 1);
+    final selected = months.isEmpty ? null : months[selectedIndex];
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
       children: [
@@ -336,49 +348,132 @@ class _CashFlowView extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(l10n.cashFlowEstimateDisclaimer),
-                if (value.events.isNotEmpty) ...[
+                if (months.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   SizedBox(
-                    height: 180,
+                    height: 210,
                     child: AccessibleChart(
-                      label: l10n.cashFlowChartTitle,
+                      label:
+                          '${l10n.cashFlowChartTitle}. '
+                          '${months.map((month) => l10n.selectedProjectedMonth(EquisFormatters.monthYear(context, month.month), _money(context, value.reportingCurrency, month.closingBalanceMinor))).join('. ')}',
                       child: LineChart(
                         LineChartData(
+                          minX: 0,
+                          maxX: months.length <= 1
+                              ? 1
+                              : (months.length - 1).toDouble(),
                           borderData: FlBorderData(show: false),
                           gridData: const FlGridData(drawVerticalLine: false),
-                          titlesData: const FlTitlesData(
-                            leftTitles: AxisTitles(
+                          titlesData: FlTitlesData(
+                            leftTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false),
                             ),
-                            rightTitles: AxisTitles(
+                            rightTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false),
                             ),
-                            topTitles: AxisTitles(
+                            topTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false),
                             ),
                             bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                interval: 1,
+                                reservedSize: 32,
+                                getTitlesWidget: (position, meta) {
+                                  final index = position.round();
+                                  if (index < 0 || index >= months.length) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Text(
+                                      EquisFormatters.monthYear(
+                                        context,
+                                        months[index].month,
+                                      ),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          lineTouchData: LineTouchData(
+                            handleBuiltInTouches: true,
+                            touchCallback: (event, response) {
+                              final spots = response?.lineBarSpots;
+                              if (!event.isInterestedForInteractions ||
+                                  spots == null ||
+                                  spots.isEmpty) {
+                                return;
+                              }
+                              final index = spots.first.x.round();
+                              if (index != selectedMonth &&
+                                  index >= 0 &&
+                                  index < months.length) {
+                                setState(() => selectedMonth = index);
+                              }
+                            },
+                            touchTooltipData: LineTouchTooltipData(
+                              getTooltipItems: (spots) => [
+                                for (final spot in spots)
+                                  LineTooltipItem(
+                                    '${EquisFormatters.monthYear(context, months[spot.x.round()].month)}\n'
+                                    '${_money(context, value.reportingCurrency, months[spot.x.round()].closingBalanceMinor)}',
+                                    TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onInverseSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                           lineBarsData: [
                             LineChartBarData(
                               spots: [
-                                FlSpot(0, value.openingAvailableMinor / 100),
-                                for (var i = 0; i < value.events.length; i++)
+                                for (var i = 0; i < months.length; i++)
                                   FlSpot(
-                                    (i + 1).toDouble(),
-                                    value.events[i].balanceAfterMinor / 100,
+                                    i.toDouble(),
+                                    months[i].closingBalanceMinor / 100,
                                   ),
                               ],
                               color: Theme.of(context).colorScheme.primary,
                               barWidth: 3,
-                              dotData: const FlDotData(show: false),
+                              dotData: const FlDotData(show: true),
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  if (selected != null)
+                    Semantics(
+                      liveRegion: true,
+                      label: l10n.selectedProjectedMonth(
+                        EquisFormatters.monthYear(context, selected.month),
+                        _money(
+                          context,
+                          value.reportingCurrency,
+                          selected.closingBalanceMinor,
+                        ),
+                      ),
+                      child: Text(
+                        l10n.selectedProjectedMonth(
+                          EquisFormatters.monthYear(context, selected.month),
+                          _money(
+                            context,
+                            value.reportingCurrency,
+                            selected.closingBalanceMinor,
+                          ),
+                        ),
+                        key: const Key('selected-cash-flow-month'),
+                      ),
+                    ),
                 ],
               ],
             ),

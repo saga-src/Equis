@@ -55,6 +55,9 @@ void main() {
         categoryId: fixture.category,
         date: LocalDate(2026, 8, 20),
         now: fixture.now,
+        title: 'Groceries',
+        notes: 'Weekly shop',
+        tagIds: [fixture.tag],
       );
       final after = await service.purchase(
         card: fixture.brlCard,
@@ -64,6 +67,10 @@ void main() {
         now: fixture.now,
       );
       expect(before.movements.single.statementId, isNotNull);
+      expect(before.title, 'Groceries');
+      expect(before.notes, 'Weekly shop');
+      expect(before.tagIds, [fixture.tag]);
+      expect(before.splits.single.categoryId, fixture.category);
       expect(
         before.movements.single.statementId,
         isNot(after.movements.single.statementId),
@@ -247,6 +254,7 @@ Future<_Fixture> _seed(EquisDatabase database) async {
   final brlCard = EntityId.generate();
   final usdCard = EntityId.generate();
   final category = EntityId.generate();
+  final tag = EntityId.generate();
   await database.customStatement(
     'INSERT INTO vaults (id, name, base_currency_code, timezone, created_at, updated_at) '
     'VALUES (?, ?, ?, ?, 1, 1)',
@@ -297,6 +305,11 @@ Future<_Fixture> _seed(EquisDatabase database) async {
     'VALUES (?, ?, ?, ?, 1, 1)',
     [category.value, vault.value, 'expense', 'Purchases'],
   );
+  await database.customStatement(
+    'INSERT INTO tags (id, vault_id, name, created_at, updated_at) '
+    'VALUES (?, ?, ?, 1, 1)',
+    [tag.value, vault.value, 'Daily'],
+  );
   return _Fixture(
     brlCard: CreditCardContext(
       vaultId: vault,
@@ -321,6 +334,7 @@ Future<_Fixture> _seed(EquisDatabase database) async {
       nature: AccountNature.asset,
     ),
     category: category,
+    tag: tag,
   );
 }
 
@@ -331,6 +345,7 @@ final class _Fixture {
     required this.brlBank,
     required this.usdBank,
     required this.category,
+    required this.tag,
   });
 
   final CreditCardContext brlCard;
@@ -338,6 +353,7 @@ final class _Fixture {
   final LedgerPocket brlBank;
   final LedgerPocket usdBank;
   final EntityId category;
+  final EntityId tag;
   UtcInstant get now => const UtcInstant.fromEpochMicroseconds(1000);
   UtcInstant get later => const UtcInstant.fromEpochMicroseconds(2000);
   Money brl(int minor) => Money(currency: CurrencyCode.brl, minorUnits: minor);

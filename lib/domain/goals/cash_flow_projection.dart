@@ -46,6 +46,18 @@ final class ProjectedCashFlowEvent {
   final String? name;
 }
 
+final class ProjectedCashFlowMonth {
+  const ProjectedCashFlowMonth({
+    required this.month,
+    required this.through,
+    required this.closingBalanceMinor,
+  });
+
+  final LocalDate month;
+  final LocalDate through;
+  final int closingBalanceMinor;
+}
+
 final class CashFlowProjection {
   CashFlowProjection({
     required this.reportingCurrency,
@@ -54,9 +66,11 @@ final class CashFlowProjection {
     required this.openingAvailableMinor,
     required this.closingProjectedMinor,
     required List<ProjectedCashFlowEvent> events,
+    List<ProjectedCashFlowMonth> monthlyBalances = const [],
     required Set<CurrencyCode> missingRates,
     required this.usesEstimatedRates,
   }) : events = List.unmodifiable(events),
+       monthlyBalances = List.unmodifiable(monthlyBalances),
        missingRates = Set.unmodifiable(missingRates);
 
   final CurrencyCode reportingCurrency;
@@ -65,6 +79,7 @@ final class CashFlowProjection {
   final int openingAvailableMinor;
   final int closingProjectedMinor;
   final List<ProjectedCashFlowEvent> events;
+  final List<ProjectedCashFlowMonth> monthlyBalances;
   final Set<CurrencyCode> missingRates;
   final bool usesEstimatedRates;
 

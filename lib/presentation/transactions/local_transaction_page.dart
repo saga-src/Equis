@@ -1,6 +1,8 @@
 import 'package:equis/app/providers/app_providers.dart';
 import 'package:equis/application/services/everyday_transaction_service.dart';
 import 'package:equis/domain/entities/category_node.dart';
+import 'package:equis/domain/entities/account_profile.dart';
+import 'package:equis/domain/credit_cards/credit_card_models.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/shared/money.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
@@ -61,6 +63,15 @@ class LocalTransactionPage extends ConsumerWidget {
             ))
               QuickAccountOption(
                 label: '${account.account.name} · ${pocket.currency.value}',
+                accountType: account.account.type,
+                card: account.account.type == AccountType.creditCard
+                    ? CreditCardContext(
+                        vaultId: snapshot.vault!.id,
+                        accountId: account.account.id,
+                        pocketId: pocket.id,
+                        currency: pocket.currency,
+                      )
+                    : null,
                 pocket: LedgerPocket(
                   id: pocket.id,
                   currency: pocket.currency,
@@ -84,11 +95,10 @@ class LocalTransactionPage extends ConsumerWidget {
                   transactionId: existing.id,
                 ),
           onSave: (draft) async {
-            final source = accounts
-                .singleWhere(
-                  (option) => option.pocket.id == draft.sourcePocketId,
-                )
-                .pocket;
+            final sourceOption = accounts.singleWhere(
+              (option) => option.pocket.id == draft.sourcePocketId,
+            );
+            final source = sourceOption.pocket;
             final destination = draft.destinationPocketId == null
                 ? null
                 : accounts
@@ -104,6 +114,8 @@ class LocalTransactionPage extends ConsumerWidget {
               await controller.createTransaction(
                 type: _type(draft.type),
                 source: source,
+                sourceAccountType: sourceOption.accountType,
+                card: sourceOption.card,
                 destination: destination,
                 amountText: draft.amountText,
                 categoryId: draft.categoryId,

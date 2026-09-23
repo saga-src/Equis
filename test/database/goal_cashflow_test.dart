@@ -105,6 +105,14 @@ void main() {
       expect(projection.isComplete, isTrue);
       expect(projection.openingAvailableMinor, 110000);
       expect(projection.closingProjectedMinor, 107000);
+      expect(projection.monthlyBalances.map((point) => point.through), [
+        LocalDate(2026, 8, 31),
+        LocalDate(2026, 9, 30),
+      ]);
+      expect(
+        projection.monthlyBalances.map((point) => point.closingBalanceMinor),
+        [108000, 107000],
+      );
       expect(
         projection.events.map((event) => event.type),
         containsAll(<CashFlowEventType>[
@@ -137,6 +145,34 @@ void main() {
       );
     },
   );
+
+  test('empty months carry balance through a partial final month', () async {
+    await database.customStatement(
+      "UPDATE goals SET status='completed' WHERE vault_id=?",
+      [fixture.vault.value],
+    );
+    final projection = await cashFlow.load(
+      vaultId: fixture.vault,
+      reportingCurrency: CurrencyCode.brl,
+      asOf: LocalDate(2026, 9, 10),
+      through: LocalDate(2026, 11, 17),
+    );
+
+    expect(projection.events, isEmpty);
+    expect(projection.monthlyBalances.map((point) => point.through), [
+      LocalDate(2026, 9, 30),
+      LocalDate(2026, 10, 31),
+      LocalDate(2026, 11, 17),
+    ]);
+    expect(
+      projection.monthlyBalances.map((point) => point.closingBalanceMinor),
+      everyElement(projection.openingAvailableMinor),
+    );
+    expect(
+      projection.monthlyBalances.last.closingBalanceMinor,
+      projection.closingProjectedMinor,
+    );
+  });
 
   test('linked goal reports missing FX instead of assuming parity', () async {
     await database.customStatement('DELETE FROM fx_rate_cache');

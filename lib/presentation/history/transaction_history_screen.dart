@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../formatting/equis_formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers/app_providers.dart';
-import '../../app/theme/equis_theme.dart';
 import '../../application/services/local_finance_session_service.dart';
 import '../../domain/ledger/ledger_models.dart';
 import '../../domain/ledger/transaction_search.dart';
@@ -14,6 +12,7 @@ import '../../domain/shared/uuid_v7.dart';
 import '../../l10n/app_localizations.dart';
 import '../shared/equis_glass.dart';
 import '../formatting/taxonomy_labels.dart';
+import '../transactions/transaction_presentation.dart';
 import 'transaction_history_controller.dart';
 
 class TransactionHistoryScreen extends ConsumerStatefulWidget {
@@ -123,7 +122,7 @@ class _TransactionHistoryScreenState
           final transaction = history.items[index];
           return EquisGlassCard(
             child: ListTile(
-              leading: Icon(_icon(transaction.type)),
+              leading: TransactionSemanticIcon(transaction: transaction),
               title: Text(
                 transaction.title?.trim().isNotEmpty == true
                     ? transaction.title!
@@ -132,18 +131,75 @@ class _TransactionHistoryScreenState
               subtitle: Text(
                 '${transaction.financialDate} · ${_statusLabel(l10n, transaction.status)}',
               ),
-              trailing: Text(
-                _amount(context, transaction),
-                style: EquisTypography.numeric,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TransactionAmountText(transaction: transaction),
+                  TransactionActionMenu(
+                    transaction: transaction,
+                    onSelected: (action) =>
+                        _act(context, ref, transaction, action),
+                  ),
+                ],
               ),
-              onTap: _editable(transaction)
-                  ? () => context.push('/transactions/${transaction.id.value}')
+              onTap: transactionIsEditable(transaction)
+                  ? () => _edit(context, ref, transaction)
                   : null,
             ),
           );
         },
       ),
     );
+  }
+
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref,
+    LedgerTransaction transaction,
+  ) async {
+    await context.push('/transactions/${transaction.id.value}');
+    if (!context.mounted) return;
+    await ref.read(transactionHistoryControllerProvider.notifier).refresh();
+  }
+
+  Future<void> _act(
+    BuildContext context,
+    WidgetRef ref,
+    LedgerTransaction transaction,
+    TransactionAction action,
+  ) async {
+    final finance = ref.read(localFinanceControllerProvider.notifier);
+    switch (action) {
+      case TransactionAction.edit:
+        await _edit(context, ref, transaction);
+        return;
+      case TransactionAction.reconcile:
+        await finance.reconcileTransaction(transaction);
+      case TransactionAction.delete:
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(AppLocalizations.of(dialogContext).confirmDeleteTitle),
+            content: Text(
+              AppLocalizations.of(dialogContext).confirmDeleteTransactionBody,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(AppLocalizations.of(dialogContext).cancelAction),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(AppLocalizations.of(dialogContext).deleteAction),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
+        await finance.deleteTransaction(transaction);
+    }
+    if (!context.mounted) return;
+    await ref.read(transactionHistoryControllerProvider.notifier).refresh();
   }
 
   Future<void> _openFilters(
@@ -567,26 +623,3 @@ String _statusLabel(AppLocalizations l10n, LedgerTransactionStatus status) =>
       LedgerTransactionStatus.reconciled => l10n.statusReconciledLabel,
       LedgerTransactionStatus.cancelled => l10n.statusCancelledLabel,
     };
-
-bool _editable(LedgerTransaction transaction) =>
-    transaction.status != LedgerTransactionStatus.reconciled &&
-    transaction.status != LedgerTransactionStatus.cancelled &&
-    const {
-      LedgerTransactionType.expense,
-      LedgerTransactionType.income,
-      LedgerTransactionType.transfer,
-    }.contains(transaction.type);
-
-IconData _icon(LedgerTransactionType type) => switch (type) {
-  LedgerTransactionType.expense => Icons.arrow_upward,
-  LedgerTransactionType.income => Icons.arrow_downward,
-  LedgerTransactionType.transfer => Icons.swap_horiz,
-  _ => Icons.receipt_long_outlined,
-};
-
-String _amount(BuildContext context, LedgerTransaction transaction) {
-  if (transaction.type == LedgerTransactionType.transfer) return '↔';
-  final movement = transaction.movements.first;
-  final sign = movement.amountMinor < 0 ? '−' : '+';
-  return '$sign ${EquisFormatters.moneyMinor(context, currency: movement.pocket.currency, minor: movement.amountMinor.abs())}';
-}

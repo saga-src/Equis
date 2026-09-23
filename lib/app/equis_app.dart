@@ -41,6 +41,7 @@ final class _EquisAppState extends ConsumerState<EquisApp>
     final themeVariant = ref.watch(themeVariantProvider);
     final theme = EquisTheme.forVariant(themeVariant);
     ref.watch(cloudAccountControllerProvider);
+    ref.watch(startupRefreshProvider);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,

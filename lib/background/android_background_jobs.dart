@@ -53,10 +53,22 @@ void equisBackgroundCallbackDispatcher() {
 final class AndroidBackgroundJobs {
   const AndroidBackgroundJobs._();
 
+  static const scheduledPeriodicJobNames = <String>{
+    AndroidBackgroundJobNames.pendingSync,
+    AndroidBackgroundJobNames.attachmentUpload,
+    AndroidBackgroundJobNames.maintenance,
+  };
+  static const retiredPeriodicJobNames = <String>{
+    AndroidBackgroundJobNames.fxRefresh,
+    AndroidBackgroundJobNames.marketRefresh,
+  };
+
   static Future<void> initializeAndSchedule() async {
     if (!Platform.isAndroid) return;
     final manager = Workmanager();
     await manager.initialize(equisBackgroundCallbackDispatcher);
+    await manager.cancelByUniqueName(AndroidBackgroundJobNames.fxRefresh);
+    await manager.cancelByUniqueName(AndroidBackgroundJobNames.marketRefresh);
     final network = Constraints(networkType: NetworkType.connected);
     await _periodic(
       manager,
@@ -68,18 +80,6 @@ final class AndroidBackgroundJobs {
       manager,
       AndroidBackgroundJobNames.attachmentUpload,
       const Duration(minutes: 15),
-      network,
-    );
-    await _periodic(
-      manager,
-      AndroidBackgroundJobNames.fxRefresh,
-      const Duration(hours: 6),
-      network,
-    );
-    await _periodic(
-      manager,
-      AndroidBackgroundJobNames.marketRefresh,
-      const Duration(hours: 6),
       network,
     );
     await _periodic(

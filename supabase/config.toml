@@ -1,2 +1,5 @@
 [functions.market-quotes]
 verify_jwt = true
+
+[functions.sync-market-data]
+verify_jwt = false

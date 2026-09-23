@@ -327,8 +327,17 @@ final class LedgerTransaction {
 
   LedgerTransaction tagged(List<EntityId> values) => _copy(tagIds: values);
 
-  LedgerTransaction withDetails({String? title, String? notes}) =>
-      _copy(title: title, notes: notes, replaceTitle: true, replaceNotes: true);
+  LedgerTransaction withDetails({
+    String? title,
+    String? notes,
+    List<EntityId>? tagIds,
+  }) => _copy(
+    title: title,
+    notes: notes,
+    replaceTitle: true,
+    replaceNotes: true,
+    tagIds: tagIds,
+  );
 
   LedgerTransaction softDelete({required UtcInstant at}) {
     if (deletedAt != null) return this;

@@ -324,6 +324,33 @@ final class LedgerEngine {
     now: now,
   );
 
+  LedgerTransaction investmentOpeningPosition({
+    required EntityId vaultId,
+    required LedgerPocket cashPocket,
+    required Money totalCost,
+    required LedgerInvestmentEvent event,
+    required LocalDate date,
+    required UtcInstant now,
+  }) {
+    _requireNature(cashPocket, AccountNature.asset, 'cashPocket');
+    _requirePositive(totalCost, cashPocket);
+    return LedgerTransaction(
+      id: _nextId(),
+      vaultId: vaultId,
+      type: LedgerTransactionType.adjustment,
+      status: LedgerTransactionStatus.cleared,
+      financialDate: date,
+      movements: [
+        _movement(cashPocket, -totalCost.minorUnits, 0),
+        _movement(cashPocket, totalCost.minorUnits, 1),
+      ],
+      splits: const [],
+      investmentEvents: [event],
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
   LedgerTransaction investmentSell({
     required EntityId vaultId,
     required LedgerPocket cashPocket,

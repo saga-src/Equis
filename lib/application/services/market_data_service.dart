@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 
 import '../../domain/investments/investment_models.dart';
 import '../../domain/market/market_models.dart';
+import '../../domain/shared/currency.dart';
 import '../../domain/shared/local_date.dart';
 import '../../domain/shared/utc_instant.dart';
 import '../../domain/shared/uuid_v7.dart';
@@ -25,9 +26,22 @@ final class MarketDataService {
     required LocalDate asOf,
     required UtcInstant now,
     bool refresh = false,
+    MarketQuotePurpose purpose = MarketQuotePurpose.manualRefresh,
   }) async {
     final result = <MarketPriceState>[];
-    for (final instrument in await instruments.listInstruments(vaultId)) {
+    final available = await instruments.listInstruments(vaultId);
+    if (refresh) {
+      try {
+        await provider.heartbeat([
+          for (final instrument in available)
+            if (instrument.providerSymbol != null)
+              _request(instrument, purpose: MarketQuotePurpose.portfolio),
+        ]);
+      } on Exception {
+        // Heartbeat is best effort and never blocks local portfolio refresh.
+      }
+    }
+    for (final instrument in available) {
       final manual = await prices.latestManual(
         vaultId,
         instrument.id,
@@ -53,15 +67,23 @@ final class MarketDataService {
       }
       var quote = await prices.latestAutomatic(instrument.id, asOf: asOf);
       var failed = false;
+      var refreshed = false;
+      MarketRefreshFailureKind? failure;
       if (refresh) {
         try {
-          final remote = await provider.quote(_request(instrument));
+          final remote = await provider.quote(
+            _request(instrument, purpose: purpose),
+          );
           if (remote != null) {
-            await prices.saveAutomatic(remote);
+            if (!remote.refreshFailed) await prices.saveAutomatic(remote);
             quote = remote;
+            refreshed = !remote.refreshFailed;
+            failed = remote.refreshFailed;
+            failure = remote.refreshFailure;
           }
-        } on Exception {
+        } on Exception catch (error) {
           failed = true;
+          failure = _failureKind(error);
         }
       }
       result.add(
@@ -69,8 +91,12 @@ final class MarketDataService {
           instrument: instrument,
           quote: quote,
           source: MarketPriceSource.automatic,
-          stale: quote?.isStaleAt(now, maximumAge: staleAfter) ?? false,
+          stale:
+              (quote?.stale ?? false) ||
+              (quote?.isStaleAt(now, maximumAge: staleAfter) ?? false),
           refreshFailed: failed,
+          refreshFailure: failure,
+          refreshed: refreshed,
         ),
       );
     }
@@ -100,7 +126,44 @@ final class MarketDataService {
     return value;
   }
 
-  MarketQuoteRequest _request(InvestmentInstrument value) => MarketQuoteRequest(
+  Future<List<MarketInstrumentCandidate>> search({
+    required String query,
+    required InvestmentAssetClass assetClass,
+    required CurrencyCode currency,
+    int limit = 10,
+  }) => provider.search(
+    query: query,
+    assetClass: assetClass,
+    currency: currency,
+    limit: limit,
+  );
+
+  Future<MarketQuotePreview?> quoteCandidate(
+    MarketInstrumentCandidate candidate,
+  ) => provider.quoteCandidate(candidate);
+
+  Future<void> savePreview(
+    InvestmentInstrument instrument,
+    MarketQuotePreview preview,
+  ) {
+    // A stale server fallback is useful to show a reference price, but saving it
+    // as a fresh automatic quote would incorrectly advance the local cache.
+    if (preview.stale || preview.refreshFailed) return Future.value();
+    return prices.saveAutomatic(
+      MarketQuote(
+        instrumentId: instrument.id,
+        price: preview.price,
+        currency: preview.currency,
+        timestamp: preview.timestamp,
+        provider: preview.provider,
+      ),
+    );
+  }
+
+  MarketQuoteRequest _request(
+    InvestmentInstrument value, {
+    MarketQuotePurpose purpose = MarketQuotePurpose.manualRefresh,
+  }) => MarketQuoteRequest(
     instrumentId: value.id,
     symbol: value.symbol ?? value.name,
     providerSymbol: value.providerSymbol,
@@ -108,8 +171,15 @@ final class MarketDataService {
     currency: value.currency,
     exchange: value.exchange,
     provider: _providerFor(value),
+    purpose: purpose,
   );
   MarketProvider _providerFor(InvestmentInstrument value) {
+    final persisted = value.providerName;
+    if (persisted != null) {
+      for (final provider in MarketProvider.values) {
+        if (provider.name == persisted) return provider;
+      }
+    }
     if (value.assetClass == InvestmentAssetClass.crypto) {
       return MarketProvider.coinGecko;
     }
@@ -119,6 +189,20 @@ final class MarketDataService {
     }
     return MarketProvider.twelveData;
   }
+}
+
+MarketRefreshFailureKind _failureKind(Object error) {
+  if (error is MarketProviderUnavailable) {
+    return switch (error.reason) {
+      'unauthorized' => MarketRefreshFailureKind.unauthorized,
+      'rate_limited' => MarketRefreshFailureKind.rateLimited,
+      'invalid_response' => MarketRefreshFailureKind.invalidResponse,
+      'network' => MarketRefreshFailureKind.network,
+      _ => MarketRefreshFailureKind.providerUnavailable,
+    };
+  }
+  if (error is FormatException) return MarketRefreshFailureKind.invalidResponse;
+  return MarketRefreshFailureKind.network;
 }
 
 UtcInstant _endOfDay(LocalDate value) => UtcInstant.fromEpochMicroseconds(

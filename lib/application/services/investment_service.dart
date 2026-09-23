@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 import '../../domain/investments/investment_models.dart';
 import '../../domain/ledger/ledger_engine.dart';
 import '../../domain/ledger/ledger_models.dart';
+import '../../domain/market/market_models.dart';
 import '../../domain/shared/currency.dart';
 import '../../domain/shared/decimal_value.dart';
 import '../../domain/shared/local_date.dart';
@@ -11,15 +12,40 @@ import '../../domain/shared/utc_instant.dart';
 import '../../domain/shared/uuid_v7.dart';
 import '../ports/dashboard_repository.dart';
 import '../ports/investment_repository.dart';
+import '../ports/local_unit_of_work.dart';
+
+enum InitialPositionMode { historicalBuy, openingPosition }
+
+final class InitialPositionDraft {
+  const InitialPositionDraft({
+    required this.mode,
+    required this.cashPocket,
+    required this.quantity,
+    required this.unitPrice,
+    required this.date,
+    this.feesMinor = 0,
+    this.taxesMinor = 0,
+  });
+
+  final InitialPositionMode mode;
+  final LedgerPocket cashPocket;
+  final Decimal quantity;
+  final Decimal unitPrice;
+  final LocalDate date;
+  final int feesMinor;
+  final int taxesMinor;
+}
 
 final class InvestmentService {
   InvestmentService({
     required this.repository,
     required this.reporting,
+    this.unitOfWork,
     LedgerEngine? ledgerEngine,
   }) : ledgerEngine = ledgerEngine ?? LedgerEngine();
   final InvestmentRepository repository;
   final DashboardRepository reporting;
+  final LocalUnitOfWork? unitOfWork;
   final LedgerEngine ledgerEngine;
 
   Future<InvestmentInstrument> createInstrument({
@@ -31,6 +57,8 @@ final class InvestmentService {
     String? symbol,
     String? exchange,
     String? isin,
+    String? providerSymbol,
+    String? providerName,
     bool customInstrument = false,
   }) async {
     final value = InvestmentInstrument(
@@ -42,6 +70,8 @@ final class InvestmentService {
       exchange: _optional(exchange),
       currency: currency,
       isin: _optional(isin),
+      providerSymbol: _optional(providerSymbol),
+      providerName: _optional(providerName),
       customInstrument: customInstrument,
       createdAt: now,
       updatedAt: now,
@@ -50,8 +80,94 @@ final class InvestmentService {
     return value;
   }
 
-  Future<void> deleteInstrument(InvestmentInstrument value, UtcInstant now) =>
-      repository.saveInstrument(value.revise(deletedAt: now, at: now));
+  Future<InvestmentInstrument> createInstrumentWithInitialPosition({
+    required EntityId vaultId,
+    required String name,
+    required InvestmentAssetClass assetClass,
+    required CurrencyCode currency,
+    required UtcInstant now,
+    String? symbol,
+    String? exchange,
+    String? isin,
+    String? providerSymbol,
+    String? providerName,
+    bool customInstrument = false,
+    InitialPositionDraft? initialPosition,
+  }) => _atomic(() async {
+    final instrument = await createInstrument(
+      vaultId: vaultId,
+      name: name,
+      assetClass: assetClass,
+      currency: currency,
+      now: now,
+      symbol: symbol,
+      exchange: exchange,
+      isin: isin,
+      providerSymbol: providerSymbol,
+      providerName: providerName,
+      customInstrument: customInstrument,
+    );
+    final initial = initialPosition;
+    if (initial != null) {
+      if (initial.mode == InitialPositionMode.historicalBuy) {
+        await buy(
+          instrument: instrument,
+          cashPocket: initial.cashPocket,
+          quantity: initial.quantity,
+          unitPrice: initial.unitPrice,
+          date: initial.date,
+          now: now,
+          feesMinor: initial.feesMinor,
+          taxesMinor: initial.taxesMinor,
+        );
+      } else {
+        await importOpeningPosition(
+          instrument: instrument,
+          cashPocket: initial.cashPocket,
+          quantity: initial.quantity,
+          unitPrice: initial.unitPrice,
+          date: initial.date,
+          now: now,
+          feesMinor: initial.feesMinor,
+          taxesMinor: initial.taxesMinor,
+        );
+      }
+    }
+    return instrument;
+  });
+
+  Future<InvestmentInstrument> linkMarketCandidate({
+    required InvestmentInstrument instrument,
+    required MarketInstrumentCandidate candidate,
+    required UtcInstant now,
+  }) async {
+    if (candidate.currency != instrument.currency) {
+      throw InvestmentCurrencyMismatch(
+        expected: instrument.currency,
+        actual: candidate.currency,
+      );
+    }
+    final revised = instrument.revise(
+      symbol: candidate.symbol,
+      exchange: candidate.exchange,
+      providerSymbol: candidate.providerSymbol,
+      providerName: candidate.provider.name,
+      customInstrument: false,
+      at: now,
+    );
+    await repository.saveInstrument(revised);
+    return revised;
+  }
+
+  Future<void> deleteInstrument(
+    InvestmentInstrument value,
+    UtcInstant now,
+  ) async {
+    if (await repository.hasProtectedHistory(value.id)) {
+      throw InvestmentAssetInUse(value.id);
+    }
+    await repository.saveInstrument(value.revise(deletedAt: now, at: now));
+  }
 
   Future<LedgerTransaction> buy({
     required InvestmentInstrument instrument,
@@ -63,6 +179,7 @@ final class InvestmentService {
     int feesMinor = 0,
     int taxesMinor = 0,
   }) async {
+    _matchingCurrency(cashPocket, instrument.currency);
     _positive(quantity, 'quantity');
     _positive(unitPrice, 'unitPrice');
     _nonNegative(feesMinor, 'feesMinor');
@@ -103,6 +220,55 @@ final class InvestmentService {
     return transaction;
   }
 
+  Future<LedgerTransaction> importOpeningPosition({
+    required InvestmentInstrument instrument,
+    required LedgerPocket cashPocket,
+    required Decimal quantity,
+    required Decimal unitPrice,
+    required LocalDate date,
+    required UtcInstant now,
+    int feesMinor = 0,
+    int taxesMinor = 0,
+  }) async {
+    _matchingCurrency(cashPocket, instrument.currency);
+    _positive(quantity, 'quantity');
+    _positive(unitPrice, 'unitPrice');
+    _nonNegative(feesMinor, 'feesMinor');
+    _nonNegative(taxesMinor, 'taxesMinor');
+    final gross = await _priceMinor(quantity, unitPrice, instrument.currency);
+    final event = LedgerInvestmentEvent(
+      id: EntityId.generate(),
+      instrumentId: instrument.id,
+      eventType: 'buy',
+      quantity: quantity.toString(),
+      unitPrice: unitPrice.toString(),
+      priceCurrency: instrument.currency,
+      grossMinor: gross,
+      feesMinor: feesMinor,
+      taxesMinor: taxesMinor,
+    );
+    final total = gross + feesMinor + taxesMinor;
+    final transaction = ledgerEngine.investmentOpeningPosition(
+      vaultId: instrument.vaultId,
+      cashPocket: cashPocket,
+      totalCost: Money(currency: instrument.currency, minorUnits: total),
+      event: event,
+      date: date,
+      now: now,
+    );
+    final lot = InvestmentLot(
+      id: EntityId.generate(),
+      acquisitionEventId: event.id,
+      instrumentId: instrument.id,
+      acquiredOn: date,
+      originalQuantity: quantity,
+      costBasisMinor: total,
+      costCurrency: instrument.currency,
+    );
+    await repository.saveBuy(transaction, lot);
+    return transaction;
+  }
+
   Future<LedgerTransaction> sell({
     required InvestmentInstrument instrument,
     required LedgerPocket cashPocket,
@@ -113,6 +279,7 @@ final class InvestmentService {
     int feesMinor = 0,
     int taxesMinor = 0,
   }) async {
+    _matchingCurrency(cashPocket, instrument.currency);
     _positive(quantity, 'quantity');
     _positive(unitPrice, 'unitPrice');
     final positions = await repository.lotPositions(instrument.id, asOf: date);
@@ -182,6 +349,7 @@ final class InvestmentService {
     required UtcInstant now,
     required bool interest,
   }) async {
+    _matchingCurrency(cashPocket, instrument.currency);
     final event = LedgerInvestmentEvent(
       id: EntityId.generate(),
       instrumentId: instrument.id,
@@ -244,6 +412,7 @@ final class InvestmentService {
     required UtcInstant now,
     required bool deposit,
   }) async {
+    _matchingCurrency(investmentCash, regularCash.currency);
     final money = Money(
       currency: regularCash.currency,
       minorUnits: amountMinor,
@@ -267,6 +436,15 @@ final class InvestmentService {
           );
     await repository.saveLedgerTransaction(transaction);
     return transaction;
+  }
+
+  void _matchingCurrency(LedgerPocket pocket, CurrencyCode expected) {
+    if (pocket.currency != expected) {
+      throw InvestmentCurrencyMismatch(
+        expected: expected,
+        actual: pocket.currency,
+      );
+    }
   }
 
   Future<PortfolioReport> report({
@@ -434,6 +612,9 @@ final class InvestmentService {
       incomeMinor: totalIncome,
     );
   }
+
+  Future<T> _atomic<T>(Future<T> Function() action) =>
+      unitOfWork?.run(action) ?? action();
 
   Future<int> _priceMinor(
     Decimal quantity,

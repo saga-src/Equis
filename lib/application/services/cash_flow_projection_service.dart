@@ -125,6 +125,26 @@ final class CashFlowProjectionService {
         ),
       );
     }
+    final monthlyBalances = <ProjectedCashFlowMonth>[];
+    var monthlyBalance = current.availableMoneyMinor;
+    var eventIndex = 0;
+    for (final closingDate in _monthClosingDates(
+      from: asOf.addDays(1),
+      through: through,
+    )) {
+      while (eventIndex < events.length &&
+          events[eventIndex].date.compareTo(closingDate) <= 0) {
+        monthlyBalance += events[eventIndex].amountMinor;
+        eventIndex++;
+      }
+      monthlyBalances.add(
+        ProjectedCashFlowMonth(
+          month: LocalDate(closingDate.year, closingDate.month, 1),
+          through: closingDate,
+          closingBalanceMinor: monthlyBalance,
+        ),
+      );
+    }
     return CashFlowProjection(
       reportingCurrency: reportingCurrency,
       from: asOf.addDays(1),
@@ -132,9 +152,33 @@ final class CashFlowProjectionService {
       openingAvailableMinor: current.availableMoneyMinor,
       closingProjectedMinor: balance,
       events: events,
+      monthlyBalances: monthlyBalances,
       missingRates: missing,
       usesEstimatedRates: estimated,
     );
+  }
+}
+
+Iterable<LocalDate> _monthClosingDates({
+  required LocalDate from,
+  required LocalDate through,
+}) sync* {
+  var year = from.year;
+  var month = from.month;
+  while (true) {
+    final monthEnd = LocalDate(
+      year,
+      month,
+      DateTime.utc(year, month + 1, 0).day,
+    );
+    final closing = monthEnd.compareTo(through) > 0 ? through : monthEnd;
+    if (closing.compareTo(from) >= 0) yield closing;
+    if (monthEnd.compareTo(through) >= 0) return;
+    month++;
+    if (month == 13) {
+      month = 1;
+      year++;
+    }
   }
 }
 

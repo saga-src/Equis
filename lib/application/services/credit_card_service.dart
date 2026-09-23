@@ -126,6 +126,7 @@ final class CreditCardService {
     required EntityId categoryId,
     required LocalDate date,
     required UtcInstant now,
+    List<EntityId> tagIds = const [],
     String? title,
     String? notes,
   }) => unitOfWork.run(() async {
@@ -140,7 +141,7 @@ final class CreditCardService {
           now: now,
           statementId: statement.id,
         )
-        .withDetails(title: title, notes: notes);
+        .withDetails(title: title, notes: notes, tagIds: tagIds);
     await ledger.save(transaction);
     return transaction;
   });

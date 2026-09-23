@@ -348,6 +348,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get creditCardAccountType => 'Credit card';
 
   @override
+  String get quickCardPurchaseNotice =>
+      'This expense will be saved as a credit-card purchase in the statement for its date.';
+
+  @override
   String get historyNavigationLabel => 'History';
 
   @override
@@ -545,6 +549,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get spendingByCategoryTitle => 'Spending by category';
+
+  @override
+  String get categoryBreakdownTitle => 'By category';
+
+  @override
+  String get otherCategoriesLabel => 'Other';
 
   @override
   String get cashFlowChartTitle => 'Cash flow over time';
@@ -937,6 +947,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get projectedBalanceLabel => 'Balance after event';
 
   @override
+  String selectedProjectedMonth(String month, String amount) {
+    return '$month: projected closing balance $amount';
+  }
+
+  @override
   String get recurringIncomeProjectionType => 'Recurring income';
 
   @override
@@ -982,6 +997,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get investmentsTitle => 'Investments';
 
   @override
+  String get marketDataInfoTooltip => 'About market data';
+
+  @override
+  String get marketDataInfoTitle => 'Market data';
+
+  @override
+  String get marketDataInfoProviders =>
+      'Automatic prices use BRAPI for Brazilian assets, Twelve Data for international assets, and CoinGecko for cryptoassets. Exchange rates use Frankfurter.';
+
+  @override
+  String get marketDataInfoDelay =>
+      'Values may be delayed and are not real-time quotes. If a service is unavailable, Equis keeps the latest cached value.';
+
+  @override
+  String get marketDataInfoManualPriority =>
+      'Manual prices always take precedence over automatic prices.';
+
+  @override
+  String get marketDataAttribution =>
+      'Data provided by Twelve Data. Powered by CoinGecko.';
+
+  @override
   String get portfolioValueLabel => 'Portfolio value';
 
   @override
@@ -1000,17 +1037,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allocationLabel => 'Allocation';
 
   @override
-  String get addInstrumentAction => 'Add instrument';
+  String get addInstrumentAction => 'Add asset';
 
   @override
-  String get noInvestmentsMessage => 'No investment instruments yet.';
+  String get noInvestmentsMessage => 'No investment assets yet.';
 
   @override
   String get investmentLoadFailedMessage =>
       'Could not load investments from the local vault.';
 
   @override
-  String get instrumentNameLabel => 'Instrument name';
+  String get investmentAccountSetupTitle => 'Set up an investment account';
+
+  @override
+  String investmentAccountSetupBody(String currency) {
+    return 'Create an investment cash account in $currency to deposit funds and record trades.';
+  }
+
+  @override
+  String get createInvestmentAccountAction => 'Create investment account';
+
+  @override
+  String get brokerageNameLabel => 'Brokerage account name';
+
+  @override
+  String get investmentAccountCreatedMessage => 'Investment account created.';
+
+  @override
+  String get investmentActionFailedMessage =>
+      'The investment action could not be completed. Check the values and required accounts.';
+
+  @override
+  String get missingRegularInvestmentAccountMessage =>
+      'Add a regular asset account before moving cash to or from investments.';
+
+  @override
+  String get missingInvestmentCategoryMessage =>
+      'Create a matching income or expense category before recording this investment action.';
+
+  @override
+  String get instrumentNameLabel => 'Asset name';
+
+  @override
+  String get deleteInvestmentAssetAction => 'Delete asset';
+
+  @override
+  String confirmDeleteInvestmentAssetBody(String name) {
+    return 'Delete $name? This is allowed only when the asset has no transactions, lots, or linked files.';
+  }
+
+  @override
+  String get investmentAssetDeletedMessage => 'Investment asset deleted.';
+
+  @override
+  String get investmentAssetDeleteBlockedMessage =>
+      'This asset cannot be deleted because it already has financial history or linked files.';
 
   @override
   String get instrumentSymbolLabel => 'Symbol';
@@ -1188,6 +1269,55 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get priceRefreshFailedMessage =>
       'Price refresh failed. The last local value is still in use.';
+
+  @override
+  String get assetSearchLabel => 'Search symbol or name';
+
+  @override
+  String get assetSearchHint => 'Type at least two characters';
+
+  @override
+  String get assetSearchNoResults => 'No matching market assets found.';
+
+  @override
+  String get assetSearchFailed =>
+      'Market search failed. You can still add the asset manually.';
+
+  @override
+  String get addAssetManuallyAction => 'Add manually';
+
+  @override
+  String get clearAssetSelectionAction => 'Choose another asset';
+
+  @override
+  String get currentMarketPriceLabel => 'Current market price';
+
+  @override
+  String get addInitialPositionLabel => 'Add an initial position';
+
+  @override
+  String get initialPositionModeLabel => 'Initial position mode';
+
+  @override
+  String get historicalBuyMode => 'Historical purchase';
+
+  @override
+  String get openingPositionMode => 'Import without changing cash';
+
+  @override
+  String get openingPositionDescription =>
+      'Creates the quantity and cost basis while keeping the investment account cash balance unchanged.';
+
+  @override
+  String get linkMarketAssetAction => 'Link market quote';
+
+  @override
+  String get linkMarketAssetTitle => 'Link asset to market data';
+
+  @override
+  String marketRefreshSummary(int updated, int failed) {
+    return '$updated updated, $failed failed.';
+  }
 
   @override
   String get intelligenceTitle => 'Financial insights';
@@ -2145,6 +2275,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get creditCardAccountType => 'Credit card';
 
   @override
+  String get quickCardPurchaseNotice =>
+      'This expense will be saved as a credit-card purchase in the statement for its date.';
+
+  @override
   String get historyNavigationLabel => 'History';
 
   @override
@@ -2342,6 +2476,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get spendingByCategoryTitle => 'Spending by category';
+
+  @override
+  String get categoryBreakdownTitle => 'By category';
+
+  @override
+  String get otherCategoriesLabel => 'Other';
 
   @override
   String get cashFlowChartTitle => 'Cash flow over time';
@@ -2734,6 +2874,11 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get projectedBalanceLabel => 'Balance after event';
 
   @override
+  String selectedProjectedMonth(String month, String amount) {
+    return '$month: projected closing balance $amount';
+  }
+
+  @override
   String get recurringIncomeProjectionType => 'Recurring income';
 
   @override
@@ -2779,6 +2924,28 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get investmentsTitle => 'Investments';
 
   @override
+  String get marketDataInfoTooltip => 'About market data';
+
+  @override
+  String get marketDataInfoTitle => 'Market data';
+
+  @override
+  String get marketDataInfoProviders =>
+      'Automatic prices use BRAPI for Brazilian assets, Twelve Data for international assets, and CoinGecko for cryptoassets. Exchange rates use Frankfurter.';
+
+  @override
+  String get marketDataInfoDelay =>
+      'Values may be delayed and are not real-time quotes. If a service is unavailable, Equis keeps the latest cached value.';
+
+  @override
+  String get marketDataInfoManualPriority =>
+      'Manual prices always take precedence over automatic prices.';
+
+  @override
+  String get marketDataAttribution =>
+      'Data provided by Twelve Data. Powered by CoinGecko.';
+
+  @override
   String get portfolioValueLabel => 'Portfolio value';
 
   @override
@@ -2797,17 +2964,61 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get allocationLabel => 'Allocation';
 
   @override
-  String get addInstrumentAction => 'Add instrument';
+  String get addInstrumentAction => 'Add asset';
 
   @override
-  String get noInvestmentsMessage => 'No investment instruments yet.';
+  String get noInvestmentsMessage => 'No investment assets yet.';
 
   @override
   String get investmentLoadFailedMessage =>
       'Could not load investments from the local vault.';
 
   @override
-  String get instrumentNameLabel => 'Instrument name';
+  String get investmentAccountSetupTitle => 'Set up an investment account';
+
+  @override
+  String investmentAccountSetupBody(String currency) {
+    return 'Create an investment cash account in $currency to deposit funds and record trades.';
+  }
+
+  @override
+  String get createInvestmentAccountAction => 'Create investment account';
+
+  @override
+  String get brokerageNameLabel => 'Brokerage account name';
+
+  @override
+  String get investmentAccountCreatedMessage => 'Investment account created.';
+
+  @override
+  String get investmentActionFailedMessage =>
+      'The investment action could not be completed. Check the values and required accounts.';
+
+  @override
+  String get missingRegularInvestmentAccountMessage =>
+      'Add a regular asset account before moving cash to or from investments.';
+
+  @override
+  String get missingInvestmentCategoryMessage =>
+      'Create a matching income or expense category before recording this investment action.';
+
+  @override
+  String get instrumentNameLabel => 'Asset name';
+
+  @override
+  String get deleteInvestmentAssetAction => 'Delete asset';
+
+  @override
+  String confirmDeleteInvestmentAssetBody(String name) {
+    return 'Delete $name? This is allowed only when the asset has no transactions, lots, or linked files.';
+  }
+
+  @override
+  String get investmentAssetDeletedMessage => 'Investment asset deleted.';
+
+  @override
+  String get investmentAssetDeleteBlockedMessage =>
+      'This asset cannot be deleted because it already has financial history or linked files.';
 
   @override
   String get instrumentSymbolLabel => 'Symbol';
@@ -2985,6 +3196,55 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get priceRefreshFailedMessage =>
       'Price refresh failed. The last local value is still in use.';
+
+  @override
+  String get assetSearchLabel => 'Search symbol or name';
+
+  @override
+  String get assetSearchHint => 'Type at least two characters';
+
+  @override
+  String get assetSearchNoResults => 'No matching market assets found.';
+
+  @override
+  String get assetSearchFailed =>
+      'Market search failed. You can still add the asset manually.';
+
+  @override
+  String get addAssetManuallyAction => 'Add manually';
+
+  @override
+  String get clearAssetSelectionAction => 'Choose another asset';
+
+  @override
+  String get currentMarketPriceLabel => 'Current market price';
+
+  @override
+  String get addInitialPositionLabel => 'Add an initial position';
+
+  @override
+  String get initialPositionModeLabel => 'Initial position mode';
+
+  @override
+  String get historicalBuyMode => 'Historical purchase';
+
+  @override
+  String get openingPositionMode => 'Import without changing cash';
+
+  @override
+  String get openingPositionDescription =>
+      'Creates the quantity and cost basis while keeping the investment account cash balance unchanged.';
+
+  @override
+  String get linkMarketAssetAction => 'Link market quote';
+
+  @override
+  String get linkMarketAssetTitle => 'Link asset to market data';
+
+  @override
+  String marketRefreshSummary(int updated, int failed) {
+    return '$updated updated, $failed failed.';
+  }
 
   @override
   String get intelligenceTitle => 'Financial insights';

@@ -27,9 +27,9 @@ void main() {
         jsonEncode({
           'format': 1,
           'applicationId': 'app.saga.equis',
-          'version': '1.0.1',
-          'build': 7,
-          'tag': 'v1.0.1',
+          'version': '1.1.1',
+          'build': 8,
+          'tag': 'v1.1.1',
           'packages': [
             {
               'platform': 'android',
@@ -50,7 +50,7 @@ void main() {
         if (r.url.path.endsWith('/latest')) {
           return http.Response(
             jsonEncode({
-              'tag_name': 'v1.0.1',
+              'tag_name': 'v1.1.1',
               'draft': false,
               'prerelease': false,
             }),
