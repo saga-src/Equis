@@ -29,6 +29,13 @@ void main() {
 
   test('presentation source has no unapproved literal Text labels', () {
     final literals = <String>[];
+    const approvedLiterals = {
+      '—',
+      'BRL',
+      'USD',
+      // Provider/license names are fixed; the action uses Material localization.
+      r'BCB · ODbL 1.0 · ${MaterialLocalizations.of(context).licensesPageTitle}',
+    };
     final pattern = RegExp(
       r'''Text\(\s*(?:const\s+)?['"]([^'$][^'"]*)['"]''',
       multiLine: true,
@@ -41,7 +48,7 @@ void main() {
       final source = file.readAsStringSync();
       for (final match in pattern.allMatches(source)) {
         final value = match.group(1)!;
-        if (!{'—', 'BRL', 'USD'}.contains(value)) {
+        if (!approvedLiterals.contains(value)) {
           literals.add('${file.path}: $value');
         }
       }

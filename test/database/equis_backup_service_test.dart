@@ -226,7 +226,7 @@ void main() {
   });
 
   test('restores a real encrypted schema v6 backup into schema v7', () async {
-    final fixture = File('test/fixtures/v1.1-schema-v6.equis');
+    final fixture = File('test/fixtures/v1.1-schema-v6.equis.fixture');
     const fixturePassword = 'synthetic v6 fixture password';
     final keys = VaultKeyManager(
       store: _Store(base64UrlEncode(List<int>.filled(32, 91))),

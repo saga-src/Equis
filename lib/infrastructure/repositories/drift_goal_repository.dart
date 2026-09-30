@@ -53,8 +53,7 @@ final class DriftGoalRepository implements GoalRepository {
         )
         .get();
     final existingPocketIds = {
-      for (final row in existingLinks)
-        row.read<String>('account_pocket_id'),
+      for (final row in existingLinks) row.read<String>('account_pocket_id'),
     };
     final persistedPocketIds = {
       ...goal.accountPocketIds.map((id) => id.value),
@@ -82,7 +81,9 @@ final class DriftGoalRepository implements GoalRepository {
               (pocket.read<int>('account_archived') != 0 ||
                   pocket.readNullable<int>('deleted_at') != null ||
                   pocket.read<int>('pocket_archived') != 0))) {
-        throw StateError('Goal account pocket is inactive or outside the vault.');
+        throw StateError(
+          'Goal account pocket is inactive or outside the vault.',
+        );
       }
     }
     if (current == null) {

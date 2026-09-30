@@ -84,7 +84,8 @@ class CreditCardScreen extends ConsumerWidget {
                       child: TextButton.icon(
                         onPressed: state.loading || state.card == null
                             ? null
-                            : () => onManageSelectedCard!(state.card!.accountId),
+                            : () =>
+                                  onManageSelectedCard!(state.card!.accountId),
                         icon: const Icon(Icons.manage_accounts_outlined),
                         label: Text(l10n.reviewAccountRemovalAction),
                       ),

@@ -40,166 +40,202 @@ void main() {
   for (final deleted in [false, true]) {
     final stateName = deleted ? 'deleted' : 'archived';
 
-    test('new goal and budget reject $stateName account without rows or outbox', () async {
-      await _inactivate(database, fixture.accountId, deleted: deleted);
-      final before = await _snapshot(database);
-      for (final status in [GoalStatus.active, GoalStatus.completed]) {
-        await expectLater(
-          goals.save(_goal(fixture, status: status)),
-          throwsStateError,
-        );
-      }
-      for (final enabled in [false, true]) {
-        await expectLater(
-          budgets.save(_budget(fixture, enabled: enabled)),
-          throwsStateError,
-        );
-      }
-      expect(await _snapshot(database), before);
-    });
+    test(
+      'new goal and budget reject $stateName account without rows or outbox',
+      () async {
+        await _inactivate(database, fixture.accountId, deleted: deleted);
+        final before = await _snapshot(database);
+        for (final status in [GoalStatus.active, GoalStatus.completed]) {
+          await expectLater(
+            goals.save(_goal(fixture, status: status)),
+            throwsStateError,
+          );
+        }
+        for (final enabled in [false, true]) {
+          await expectLater(
+            budgets.save(_budget(fixture, enabled: enabled)),
+            throwsStateError,
+          );
+        }
+        expect(await _snapshot(database), before);
+      },
+    );
 
-    test('existing inert links to $stateName account reject reactivation atomically', () async {
+    test(
+      'existing inert links to $stateName account reject reactivation atomically',
+      () async {
+        final goal = _goal(fixture, status: GoalStatus.completed);
+        final budget = _budget(fixture, enabled: false);
+        await goals.save(goal);
+        await budgets.save(budget);
+        await _inactivate(database, fixture.accountId, deleted: deleted);
+        final before = await _snapshot(database);
+
+        await expectLater(
+          goals.save(goal.revise(status: GoalStatus.active, at: _now)),
+          throwsStateError,
+        );
+        await expectLater(
+          budgets.save(budget.revise(enabled: true, at: _now)),
+          throwsStateError,
+        );
+        expect(await _snapshot(database), before);
+      },
+    );
+
+    test(
+      'unchanged inert links to $stateName account remain historical',
+      () async {
+        final goal = _goal(fixture, status: GoalStatus.completed);
+        final budget = _budget(fixture, enabled: false);
+        await goals.save(goal);
+        await budgets.save(budget);
+        await _inactivate(database, fixture.accountId, deleted: deleted);
+
+        await goals.save(goal.revise(name: 'Historical goal', at: _now));
+        await budgets.save(budget.revise(name: 'Historical budget', at: _now));
+
+        final loadedGoal = await goals.find(goal.id);
+        final loadedBudget = await budgets.find(budget.id);
+        expect(loadedGoal?.accountPocketIds, {fixture.pocketId});
+        expect(loadedGoal?.status, GoalStatus.completed);
+        expect(loadedGoal?.revision, 2);
+        expect(loadedBudget?.scope.accountIds, {fixture.accountId});
+        expect(loadedBudget?.enabled, isFalse);
+        expect(loadedBudget?.revision, 2);
+        expect(
+          await database.customSelect('PRAGMA foreign_key_check').get(),
+          isEmpty,
+        );
+      },
+    );
+  }
+
+  test(
+    'inert existing goal and budget cannot add a new inactive link',
+    () async {
       final goal = _goal(fixture, status: GoalStatus.completed);
       final budget = _budget(fixture, enabled: false);
       await goals.save(goal);
       await budgets.save(budget);
-      await _inactivate(database, fixture.accountId, deleted: deleted);
+      final otherAccount = EntityId.generate();
+      final otherPocket = EntityId.generate();
+      await _account(database, fixture.vaultId, otherAccount, otherPocket);
+      await _inactivate(database, otherAccount, deleted: true);
       final before = await _snapshot(database);
 
+      await expectLater(
+        goals.save(
+          goal.revise(
+            accountPocketIds: {fixture.pocketId, otherPocket},
+            at: _now,
+          ),
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        budgets.save(
+          budget.revise(
+            scope: BudgetScope(accountIds: {fixture.accountId, otherAccount}),
+            at: _now,
+          ),
+        ),
+        throwsStateError,
+      );
+      expect(await _snapshot(database), before);
+    },
+  );
+
+  test(
+    'goal requires active pocket even when account remains active',
+    () async {
+      final goal = _goal(fixture, status: GoalStatus.completed);
+      await goals.save(goal);
+      await database.customStatement(
+        'UPDATE account_pockets SET archived = 1 WHERE id = ?',
+        [fixture.pocketId.value],
+      );
+      final before = await _snapshot(database);
+      await expectLater(goals.save(_goal(fixture)), throwsStateError);
       await expectLater(
         goals.save(goal.revise(status: GoalStatus.active, at: _now)),
         throwsStateError,
       );
+      expect(await _snapshot(database), before);
+    },
+  );
+
+  test(
+    'cross-vault goal and budget references are rejected before writes',
+    () async {
+      final otherVault = EntityId.generate();
+      final otherAccount = EntityId.generate();
+      final otherPocket = EntityId.generate();
+      await _vault(database, otherVault);
+      await _account(database, otherVault, otherAccount, otherPocket);
+      final before = await _snapshot(database);
       await expectLater(
-        budgets.save(budget.revise(enabled: true, at: _now)),
+        goals.save(_goal(fixture, pocketIds: {otherPocket})),
+        throwsStateError,
+      );
+      await expectLater(
+        budgets.save(_budget(fixture, accountIds: {otherAccount})),
         throwsStateError,
       );
       expect(await _snapshot(database), before);
-    });
+    },
+  );
 
-    test('unchanged inert links to $stateName account remain historical', () async {
+  test(
+    'goal and budget tombstones keep old links and reject resurrection',
+    () async {
       final goal = _goal(fixture, status: GoalStatus.completed);
       final budget = _budget(fixture, enabled: false);
       await goals.save(goal);
       await budgets.save(budget);
-      await _inactivate(database, fixture.accountId, deleted: deleted);
+      await _inactivate(database, fixture.accountId, deleted: false);
 
-      await goals.save(goal.revise(name: 'Historical goal', at: _now));
-      await budgets.save(budget.revise(name: 'Historical budget', at: _now));
-
-      final loadedGoal = await goals.find(goal.id);
-      final loadedBudget = await budgets.find(budget.id);
-      expect(loadedGoal?.accountPocketIds, {fixture.pocketId});
-      expect(loadedGoal?.status, GoalStatus.completed);
-      expect(loadedGoal?.revision, 2);
-      expect(loadedBudget?.scope.accountIds, {fixture.accountId});
-      expect(loadedBudget?.enabled, isFalse);
-      expect(loadedBudget?.revision, 2);
-      expect(await database.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
-    });
-  }
-
-  test('inert existing goal and budget cannot add a new inactive link', () async {
-    final goal = _goal(fixture, status: GoalStatus.completed);
-    final budget = _budget(fixture, enabled: false);
-    await goals.save(goal);
-    await budgets.save(budget);
-    final otherAccount = EntityId.generate();
-    final otherPocket = EntityId.generate();
-    await _account(database, fixture.vaultId, otherAccount, otherPocket);
-    await _inactivate(database, otherAccount, deleted: true);
-    final before = await _snapshot(database);
-
-    await expectLater(
-      goals.save(goal.revise(
-        accountPocketIds: {fixture.pocketId, otherPocket},
-        at: _now,
-      )),
-      throwsStateError,
-    );
-    await expectLater(
-      budgets.save(budget.revise(
-        scope: BudgetScope(accountIds: {fixture.accountId, otherAccount}),
-        at: _now,
-      )),
-      throwsStateError,
-    );
-    expect(await _snapshot(database), before);
-  });
-
-  test('goal requires active pocket even when account remains active', () async {
-    final goal = _goal(fixture, status: GoalStatus.completed);
-    await goals.save(goal);
-    await database.customStatement(
-      'UPDATE account_pockets SET archived = 1 WHERE id = ?',
-      [fixture.pocketId.value],
-    );
-    final before = await _snapshot(database);
-    await expectLater(goals.save(_goal(fixture)), throwsStateError);
-    await expectLater(
-      goals.save(goal.revise(status: GoalStatus.active, at: _now)),
-      throwsStateError,
-    );
-    expect(await _snapshot(database), before);
-  });
-
-  test('cross-vault goal and budget references are rejected before writes', () async {
-    final otherVault = EntityId.generate();
-    final otherAccount = EntityId.generate();
-    final otherPocket = EntityId.generate();
-    await _vault(database, otherVault);
-    await _account(database, otherVault, otherAccount, otherPocket);
-    final before = await _snapshot(database);
-    await expectLater(
-      goals.save(_goal(fixture, pocketIds: {otherPocket})),
-      throwsStateError,
-    );
-    await expectLater(
-      budgets.save(_budget(fixture, accountIds: {otherAccount})),
-      throwsStateError,
-    );
-    expect(await _snapshot(database), before);
-  });
-
-  test('goal and budget tombstones keep old links and reject resurrection', () async {
-    final goal = _goal(fixture, status: GoalStatus.completed);
-    final budget = _budget(fixture, enabled: false);
-    await goals.save(goal);
-    await budgets.save(budget);
-    await _inactivate(database, fixture.accountId, deleted: false);
-
-    await goals.save(goal.revise(
-      trackingMode: GoalTrackingMode.manual,
-      accountPocketIds: {},
-      deletedAt: _now,
-      at: _now,
-    ));
-    await budgets.save(budget.revise(
-      scope: BudgetScope(),
-      deletedAt: _now,
-      at: _now,
-    ));
-    expect(await goals.find(goal.id), isNull);
-    expect(await budgets.find(budget.id), isNull);
-    final goalLinks = await database.customSelect(
-      'SELECT account_pocket_id FROM goal_accounts',
-    ).get();
-    final budgetLinks = await database.customSelect(
-      'SELECT account_id FROM budget_accounts',
-    ).get();
-    expect(goalLinks.single.read<String>('account_pocket_id'), fixture.pocketId.value);
-    expect(budgetLinks.single.read<String>('account_id'), fixture.accountId.value);
-    final before = await _snapshot(database);
-    await expectLater(
-      goals.save(_goal(fixture, id: goal.id, revision: 3, pocketIds: {})),
-      throwsStateError,
-    );
-    await expectLater(
-      budgets.save(_budget(fixture, id: budget.id, revision: 3, accountIds: {})),
-      throwsStateError,
-    );
-    expect(await _snapshot(database), before);
-  });
+      await goals.save(
+        goal.revise(
+          trackingMode: GoalTrackingMode.manual,
+          accountPocketIds: {},
+          deletedAt: _now,
+          at: _now,
+        ),
+      );
+      await budgets.save(
+        budget.revise(scope: BudgetScope(), deletedAt: _now, at: _now),
+      );
+      expect(await goals.find(goal.id), isNull);
+      expect(await budgets.find(budget.id), isNull);
+      final goalLinks = await database
+          .customSelect('SELECT account_pocket_id FROM goal_accounts')
+          .get();
+      final budgetLinks = await database
+          .customSelect('SELECT account_id FROM budget_accounts')
+          .get();
+      expect(
+        goalLinks.single.read<String>('account_pocket_id'),
+        fixture.pocketId.value,
+      );
+      expect(
+        budgetLinks.single.read<String>('account_id'),
+        fixture.accountId.value,
+      );
+      final before = await _snapshot(database);
+      await expectLater(
+        goals.save(_goal(fixture, id: goal.id, revision: 3, pocketIds: {})),
+        throwsStateError,
+      );
+      await expectLater(
+        budgets.save(
+          _budget(fixture, id: budget.id, revision: 3, accountIds: {}),
+        ),
+        throwsStateError,
+      );
+      expect(await _snapshot(database), before);
+    },
+  );
 }
 
 GoalDefinition _goal(
@@ -256,7 +292,12 @@ Future<_Fixture> _seed(EquisDatabase database) async {
     'INSERT INTO currencies (code, name_key, symbol, minor_units) '
     "VALUES ('BRL', 'currency.brl', 'BRL', 2)",
   );
-  await _account(database, fixture.vaultId, fixture.accountId, fixture.pocketId);
+  await _account(
+    database,
+    fixture.vaultId,
+    fixture.accountId,
+    fixture.pocketId,
+  );
   await database.customStatement(
     'INSERT INTO vault_cloud_bindings '
     '(vault_id, auth_user_id, sync_enabled, linked_at) VALUES (?, ?, 1, 1)',
@@ -265,12 +306,13 @@ Future<_Fixture> _seed(EquisDatabase database) async {
   return fixture;
 }
 
-Future<void> _vault(EquisDatabase database, EntityId id) => database.customStatement(
-  'INSERT INTO vaults '
-  '(id, name, base_currency_code, timezone, created_at, updated_at) '
-  "VALUES (?, 'Vault', 'BRL', 'UTC', 1, 1)",
-  [id.value],
-);
+Future<void> _vault(EquisDatabase database, EntityId id) =>
+    database.customStatement(
+      'INSERT INTO vaults '
+      '(id, name, base_currency_code, timezone, created_at, updated_at) '
+      "VALUES (?, 'Vault', 'BRL', 'UTC', 1, 1)",
+      [id.value],
+    );
 
 Future<void> _account(
   EquisDatabase database,
@@ -301,7 +343,9 @@ Future<void> _inactivate(
   [deleted ? 0 : 1, deleted ? _now.epochMicroseconds : null, accountId.value],
 );
 
-Future<Map<String, List<Map<String, Object?>>>> _snapshot(EquisDatabase database) async {
+Future<Map<String, List<Map<String, Object?>>>> _snapshot(
+  EquisDatabase database,
+) async {
   final snapshot = <String, List<Map<String, Object?>>>{};
   for (final table in [
     'goals',
@@ -312,7 +356,10 @@ Future<Map<String, List<Map<String, Object?>>>> _snapshot(EquisDatabase database
     'sync_entity_state',
   ]) {
     snapshot[table] = [
-      for (final row in await database.customSelect('SELECT * FROM $table ORDER BY rowid').get())
+      for (final row
+          in await database
+              .customSelect('SELECT * FROM $table ORDER BY rowid')
+              .get())
         row.data,
     ];
   }
@@ -320,7 +367,11 @@ Future<Map<String, List<Map<String, Object?>>>> _snapshot(EquisDatabase database
 }
 
 final class _Fixture {
-  const _Fixture({required this.vaultId, required this.accountId, required this.pocketId});
+  const _Fixture({
+    required this.vaultId,
+    required this.accountId,
+    required this.pocketId,
+  });
   final EntityId vaultId;
   final EntityId accountId;
   final EntityId pocketId;

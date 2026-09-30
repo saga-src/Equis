@@ -33,7 +33,8 @@ class AccountManagementPage extends ConsumerWidget {
         skipLoadingOnReload: false,
         skipLoadingOnRefresh: false,
         loading: () => _status(context, loading: true),
-        error: (_, _) => _status(context, onRetry: () => _refresh(ref, vaultId)),
+        error: (_, _) =>
+            _status(context, onRetry: () => _refresh(ref, vaultId)),
         data: (states) => AccountManagementScreen(
           key: ValueKey(vaultId.value),
           accounts: values,
@@ -42,29 +43,35 @@ class AccountManagementPage extends ConsumerWidget {
           initialAccountId: _parseId(initialAccountId),
           assessRemoval: (account) async {
             _requireCurrentVault(ref, vaultId);
-            return ref.read(localAppDependenciesProvider)!.session
+            return ref
+                .read(localAppDependenciesProvider)!
+                .session
                 .assessAccountRemoval(account, now: UtcInstant.now());
           },
           removeAccount: (account) => _mutate(
             ref,
             vaultId,
-            () => ref.read(localFinanceControllerProvider.notifier)
+            () => ref
+                .read(localFinanceControllerProvider.notifier)
                 .removeAccount(account),
           ),
           restoreAccount: (account) => _mutate(
             ref,
             vaultId,
-            () => ref.read(localFinanceControllerProvider.notifier)
+            () => ref
+                .read(localFinanceControllerProvider.notifier)
                 .restoreAccount(account),
           ),
           requestRecovery: (state) async {
             await _mutate(
               ref,
               vaultId,
-              () => ref.read(localFinanceControllerProvider.notifier)
+              () => ref
+                  .read(localFinanceControllerProvider.notifier)
                   .requestAccountRestore(vaultId: vaultId, recovery: state),
             );
-            final coordinator = ref.read(localAppDependenciesProvider)
+            final coordinator = ref
+                .read(localAppDependenciesProvider)
                 ?.syncCoordinator;
             if (coordinator != null) {
               unawaited(coordinator.onResume().then((_) {}, onError: (_) {}));

@@ -47,17 +47,21 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final recoveryIds = widget.recoveryStates.map((item) => item.accountId).toSet();
+    final recoveryIds = widget.recoveryStates
+        .map((item) => item.accountId)
+        .toSet();
     final active = widget.accounts
         .where(
-          (item) => item.account.deletedAt == null &&
+          (item) =>
+              item.account.deletedAt == null &&
               !item.account.archived &&
               !recoveryIds.contains(item.account.id.value),
         )
         .toList();
     final archived = widget.accounts
         .where(
-          (item) => item.account.deletedAt == null &&
+          (item) =>
+              item.account.deletedAt == null &&
               item.account.archived &&
               !recoveryIds.contains(item.account.id.value),
         )
@@ -141,14 +145,15 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : recovery.restorationPending
-                ? null
-                : IconButton(
-                    tooltip: l10n.restoreAccountAction,
-                    icon: const Icon(Icons.restore),
-                    onPressed: _busyAccountId == null && widget.requestRecovery != null
-                        ? () => _confirmRecovery(recovery)
-                        : null,
-                  ),
+            ? null
+            : IconButton(
+                tooltip: l10n.restoreAccountAction,
+                icon: const Icon(Icons.restore),
+                onPressed:
+                    _busyAccountId == null && widget.requestRecovery != null
+                    ? () => _confirmRecovery(recovery)
+                    : null,
+              ),
       ),
     );
   }
@@ -174,10 +179,12 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
       ),
     );
     if (accepted != true || !mounted) return;
-    if (!widget.recoveryStates.any((state) =>
-        state.accountId == recovery.accountId &&
-        state.revision == recovery.revision &&
-        !state.restorationPending)) {
+    if (!widget.recoveryStates.any(
+      (state) =>
+          state.accountId == recovery.accountId &&
+          state.revision == recovery.revision &&
+          !state.restorationPending,
+    )) {
       _changed();
       return;
     }
@@ -187,7 +194,9 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
     } on AccountLifecycleConflict {
       if (mounted) _changed();
     } catch (_) {
-      if (mounted) _message(AppLocalizations.of(context).accountActionFailedMessage);
+      if (mounted) {
+        _message(AppLocalizations.of(context).accountActionFailedMessage);
+      }
     } finally {
       if (mounted) setState(() => _busyAccountId = null);
     }
@@ -427,8 +436,10 @@ String _referenceLabel(AppLocalizations l10n, AccountReferenceKind kind) =>
     switch (kind) {
       AccountReferenceKind.movements => l10n.accountReferencesMovements,
       AccountReferenceKind.statements => l10n.accountReferencesStatements,
-      AccountReferenceKind.installmentPlans => l10n.accountReferencesInstallmentPlans,
-      AccountReferenceKind.recurrenceTemplates => l10n.accountReferencesRecurrenceTemplates,
+      AccountReferenceKind.installmentPlans =>
+        l10n.accountReferencesInstallmentPlans,
+      AccountReferenceKind.recurrenceTemplates =>
+        l10n.accountReferencesRecurrenceTemplates,
       AccountReferenceKind.transactions => l10n.accountReferencesTransactions,
       AccountReferenceKind.goals => l10n.accountReferencesGoals,
       AccountReferenceKind.budgets => l10n.accountReferencesBudgets,

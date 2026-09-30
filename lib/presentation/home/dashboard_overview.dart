@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import '../../domain/ledger/transaction_search.dart';
 import '../../domain/ledger/ledger_models.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -23,6 +21,7 @@ import '../budgets/budget_controller.dart';
 import '../goals/goal_controller.dart';
 import '../wealth/wealth_controller.dart';
 import '../investments/investment_controller.dart';
+import 'tag_bubble_layout.dart';
 
 class DashboardOverview extends ConsumerWidget {
   const DashboardOverview({
@@ -477,7 +476,9 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
   bool _tags = false;
 
   String _tagName(BuildContext context, TagSpending value) {
-    if (value.tagId == null) return AppLocalizations.of(context).withoutTagsLabel;
+    if (value.tagId == null) {
+      return AppLocalizations.of(context).withoutTagsLabel;
+    }
     return widget.finance.tags
             .where((tag) => tag.id == value.tagId)
             .map((tag) => tagLabel(context, tag))
@@ -523,9 +524,7 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
   Widget _tagBubble(
     BuildContext context,
     TagSpending value, {
-    required double cellWidth,
-    required double maxDiameter,
-    required int maximum,
+    required TagBubblePlacement placement,
   }) {
     final label = _tagName(context, value);
     final amount = _money(
@@ -533,59 +532,13 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
       widget.report.reportingCurrency,
       value.amountMinor,
     );
-    // Circle area is proportional to the tag's own amount, not a share of expenses.
-    final diameter = maxDiameter * math.sqrt(value.amountMinor / maximum);
-    final color = Theme.of(context).colorScheme.primary;
-    return Semantics(
-      button: true,
-      label: '$label, $amount',
+    return _TagBubble(
+      key: ValueKey(value.tagId?.value ?? 'without-tags'),
+      id: value.tagId?.value ?? 'without-tags',
+      label: label,
+      amount: amount,
+      placement: placement,
       onTap: () => _openTagHistory(context, value),
-      child: ExcludeSemantics(
-        child: InkWell(
-          onTap: () => _openTagHistory(context, value),
-          borderRadius: BorderRadius.circular(16),
-          child: SizedBox(
-            width: cellWidth,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: maxDiameter,
-                  height: maxDiameter,
-                  child: Center(
-                    child: SizedBox(
-                      key: Key(
-                        'tag-bubble-${value.tagId?.value ?? 'without-tags'}',
-                      ),
-                      width: diameter,
-                      height: diameter,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: color.withValues(alpha: 0.28),
-                          border: Border.all(color: color),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  amount,
-                  style: EquisTypography.numeric,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -595,12 +548,13 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
     final report = widget.report;
     final values = report.spendingByTag;
     final positives = values.where((value) => value.amountMinor > 0).toList()
-      ..sort((a, b) => b.amountMinor.compareTo(a.amountMinor));
+      ..sort((a, b) {
+        final amountOrder = b.amountMinor.compareTo(a.amountMinor);
+        return amountOrder != 0
+            ? amountOrder
+            : (a.tagId?.value ?? '').compareTo(b.tagId?.value ?? '');
+      });
     final featured = positives.take(6).toList();
-    final otherValues = [
-      ...positives.skip(6),
-      ...values.where((value) => value.amountMinor == 0),
-    ];
     final negatives = values.where((value) => value.amountMinor < 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -634,59 +588,230 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
                       padding: const EdgeInsets.all(24),
                       child: Text(l.noSpendingDataMessage),
                     ),
-                  if (featured.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final width = constraints.maxWidth;
-                        final columns = width < 260 ? 1 : width < 480 ? 2 : 3;
-                        const spacing = 8.0;
-                        final cellWidth =
-                            (width - spacing * (columns - 1)) / columns;
-                        final maxDiameter = math.min(128.0, cellWidth - 12);
-                        return Wrap(
-                          key: const Key('tag-bubble-grid'),
-                          spacing: spacing,
-                          runSpacing: 16,
-                          children: [
-                            for (final value in featured)
-                              _tagBubble(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final layout = TagBubbleLayout.pack(
+                        featured.map((value) => value.amountMinor).toList(),
+                        width: constraints.maxWidth,
+                      );
+                      final otherValues = [
+                        for (var index = 0; index < featured.length; index++)
+                          if (layout.bubbles.isEmpty ||
+                              !_TagBubble.hasLabel(
                                 context,
-                                value,
-                                cellWidth: cellWidth,
-                                maxDiameter: maxDiameter,
-                                maximum: featured.first.amountMinor,
+                                layout.bubbles[index].radius * 2,
+                              ))
+                            featured[index],
+                        ...positives.skip(6),
+                        ...values.where((value) => value.amountMinor == 0),
+                      ];
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (layout.bubbles.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              key: const Key('tag-bubble-cluster'),
+                              width: layout.size.width,
+                              height: layout.size.height,
+                              child: Stack(
+                                children: [
+                                  for (
+                                    var index = 0;
+                                    index < featured.length;
+                                    index++
+                                  )
+                                    Positioned(
+                                      key: ValueKey(
+                                        'tag-placement-${featured[index].tagId?.value ?? 'without-tags'}',
+                                      ),
+                                      left:
+                                          layout.bubbles[index].center.dx -
+                                          layout.bubbles[index].hitRadius,
+                                      top:
+                                          layout.bubbles[index].center.dy -
+                                          layout.bubbles[index].hitRadius,
+                                      child: _tagBubble(
+                                        context,
+                                        featured[index],
+                                        placement: layout.bubbles[index],
+                                      ),
+                                    ),
+                                ],
                               ),
+                            ),
                           ],
-                        );
-                      },
-                    ),
-                  ],
-                  if (otherValues.isNotEmpty)
-                    ExpansionTile(
-                      key: const Key('tag-other-values-expansion'),
-                      tilePadding: EdgeInsets.zero,
-                      childrenPadding: EdgeInsets.zero,
-                      title: Text(l.otherTagValuesTitle),
-                      children: [
-                        for (final value in otherValues)
-                          _tagListTile(context, value),
-                      ],
-                    ),
+                          if (otherValues.isNotEmpty)
+                            ExpansionTile(
+                              key: const Key('tag-other-values-expansion'),
+                              tilePadding: EdgeInsets.zero,
+                              childrenPadding: EdgeInsets.zero,
+                              title: Text(l.otherTagValuesTitle),
+                              children: [
+                                for (final value in otherValues)
+                                  _tagListTile(context, value),
+                              ],
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                   if (negatives.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Text(
                       l.negativeTagValuesTitle,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
-                    for (final value in negatives)
-                      _tagListTile(context, value),
+                    for (final value in negatives) _tagListTile(context, value),
                   ],
                 ],
               ),
             ),
           ),
       ],
+    );
+  }
+}
+
+class _TagBubble extends StatefulWidget {
+  const _TagBubble({
+    required this.id,
+    required this.label,
+    required this.amount,
+    required this.placement,
+    required this.onTap,
+    super.key,
+  });
+
+  final String id;
+  final String label;
+  final String amount;
+  final TagBubblePlacement placement;
+  final VoidCallback onTap;
+
+  static bool hasLabel(BuildContext context, double diameter) =>
+      diameter >= 80 && MediaQuery.textScalerOf(context).scale(12) <= 16.8;
+
+  @override
+  State<_TagBubble> createState() => _TagBubbleState();
+}
+
+class _TagBubbleState extends State<_TagBubble> {
+  final _tooltipKey = GlobalKey<TooltipState>();
+  final _focusNode = FocusNode();
+  bool _focused = false;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _focusChanged(bool focused) {
+    setState(() => _focused = focused);
+    Tooltip.dismissAllToolTips();
+    if (focused) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _focusNode.hasFocus) {
+          _tooltipKey.currentState?.ensureTooltipVisible();
+        }
+      });
+    }
+  }
+
+  void _activate() {
+    Tooltip.dismissAllToolTips();
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final diameter = widget.placement.radius * 2;
+    final color = Theme.of(context).colorScheme.primary;
+    return SizedBox(
+      key: Key('tag-bubble-target-${widget.id}'),
+      width: widget.placement.hitRadius * 2,
+      height: widget.placement.hitRadius * 2,
+      child: ClipOval(
+        child: Tooltip(
+          key: _tooltipKey,
+          message: '${widget.label}\n${widget.amount}',
+          excludeFromSemantics: true,
+          waitDuration: const Duration(milliseconds: 200),
+          exitDuration: const Duration(milliseconds: 100),
+          triggerMode: TooltipTriggerMode.longPress,
+          child: Semantics(
+            button: true,
+            label: '${widget.label}, ${widget.amount}',
+            onTap: _activate,
+            child: ExcludeSemantics(
+              child: Material(
+                color: Colors.transparent,
+                shape: CircleBorder(
+                  side: _focused
+                      ? BorderSide(color: color, width: 2)
+                      : BorderSide.none,
+                ),
+                child: InkWell(
+                  focusNode: _focusNode,
+                  onFocusChange: _focusChanged,
+                  customBorder: const CircleBorder(),
+                  focusColor: Colors.transparent,
+                  hoverColor: Colors.transparent,
+                  onTap: _activate,
+                  child: Center(
+                    child: SizedBox(
+                      key: Key('tag-bubble-${widget.id}'),
+                      width: diameter,
+                      height: diameter,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: color.withValues(alpha: .28),
+                          border: Border.all(color: color),
+                        ),
+                        child: Center(
+                          child: _TagBubble.hasLabel(context, diameter)
+                              ? SizedBox(
+                                  width: diameter * .7,
+                                  height: diameter * .7,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          widget.label,
+                                          maxLines: diameter >= 120 ? 2 : 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                        ),
+                                      ),
+                                      Text(
+                                        widget.amount,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: EquisTypography.numeric.copyWith(
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

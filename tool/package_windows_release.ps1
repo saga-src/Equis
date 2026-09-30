@@ -1,8 +1,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
-    [string]$Version = "1.2.0",
-    [int]$Build = 12,
+    [string]$Version = "1.2.1",
+    [int]$Build = 13,
 
     [Parameter(Mandatory = $false)]
     [string]$CertificateThumbprint = $env:EQUIS_WINDOWS_CERTIFICATE_SHA1,

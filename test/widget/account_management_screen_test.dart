@@ -134,53 +134,61 @@ void main() {
     expect(find.byType(DropdownButtonFormField<String>), findsNothing);
   });
 
-  testWidgets('deleted recovery root needs confirmation and pending disables repeat', (
-    tester,
-  ) async {
-    final original = _account('Recovered card', type: AccountType.creditCard);
-    final deleted = original.withAccount(
-      original.account.revise(deletedAt: _now, at: _now),
-    );
-    var requests = 0;
-    var recovery = AccountSyncRecoveryState(
-      accountId: deleted.account.id.value,
-      revision: deleted.account.revision,
-      restorationPending: false,
-    );
-    late StateSetter refresh;
-    await _show(
-      tester,
-      StatefulBuilder(builder: (context, setState) {
-        refresh = setState;
-        return AccountManagementScreen(
-          accounts: [deleted],
-          recoveryStates: [recovery],
-          assessRemoval: (_) async => _assessment(deleted),
-          removeAccount: (_) async {},
-          restoreAccount: (_) async {},
-          requestRecovery: (state) async {
-            expect(state.revision, deleted.account.revision);
-            requests++;
-            refresh(() => recovery = AccountSyncRecoveryState(
-              accountId: state.accountId,
-              revision: state.revision + 1,
-              restorationPending: true,
-            ));
+  testWidgets(
+    'deleted recovery root needs confirmation and pending disables repeat',
+    (tester) async {
+      final original = _account('Recovered card', type: AccountType.creditCard);
+      final deleted = original.withAccount(
+        original.account.revise(deletedAt: _now, at: _now),
+      );
+      var requests = 0;
+      var recovery = AccountSyncRecoveryState(
+        accountId: deleted.account.id.value,
+        revision: deleted.account.revision,
+        restorationPending: false,
+      );
+      late StateSetter refresh;
+      await _show(
+        tester,
+        StatefulBuilder(
+          builder: (context, setState) {
+            refresh = setState;
+            return AccountManagementScreen(
+              accounts: [deleted],
+              recoveryStates: [recovery],
+              assessRemoval: (_) async => _assessment(deleted),
+              removeAccount: (_) async {},
+              restoreAccount: (_) async {},
+              requestRecovery: (state) async {
+                expect(state.revision, deleted.account.revision);
+                requests++;
+                refresh(
+                  () => recovery = AccountSyncRecoveryState(
+                    accountId: state.accountId,
+                    revision: state.revision + 1,
+                    restorationPending: true,
+                  ),
+                );
+              },
+            );
           },
-        );
-      }),
-    );
-    expect(find.text('Recovered card'), findsOneWidget);
-    expect(requests, 0);
-    await tester.tap(find.byTooltip('Restore account'));
-    await tester.pumpAndSettle();
-    expect(requests, 0);
-    await tester.tap(find.text('Restore account').last);
-    await tester.pumpAndSettle();
-    expect(requests, 1);
-    expect(find.text('Restoration requested. Waiting for synchronization.'), findsOneWidget);
-    expect(find.byTooltip('Restore account'), findsNothing);
-  });
+        ),
+      );
+      expect(find.text('Recovered card'), findsOneWidget);
+      expect(requests, 0);
+      await tester.tap(find.byTooltip('Restore account'));
+      await tester.pumpAndSettle();
+      expect(requests, 0);
+      await tester.tap(find.text('Restore account').last);
+      await tester.pumpAndSettle();
+      expect(requests, 1);
+      expect(
+        find.text('Restoration requested. Waiting for synchronization.'),
+        findsOneWidget,
+      );
+      expect(find.byTooltip('Restore account'), findsNothing);
+    },
+  );
 
   testWidgets('revision change during confirmation prevents stale removal', (
     tester,
@@ -192,31 +200,42 @@ void main() {
     late StateSetter update;
     await _show(
       tester,
-      StatefulBuilder(builder: (context, setState) {
-        update = setState;
-        return AccountManagementScreen(
-          accounts: [account],
-          assessRemoval: (_) async => _assessment(account),
-          removeAccount: (_) async => removed++,
-          restoreAccount: (_) async {},
-          refreshAccounts: () => refreshes++,
-        );
-      }),
+      StatefulBuilder(
+        builder: (context, setState) {
+          update = setState;
+          return AccountManagementScreen(
+            accounts: [account],
+            assessRemoval: (_) async => _assessment(account),
+            removeAccount: (_) async => removed++,
+            restoreAccount: (_) async {},
+            refreshAccounts: () => refreshes++,
+          );
+        },
+      ),
     );
     await tester.tap(find.byTooltip('Review removal'));
     await tester.pumpAndSettle();
-    update(() => account = original.withAccount(
-      original.account.revise(name: 'Changed', at: _now),
-    ));
+    update(
+      () => account = original.withAccount(
+        original.account.revise(name: 'Changed', at: _now),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete account'));
     await tester.pumpAndSettle();
     expect(removed, 0);
     expect(refreshes, 1);
-    expect(find.text('This account changed. Review its current state and try again.'), findsOneWidget);
+    expect(
+      find.text(
+        'This account changed. Review its current state and try again.',
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('Portuguese narrow screen shows actionable blockers', (tester) async {
+  testWidgets('Portuguese narrow screen shows actionable blockers', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -237,7 +256,10 @@ void main() {
     );
     await tester.tap(find.byTooltip('Revisar remoção'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Uma recorrência ativa usa esta conta.'), findsOneWidget);
+    expect(
+      find.textContaining('Uma recorrência ativa usa esta conta.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }

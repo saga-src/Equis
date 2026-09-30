@@ -90,7 +90,10 @@ void main() {
       at: const UtcInstant.fromEpochMicroseconds(2),
     );
     expect(transactionIsEditable(multiSplit), isFalse);
-    expect(transactionActions(multiSplit), isNot(contains(TransactionAction.edit)));
+    expect(
+      transactionActions(multiSplit),
+      isNot(contains(TransactionAction.edit)),
+    );
     final statement = LedgerTransaction(
       id: EntityId.generate(),
       vaultId: expense.vaultId,
@@ -119,28 +122,30 @@ void main() {
       status: LedgerTransactionStatus.cleared,
     );
     final accountId = EntityId.generate();
-    AccountAggregate account({bool archived = false, bool pocketArchived = false}) =>
-        AccountAggregate(
-          account: AccountProfile(
-            id: accountId,
-            vaultId: expense.vaultId,
-            name: 'Checking',
-            type: AccountType.checking,
-            nature: AccountNature.asset,
-            archived: archived,
-            createdAt: expense.createdAt,
-            updatedAt: expense.updatedAt,
-          ),
-          pockets: [
-            AccountPocketProfile(
-              id: expense.movements.single.pocket.id,
-              accountId: accountId,
-              currency: CurrencyCode.brl,
-              isDefault: true,
-              archived: pocketArchived,
-            ),
-          ],
-        );
+    AccountAggregate account({
+      bool archived = false,
+      bool pocketArchived = false,
+    }) => AccountAggregate(
+      account: AccountProfile(
+        id: accountId,
+        vaultId: expense.vaultId,
+        name: 'Checking',
+        type: AccountType.checking,
+        nature: AccountNature.asset,
+        archived: archived,
+        createdAt: expense.createdAt,
+        updatedAt: expense.updatedAt,
+      ),
+      pockets: [
+        AccountPocketProfile(
+          id: expense.movements.single.pocket.id,
+          accountId: accountId,
+          currency: CurrencyCode.brl,
+          isDefault: true,
+          archived: pocketArchived,
+        ),
+      ],
+    );
     CategoryNode category({bool archived = false}) => CategoryNode(
       id: expense.splits.single.categoryId,
       vaultId: expense.vaultId,

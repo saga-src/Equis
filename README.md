@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/branding/logo.png" width="128" alt="Equis logo" />
   <h1>EQUIS</h1>
-  <p><strong>v1.2.0 (build 12) | Personal Finance for Windows & Android</strong></p>
+  <p><strong>v1.2.1 | Personal Finance for Windows & Android</strong></p>
   <p>
     <a href="#features">Features</a> &middot;
     <a href="#tech-stack">Tech Stack</a> &middot;
@@ -39,7 +39,7 @@ To share a vault between devices, enable optional Supabase synchronization. Reco
 ### Reports and planning
 
 - Available money, cash flow, account balances, and income or spending by category.
-- Switch to **Tags** for spending bubbles; their area represents each tag's positive amount. The home shows up to six largest positive values, with negative adjustments separately and exact amounts available. Tap a tag to open matching expenses. Untagged expenses have their own group. Each tag receives the full expense amount, so totals across tags can overlap.
+- Switch to **Tags** for compact spending bubbles; their area represents each tag's positive amount. Hover, focus, or long press for the full name and exact value; tap to open matching expenses. The home shows up to six largest positive values, with smaller values in the text list and negative adjustments separately. Untagged expenses have their own group. Each tag receives the full expense amount, so totals across tags can overlap.
 - Budgets, savings goals, selectable monthly cash-flow projections, assets, net worth, and investments.
 - Guided brokerage-account setup, currency-safe portfolio actions, and deletion of investment assets that have never been used.
 - Fixed-income terms belong to each purchase lot. Supported simple contracts show a gross estimated balance; a dated manual balance supports other structures. Missing observations remain explicit. These balances are not market quotes or net redemption prices, and tax or guarantee coverage is not inferred from a product name.
@@ -121,7 +121,7 @@ flutter build apk --release --dart-define-from-file=.dart-defines.local.json
 
 This workspace also supports its ignored local SDK at `.tooling/flutter/bin/flutter.bat`. Live sync acceptance tests require dedicated test credentials; tests that skip for missing credentials don't establish cloud compatibility.
 
-The 1.2.0 packages have been built and verified locally; the GitHub release has not been published. See the [1.2.0 feature and validation guide](docs/release/1.2.0/VALIDACAO.md) for recorded results, limitations and installer cases explicitly waived by the owner. Releases are packaged and published manually.
+The source tree targets **1.2.1**, with compact tag bubbles and fixes to automated checks. Its release packages have not been prepared in this workflow. Previous validation results and installer cases waived by the owner are recorded locally in `docs/release/1.2.0/VALIDACAO.md`. Releases are packaged and published manually.
 
 ## Backup and Updates
 
@@ -143,11 +143,11 @@ Restore a `.equis` backup with its password to add a local vault. Its identity a
 4. Open the new APK on your phone and choose **Update**. Don't uninstall the existing app or clear its storage.
 5. Open Equis and check your accounts, transactions, attachments and settings.
 
-The version prepared in source is **1.2.0** (build 12), application ID `app.saga.equis`. This does not indicate a published package. If Android rejects the update, check the package, build number and signing certificate. Keep the release keystore: future updates need the same signing key.
+The version prepared in source is **1.2.1**, application ID `app.saga.equis`. This does not indicate a published package. If Android rejects the update, check the package metadata and signing certificate. Keep the release keystore: future updates need the same signing key.
 
 The Android package uses `app.saga.equis`. If you used the earlier development app, export and validate an encrypted backup there first. Install this app separately, restore the backup, sign in, and check your data before removing the old installation. The two package identifiers cannot update each other in place.
 
-Public releases use one tag per version. The planned tag for this delivery is **v1.2.0**, which has not been created by this workflow. Internal build numbers remain in package metadata; a new public update requires a higher public version.
+Public releases use one tag per version. The planned tag for this delivery is **v1.2.1**, which has not been created by this workflow. A new public update requires a higher public version; previous tags and packages remain unchanged.
 
 Android release signing reads the ignored `android/key.properties` file or the `EQUIS_ANDROID_*` environment variables declared in `android/app/build.gradle.kts`. Windows packaging uses `installer/equis.iss` and `tool/package_windows_release.ps1`.
 

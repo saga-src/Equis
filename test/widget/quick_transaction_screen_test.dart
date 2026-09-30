@@ -124,9 +124,17 @@ void main() {
     await tester.enterText(find.byType(TextFormField).first, '12.34');
     await tester.tap(find.text('Save locally'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('This transaction changed elsewhere'), findsOneWidget);
-    expect(tester.widget<TextFormField>(find.byType(TextFormField).first).controller!.text,
-        '12.34');
+    expect(
+      find.textContaining('This transaction changed elsewhere'),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<TextFormField>(find.byType(TextFormField).first)
+          .controller!
+          .text,
+      '12.34',
+    );
     expect(reloads, 0);
     await tester.tap(find.text('Reload'));
     await tester.pumpAndSettle();

@@ -34,8 +34,8 @@ final class AppUpdateService extends ChangeNotifier
   }) : directory = Directory(p.normalize(directory.path)),
        _client = client ?? http.Client();
   static const current = UpdateVersion(
-    String.fromEnvironment('EQUIS_VERSION', defaultValue: '1.2.0'),
-    int.fromEnvironment('EQUIS_BUILD', defaultValue: 12),
+    String.fromEnvironment('EQUIS_VERSION', defaultValue: '1.2.1'),
+    int.fromEnvironment('EQUIS_BUILD', defaultValue: 13),
   );
   final Directory directory;
   final SharedPreferences preferences;

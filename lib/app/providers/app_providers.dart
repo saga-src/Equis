@@ -208,12 +208,12 @@ final creditCardContextsProvider = Provider<List<CreditCardContext>>((ref) {
           aggregate.account.deletedAt == null)
         for (final pocket in aggregate.pockets)
           if (!pocket.archived)
-          CreditCardContext(
-            vaultId: vault.id,
-            accountId: aggregate.account.id,
-            pocketId: pocket.id,
-            currency: pocket.currency,
-          ),
+            CreditCardContext(
+              vaultId: vault.id,
+              accountId: aggregate.account.id,
+              pocketId: pocket.id,
+              currency: pocket.currency,
+            ),
   ];
 });
 
@@ -226,8 +226,9 @@ final creditCardControllerProvider =
       final controller = CreditCardController(
         service: dependencies?.creditCards,
         initialCard: cards.isEmpty ? null : cards.first,
-        onLedgerChanged:
-            ref.read(localFinanceControllerProvider.notifier).reload,
+        onLedgerChanged: ref
+            .read(localFinanceControllerProvider.notifier)
+            .reload,
       );
       unawaited(controller.reload());
       return controller;

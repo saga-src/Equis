@@ -1,4 +1,8 @@
 import 'dart:math' as math;
+import 'dart:io';
+import 'dart:ui' show ImageByteFormat;
+
+import 'package:flutter/rendering.dart';
 
 import 'package:equis/application/services/local_finance_session_service.dart';
 import 'package:equis/domain/entities/account_profile.dart';
@@ -12,10 +16,13 @@ import 'package:equis/domain/shared/utc_instant.dart';
 import 'package:equis/domain/taxonomy/tag.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
 import 'package:equis/l10n/app_localizations.dart';
+import 'package:equis/app/theme/equis_theme.dart';
 import 'package:equis/presentation/home/dashboard_overview.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart' show SemanticsAction;
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
+import 'package:flutter/services.dart'
+    show FontLoader, LogicalKeyboardKey, rootBundle;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -197,7 +204,7 @@ void main() {
       await harness.pump(tester, size: const Size(1280, 1400));
       await _showTags(tester);
 
-      expect(find.byKey(const Key('tag-bubble-grid')), findsOneWidget);
+      expect(find.byKey(const Key('tag-bubble-cluster')), findsOneWidget);
       for (final id in ids.take(6)) {
         expect(find.byKey(Key('tag-bubble-${id.value}')), findsOneWidget);
       }
@@ -210,7 +217,8 @@ void main() {
       final largestDiameter = tester
           .getSize(find.byKey(Key('tag-bubble-${ids[0].value}')))
           .width;
-      expect(largestDiameter, closeTo(128, 0.01));
+      expect(largestDiameter, greaterThan(0));
+      expect(largestDiameter, lessThanOrEqualTo(180));
       for (var index = 1; index < 6; index++) {
         final diameter = tester
             .getSize(find.byKey(Key('tag-bubble-${ids[index].value}')))
@@ -241,6 +249,11 @@ void main() {
       expect(find.text('Other tag values'), findsOneWidget);
       await tester.tap(find.text('Other tag values'));
       await tester.pumpAndSettle();
+      // Featured circles too small to carry a readable label also remain
+      // available in the text list.
+      for (final id in ids.skip(2).take(5)) {
+        expect(find.byKey(Key('tag-value-${id.value}')), findsOneWidget);
+      }
       expect(find.text(_tagLabel(ids[6])), findsOneWidget);
       expect(find.text(_tagLabel(ids[7])), findsOneWidget);
       expect(find.text(_tagLabel(ids[8])), findsOneWidget);
@@ -264,7 +277,8 @@ void main() {
     final smallestDiameter = tester
         .getSize(find.byKey(Key('tag-bubble-${smallest.value}')))
         .width;
-    expect(largestDiameter, closeTo(128, 0.01));
+    expect(largestDiameter, greaterThan(0));
+    expect(largestDiameter, lessThanOrEqualTo(180));
     expect(smallestDiameter, greaterThan(0));
     expect(
       smallestDiameter,
@@ -281,9 +295,66 @@ void main() {
     await _showTags(tester);
 
     expect(find.text('No classified activity in this period.'), findsOneWidget);
-    expect(find.byKey(const Key('tag-bubble-grid')), findsNothing);
+    expect(find.byKey(const Key('tag-bubble-cluster')), findsNothing);
     expect(find.text('Other tag values'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('keeps negative-only tag values separate from the bubble chart', (
+    tester,
+  ) async {
+    final id = EntityId.generate();
+    final harness = _TagDashboardHarness([
+      TagSpending(tagId: id, amountMinor: -1250),
+    ]);
+    await harness.pump(tester, size: const Size(720, 1200));
+    await _showTags(tester);
+
+    expect(find.byKey(const Key('tag-bubble-cluster')), findsNothing);
+    expect(find.text('Negative adjustments by tag'), findsOneWidget);
+    expect(find.text(_tagLabel(id)), findsOneWidget);
+    expect(find.text('No classified activity in this period.'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('orders tied bubble values by stable tag identity', (
+    tester,
+  ) async {
+    final ids = [
+      EntityId.parse('00000000-0000-7000-8000-000000000003'),
+      EntityId.parse('00000000-0000-7000-8000-000000000001'),
+      EntityId.parse('00000000-0000-7000-8000-000000000002'),
+    ];
+    final harness = _TagDashboardHarness([
+      for (final id in ids) TagSpending(tagId: id, amountMinor: 10000),
+    ]);
+    await harness.pump(tester, size: const Size(720, 1200));
+    await _showTags(tester);
+
+    final orderedIds = [...ids]..sort((a, b) => a.value.compareTo(b.value));
+    final renderedBubbleKeys = tester
+        .widgetList<Widget>(
+          find.descendant(
+            of: find.byKey(const Key('tag-bubble-cluster')),
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget.key is ValueKey<String> &&
+                  (widget.key! as ValueKey<String>).value.startsWith(
+                    'tag-bubble-',
+                  ) &&
+                  !(widget.key! as ValueKey<String>).value.startsWith(
+                    'tag-bubble-target-',
+                  ),
+            ),
+          ),
+        )
+        .map((widget) => widget.key)
+        .toList();
+
+    expect(
+      renderedBubbleKeys,
+      orderedIds.map((id) => Key('tag-bubble-${id.value}')).toList(),
+    );
   });
 
   testWidgets(
@@ -311,10 +382,10 @@ void main() {
         await tester.binding.setSurfaceSize(const Size(360, 1400));
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('dashboard-wide-pair')), findsNothing);
-        if (find.byKey(const Key('tag-bubble-grid')).evaluate().isEmpty) {
+        if (find.byKey(const Key('tag-bubble-cluster')).evaluate().isEmpty) {
           await _showTags(tester);
         }
-        expect(find.byKey(const Key('tag-bubble-grid')), findsOneWidget);
+        expect(find.byKey(const Key('tag-bubble-cluster')), findsOneWidget);
         expect(find.text(longName), findsOneWidget);
         expect(find.bySemanticsLabel('$longName, \$100.00'), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -384,9 +455,289 @@ void main() {
       }
     },
   );
+
+  testWidgets(
+    'tooltip supports hover, exit, and long press without navigation',
+    (tester) async {
+      final id = EntityId.generate();
+      const longName = 'A full tag name that does not fit inside the bubble';
+      final harness = _TagDashboardHarness(
+        [TagSpending(tagId: id, amountMinor: 12345)],
+        tagNames: {id: longName},
+      );
+      await harness.pump(tester, size: const Size(900, 1200));
+      await _showTags(tester);
+      final target = find.byKey(Key('tag-bubble-target-${id.value}'));
+      final message = '$longName\n\$123.45';
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: const Offset(1, 1));
+      await mouse.moveTo(tester.getCenter(target));
+      await tester.pump(const Duration(milliseconds: 201));
+      expect(find.text(message), findsOneWidget);
+      expect(harness.historyFilter, isNull);
+
+      await mouse.moveTo(const Offset(1, 1));
+      await tester.pump(const Duration(milliseconds: 101));
+      expect(find.text(message), findsNothing);
+
+      await tester.longPress(target);
+      await tester.pumpAndSettle();
+      expect(find.text(message), findsOneWidget);
+      expect(harness.historyFilter, isNull);
+      await mouse.removePointer();
+    },
+  );
+
+  testWidgets('keyboard focus reveals the tooltip and Enter opens the filter', (
+    tester,
+  ) async {
+    final id = EntityId.generate();
+    final harness = _TagDashboardHarness([
+      TagSpending(tagId: id, amountMinor: 12345),
+    ]);
+    await harness.pump(tester, size: const Size(900, 1200));
+    await _showTags(tester);
+    final target = find.byKey(Key('tag-bubble-target-${id.value}'));
+    final inkWell = tester.widget<InkWell>(
+      find.descendant(of: target, matching: find.byType(InkWell)),
+    );
+
+    inkWell.focusNode!.requestFocus();
+    await tester.pumpAndSettle();
+    expect(find.text('${_tagLabel(id)}\n\$123.45'), findsOneWidget);
+    expect(harness.historyFilter, isNull);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(harness.historyFilter?.tagId, id);
+    expect(harness.historyFilter?.reportingExpensesOnly, isTrue);
+  });
+
+  testWidgets('clipped circular hit target ignores its rectangular corners', (
+    tester,
+  ) async {
+    final id = EntityId.generate();
+    final harness = _TagDashboardHarness([
+      TagSpending(tagId: id, amountMinor: 10000),
+    ]);
+    await harness.pump(tester, size: const Size(900, 1200));
+    await _showTags(tester);
+    final target = find.byKey(Key('tag-bubble-target-${id.value}'));
+    final rect = tester.getRect(target);
+
+    await tester.tapAt(rect.topLeft + const Offset(1, 1));
+    await tester.pumpAndSettle();
+
+    expect(harness.historyFilter, isNull);
+  });
+
+  testWidgets('focus moving between bubbles and away moves the tooltip', (
+    tester,
+  ) async {
+    final ids = [
+      EntityId.parse('00000000-0000-7000-8000-000000000001'),
+      EntityId.parse('00000000-0000-7000-8000-000000000002'),
+    ];
+    final harness = _TagDashboardHarness([
+      for (final id in ids) TagSpending(tagId: id, amountMinor: 10000),
+    ]);
+    await harness.pump(tester, size: const Size(900, 1200));
+    await _showTags(tester);
+
+    FocusNode focusNode(String id) {
+      final bubble = find.byKey(Key('tag-bubble-target-$id'));
+      return tester
+          .widget<InkWell>(
+            find.descendant(of: bubble, matching: find.byType(InkWell)),
+          )
+          .focusNode!;
+    }
+
+    final first = focusNode(ids[0].value);
+    final second = focusNode(ids[1].value);
+    first.requestFocus();
+    await tester.pumpAndSettle();
+    expect(find.text('${_tagLabel(ids[0])}\n\$100.00'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+    expect(first.hasFocus, isFalse);
+    expect(second.hasFocus, isTrue);
+    expect(find.text('${_tagLabel(ids[0])}\n\$100.00'), findsNothing);
+    expect(find.text('${_tagLabel(ids[1])}\n\$100.00'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+    expect(second.hasFocus, isFalse);
+    expect(find.text('${_tagLabel(ids[1])}\n\$100.00'), findsNothing);
+  });
+
+  testWidgets(
+    'focused bubble preserves its identity when report order changes',
+    (tester) async {
+      final ids = [EntityId.generate(), EntityId.generate()];
+      final harness = _TagDashboardHarness([
+        TagSpending(tagId: ids[0], amountMinor: 10000),
+        TagSpending(tagId: ids[1], amountMinor: 5000),
+      ]);
+      await harness.pump(tester, size: const Size(900, 1200));
+      await _showTags(tester);
+
+      Finder bubble(String id) => find.byKey(Key('tag-bubble-target-$id'));
+      FocusNode node(String id) => tester
+          .widget<InkWell>(
+            find.descendant(of: bubble(id), matching: find.byType(InkWell)),
+          )
+          .focusNode!;
+
+      final originalNode = node(ids[0].value);
+      originalNode.requestFocus();
+      await tester.pumpAndSettle();
+      expect(originalNode.hasFocus, isTrue);
+
+      harness.values
+        ..clear()
+        ..add(TagSpending(tagId: ids[1], amountMinor: 20000))
+        ..add(TagSpending(tagId: ids[0], amountMinor: 10000));
+      harness.router.refresh();
+      await tester.pumpAndSettle();
+
+      expect(node(ids[0].value), same(originalNode));
+      expect(originalNode.hasFocus, isTrue);
+      expect(find.text('${_tagLabel(ids[0])}\n\$100.00'), findsOneWidget);
+    },
+  );
+
+  testWidgets('large text on mobile keeps full names in the text list', (
+    tester,
+  ) async {
+    final id = EntityId.generate();
+    const longName = 'A complete tag name that remains available on mobile';
+    final harness = _TagDashboardHarness(
+      [TagSpending(tagId: id, amountMinor: 100000)],
+      tagNames: {id: longName},
+      textScale: 2,
+    );
+    await harness.pump(tester, size: const Size(320, 1200));
+    await _showTags(tester);
+
+    await tester.tap(find.text('Other tag values'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('tag-value-${id.value}')), findsOneWidget);
+    expect(find.text(longName), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'can export desktop and mobile bubble review captures',
+    (tester) async {
+      final cases = [
+        (
+          name: 'desktop-light',
+          size: const Size(1280, 1400),
+          scale: 1.0,
+          brightness: Brightness.light,
+        ),
+        (
+          name: 'mobile-light',
+          size: const Size(320, 1400),
+          scale: 1.0,
+          brightness: Brightness.light,
+        ),
+        (
+          name: 'desktop-large-dark',
+          size: const Size(1280, 1400),
+          scale: 2.0,
+          brightness: Brightness.dark,
+        ),
+        (
+          name: 'mobile-large-dark',
+          size: const Size(320, 1400),
+          scale: 2.0,
+          brightness: Brightness.dark,
+        ),
+        (
+          name: 'mobile-equal-values',
+          size: const Size(320, 1400),
+          scale: 1.0,
+          brightness: Brightness.light,
+        ),
+      ];
+      final directory = Directory('.tooling/bubble-captures');
+      await tester.runAsync(() async {
+        for (final font in const {
+          'Inter': 'assets/fonts/Inter-Variable.ttf',
+          'Geist Sans': 'assets/fonts/Geist-Variable.ttf',
+          'Space Grotesk': 'assets/fonts/SpaceGrotesk-Variable.ttf',
+          'JetBrains Mono': 'assets/fonts/JetBrainsMono-Variable.ttf',
+        }.entries) {
+          final loader = FontLoader(font.key)
+            ..addFont(rootBundle.load(font.value));
+          await loader.load();
+        }
+      });
+
+      for (final item in cases) {
+        const names = [
+          'Rent',
+          'Groceries & household',
+          'Education and training',
+          'Transport',
+          'Health',
+          'Travel',
+        ];
+        final ids = [
+          for (var index = 0; index < names.length; index++)
+            EntityId.parse(
+              '00000000-0000-7000-8000-${(index + 1).toString().padLeft(12, '0')}',
+            ),
+        ];
+        final harness = _TagDashboardHarness(
+          [
+            for (var index = 0; index < ids.length; index++)
+              TagSpending(
+                tagId: ids[index],
+                amountMinor: item.name == 'mobile-equal-values'
+                    ? 10000
+                    : [120000, 80000, 50000, 30000, 15000, 5000][index],
+              ),
+          ],
+          tagNames: {
+            for (var index = 0; index < ids.length; index++)
+              ids[index]: names[index],
+          },
+          brightness: item.brightness,
+          textScale: item.scale,
+          captureKey: const Key('bubble-review-capture'),
+        );
+        await harness.pump(tester, size: item.size);
+        await _showTags(tester);
+        await tester.ensureVisible(find.byKey(const Key('tag-bubble-cluster')));
+        await tester.pumpAndSettle();
+
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const Key('bubble-review-capture')),
+        );
+        await tester.runAsync(() async {
+          await directory.create(recursive: true);
+          final image = await boundary.toImage(pixelRatio: 1);
+          final bytes = await image.toByteData(format: ImageByteFormat.png);
+          await File(
+            '${directory.path}/${item.name}.png',
+          ).writeAsBytes(bytes!.buffer.asUint8List());
+          image.dispose();
+        });
+        expect(tester.takeException(), isNull);
+      }
+    },
+    skip: Platform.environment['EQUIS_CAPTURE_BUBBLES'] != '1',
+  );
 }
 
 Future<void> _showTags(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('Tags'));
   await tester.tap(find.text('Tags'));
   await tester.pumpAndSettle();
 }
@@ -394,10 +745,15 @@ Future<void> _showTags(WidgetTester tester) async {
 String _tagLabel(EntityId id) => 'Tag ${id.value.substring(28)}';
 
 class _TagDashboardHarness {
-  _TagDashboardHarness(this.values, {this.tagNames = const {}})
-    : vaultId = EntityId.generate(),
-      periodStart = LocalDate(2026, 8, 1),
-      periodEnd = LocalDate(2026, 8, 31) {
+  _TagDashboardHarness(
+    this.values, {
+    this.tagNames = const {},
+    this.brightness = Brightness.light,
+    this.textScale = 1,
+    this.captureKey,
+  }) : vaultId = EntityId.generate(),
+       periodStart = LocalDate(2026, 8, 1),
+       periodEnd = LocalDate(2026, 8, 31) {
     tags = [
       for (final id
           in values.map((value) => value.tagId).whereType<EntityId>().toSet())
@@ -413,6 +769,9 @@ class _TagDashboardHarness {
 
   final List<TagSpending> values;
   final Map<EntityId, String> tagNames;
+  final Brightness brightness;
+  final double textScale;
+  final Key? captureKey;
   final EntityId vaultId;
   final LocalDate periodStart;
   final LocalDate periodEnd;
@@ -428,45 +787,48 @@ class _TagDashboardHarness {
         GoRoute(
           path: '/',
           builder: (context, state) => Scaffold(
-            body: SingleChildScrollView(
-              child: DashboardOverview(
-                finance: LocalFinanceSnapshot(
-                  vault: VaultProfile(
-                    id: vaultId,
-                    name: 'Local',
-                    baseCurrency: CurrencyCode.usd,
-                    locale: 'en-US',
-                    timezone: 'UTC',
-                    createdAt: const UtcInstant.fromEpochMicroseconds(1),
-                    updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+            body: RepaintBoundary(
+              key: captureKey,
+              child: SingleChildScrollView(
+                child: DashboardOverview(
+                  finance: LocalFinanceSnapshot(
+                    vault: VaultProfile(
+                      id: vaultId,
+                      name: 'Local',
+                      baseCurrency: CurrencyCode.usd,
+                      locale: 'en-US',
+                      timezone: 'UTC',
+                      createdAt: const UtcInstant.fromEpochMicroseconds(1),
+                      updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+                    ),
+                    tags: tags,
                   ),
-                  tags: tags,
-                ),
-                reportOverride: DashboardSnapshot(
-                  reportingCurrency: CurrencyCode.usd,
-                  periodStart: periodStart,
-                  periodEnd: periodEnd,
-                  availableMoneyMinor: 100000,
-                  incomeMinor: 0,
-                  expenseMinor: 0,
-                  spendingByCategory: const [],
-                  spendingByTag: values,
-                  cashFlow: [
-                    CashFlowPoint(
-                      date: LocalDate(2026, 8, 10),
-                      incomeMinor: 0,
-                      expenseMinor: 0,
-                    ),
-                    CashFlowPoint(
-                      date: LocalDate(2026, 8, 28),
-                      incomeMinor: 0,
-                      expenseMinor: 0,
-                    ),
-                  ],
-                  accountBalances: const [],
-                  missingRates: const {},
-                  usesEstimatedRates: false,
-                  upcomingCount: 0,
+                  reportOverride: DashboardSnapshot(
+                    reportingCurrency: CurrencyCode.usd,
+                    periodStart: periodStart,
+                    periodEnd: periodEnd,
+                    availableMoneyMinor: 100000,
+                    incomeMinor: 0,
+                    expenseMinor: 0,
+                    spendingByCategory: const [],
+                    spendingByTag: values,
+                    cashFlow: [
+                      CashFlowPoint(
+                        date: LocalDate(2026, 8, 10),
+                        incomeMinor: 0,
+                        expenseMinor: 0,
+                      ),
+                      CashFlowPoint(
+                        date: LocalDate(2026, 8, 28),
+                        incomeMinor: 0,
+                        expenseMinor: 0,
+                      ),
+                    ],
+                    accountBalances: const [],
+                    missingRates: const {},
+                    usesEstimatedRates: false,
+                    upcomingCount: 0,
+                  ),
                 ),
               ),
             ),
@@ -487,6 +849,11 @@ class _TagDashboardHarness {
         child: MaterialApp.router(
           routerConfig: router,
           locale: const Locale('en', 'US'),
+          theme: EquisTheme.forVariant(
+            brightness == Brightness.dark
+                ? EquisThemeVariant.obsidian
+                : EquisThemeVariant.trueLight,
+          ),
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: const [
             AppLocalizations.delegate,
@@ -494,6 +861,12 @@ class _TagDashboardHarness {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
         ),
       ),
     );

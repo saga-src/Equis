@@ -151,10 +151,12 @@ final class LocalFinanceSessionService {
       final store = accountSyncRecovery;
       if (store == null) throw StateError('Account recovery is unavailable.');
       final states = await store.accountRecoveryStates(vaultId.value);
-      if (!states.any((state) =>
-          state.accountId == recovery.accountId &&
-          state.revision == recovery.revision &&
-          !state.restorationPending)) {
+      if (!states.any(
+        (state) =>
+            state.accountId == recovery.accountId &&
+            state.revision == recovery.revision &&
+            !state.restorationPending,
+      )) {
         throw const AccountLifecycleConflict();
       }
       await store.requestAccountRestore(
