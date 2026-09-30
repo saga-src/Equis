@@ -44,6 +44,27 @@ final class DriftRecurringRepository implements RecurringRepository {
     RecurringSchedule schedule,
   ) => database.transaction(() async {
     final rule = schedule.rule;
+    if (rule.enabled && rule.deletedAt == null) {
+      for (final movement in schedule.template.movements) {
+        final active = await database
+            .customSelect(
+              'SELECT pocket.id FROM account_pockets AS pocket '
+              'JOIN accounts AS account ON account.id = pocket.account_id '
+              'WHERE pocket.id = ? AND account.vault_id = ? '
+              'AND account.archived = 0 AND account.deleted_at IS NULL '
+              'AND pocket.archived = 0',
+              variables: [
+                Variable<String>(movement.pocket.id.value),
+                Variable<String>(rule.vaultId.value),
+              ],
+              readsFrom: {database.accountPockets, database.accounts},
+            )
+            .getSingleOrNull();
+        if (active == null) {
+          throw StateError('Account pocket is inactive.');
+        }
+      }
+    }
     final rows = await database
         .customSelect(
           'SELECT revision FROM recurring_rules WHERE id = ?',

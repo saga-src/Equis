@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 
 import '../../application/ports/dashboard_repository.dart';
+import '../../application/ports/account_sync_read_status.dart';
 import '../../domain/entities/account_profile.dart';
 import '../../domain/reporting/dashboard_models.dart';
 import '../../domain/shared/currency.dart';
@@ -12,7 +13,8 @@ import '../../domain/shared/money.dart';
 import '../../domain/shared/uuid_v7.dart';
 import '../persistence/database/equis_database.dart';
 
-final class DriftDashboardRepository implements DashboardRepository {
+final class DriftDashboardRepository
+    implements DashboardRepository, AccountSyncReadStatus {
   DriftDashboardRepository(this.database);
 
   final EquisDatabase database;
@@ -21,6 +23,26 @@ final class DriftDashboardRepository implements DashboardRepository {
 
   @override
   void beginRead() => _rates.clear();
+
+  @override
+  Future<bool> hasIncompleteAccounts(EntityId vaultId) async {
+    final row = await database
+        .customSelect(
+          'SELECT EXISTS (SELECT 1 FROM sync_dependency_pause WHERE vault_id = ?) '
+          'OR EXISTS (SELECT 1 FROM sync_quarantine WHERE vault_id = ? '
+          "AND (replayed_at IS NULL OR replay_state <> 'replayed') "
+          "AND (entity_type IN ('account', 'transaction') "
+          'OR parent_account_id IS NOT NULL OR parent_pocket_id IS NOT NULL)) '
+          'AS incomplete',
+          variables: [
+            Variable<String>(vaultId.value),
+            Variable<String>(vaultId.value),
+          ],
+          readsFrom: {database.syncDependencyPause, database.syncQuarantine},
+        )
+        .getSingle();
+    return row.read<int>('incomplete') != 0;
+  }
 
   @override
   Future<List<ReportingSplitRow>> loadSplits({
@@ -100,12 +122,17 @@ final class DriftDashboardRepository implements DashboardRepository {
           'ON movement.account_pocket_id = pocket.id '
           'LEFT JOIN transactions AS parent ON parent.id = movement.transaction_id '
           'WHERE account.vault_id = ? AND account.deleted_at IS NULL '
-          'AND account.archived = 0 AND pocket.archived = 0 '
+          'AND (account.opened_on IS NULL OR account.opened_on <= ?) '
+          'AND (account.closed_on IS NULL OR account.closed_on > ?) '
+          'AND (account.archived = 0 OR account.closed_on > ?) '
           'GROUP BY account.id, pocket.id '
           'ORDER BY account.sort_order, account.name, pocket.currency_code',
           variables: [
             Variable<String>(asOf.toString()),
             Variable<String>(vaultId.value),
+            Variable<String>(asOf.toString()),
+            Variable<String>(asOf.toString()),
+            Variable<String>(asOf.toString()),
           ],
           readsFrom: {
             database.accounts,

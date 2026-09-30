@@ -97,4 +97,42 @@ void main() {
       );
     },
   );
+
+  test('does not create plaintext files during unresolved sync replay', () async {
+    await database.customStatement(
+      "INSERT INTO sync_quarantine (event_id, vault_id, server_version, entity_type, entity_id, entity_revision, authenticated_envelope, reason, detected_at) VALUES ('event-1', ?, 1, 'transaction', ?, 2, 'ciphertext', 'dependency', 1)",
+      [vault, transaction],
+    );
+    final jsonFile = File('${temporary.path}/blocked.json');
+    final csvFile = File('${temporary.path}/blocked.csv');
+    await expectLater(
+      exporter.exportJson(vaultId: vault, destination: jsonFile),
+      throwsA(isA<VaultSnapshotUnresolvedSyncConflict>()),
+    );
+    await expectLater(
+      exporter.exportTransactionsCsv(vaultId: vault, destination: csvFile),
+      throwsA(isA<VaultSnapshotUnresolvedSyncConflict>()),
+    );
+    expect(await jsonFile.exists(), isFalse);
+    expect(await csvFile.exists(), isFalse);
+  });
+
+  test('exports local edits while sync write and review are pending', () async {
+    await database.customStatement(
+      "INSERT INTO sync_outbox (operation_id, vault_id, entity_type, record_id, new_revision, operation, created_at) VALUES ('pending', ?, 'transaction', ?, 2, 'upsert', 1)",
+      [vault, transaction],
+    );
+    await database.customStatement(
+      "INSERT INTO sync_conflicts (id, vault_id, entity_type, record_id, base_revision, local_revision, remote_revision, local_snapshot, remote_snapshot, detected_at) VALUES ('review', ?, 'transaction', ?, 1, 2, 2, '{}', '{}', 1)",
+      [vault, transaction],
+    );
+    final jsonFile = File('${temporary.path}/offline.json');
+    final csvFile = File('${temporary.path}/offline.csv');
+    await exporter.exportJson(vaultId: vault, destination: jsonFile);
+    await exporter.exportTransactionsCsv(vaultId: vault, destination: csvFile);
+    final decoded = jsonDecode(await jsonFile.readAsString()) as Map;
+    expect((decoded['tables'] as Map), isNot(contains('sync_outbox')));
+    expect((decoded['tables'] as Map), isNot(contains('sync_conflicts')));
+    expect(await csvFile.readAsString(), contains('Lunch, team'));
+  });
 }

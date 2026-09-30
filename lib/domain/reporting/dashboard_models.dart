@@ -114,6 +114,7 @@ final class DashboardSnapshot {
     required Set<CurrencyCode> missingRates,
     required this.usesEstimatedRates,
     required this.upcomingCount,
+    this.hasIncompleteAccounts = false,
   }) : spendingByTag = List.unmodifiable(spendingByTag),
        spendingByCategory = List.unmodifiable(spendingByCategory),
        incomeByCategory = List.unmodifiable(incomeByCategory),
@@ -135,9 +136,10 @@ final class DashboardSnapshot {
   final Set<CurrencyCode> missingRates;
   final bool usesEstimatedRates;
   final int upcomingCount;
+  final bool hasIncompleteAccounts;
 
   int get netCashFlowMinor => incomeMinor - expenseMinor;
-  bool get isComplete => missingRates.isEmpty;
+  bool get isComplete => missingRates.isEmpty && !hasIncompleteAccounts;
 }
 
 bool isLiquidAccount(AccountType type) => const {

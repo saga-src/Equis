@@ -1,5 +1,6 @@
 import 'package:equis/domain/entities/category_node.dart';
 import 'package:equis/domain/entities/account_profile.dart';
+import 'package:equis/application/ports/ledger_repository.dart';
 import 'package:equis/domain/credit_cards/credit_card_models.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/shared/local_date.dart';
@@ -72,6 +73,7 @@ class QuickTransactionScreen extends StatefulWidget {
     required this.onSave,
     this.initialDraft,
     this.attachmentSection,
+    this.onRevisionConflict,
     super.key,
   });
 
@@ -80,6 +82,7 @@ class QuickTransactionScreen extends StatefulWidget {
   final List<QuickTagOption> tags;
   final QuickTransactionDraft? initialDraft;
   final Widget? attachmentSection;
+  final VoidCallback? onRevisionConflict;
   final Future<void> Function(QuickTransactionDraft draft) onSave;
 
   @override
@@ -424,6 +427,20 @@ class _QuickTransactionScreenState extends State<QuickTransactionScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context).transactionSavedMessage),
+        ),
+      );
+    } on LedgerRevisionConflict {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.transactionRevisionConflictMessage),
+          action: widget.onRevisionConflict == null
+              ? null
+              : SnackBarAction(
+                  label: l10n.transactionDetailRetryAction,
+                  onPressed: widget.onRevisionConflict!,
+                ),
         ),
       );
     } catch (_) {

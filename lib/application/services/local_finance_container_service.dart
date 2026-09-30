@@ -3,6 +3,7 @@ import '../ports/ledger_repository.dart';
 import '../ports/local_unit_of_work.dart';
 import '../../domain/entities/account_aggregate.dart';
 import '../../domain/entities/account_profile.dart';
+import '../../domain/entities/account_removal_assessment.dart';
 import '../../domain/entities/vault_profile.dart';
 import '../../domain/ledger/ledger_engine.dart';
 import '../../domain/ledger/ledger_models.dart';
@@ -19,6 +20,7 @@ final class LocalFinanceContainerService {
     required this.vaults,
     required this.currencies,
     required this.accounts,
+    this.lifecycleAccounts,
     required this.ledger,
     required this.unitOfWork,
     LedgerEngine? ledgerEngine,
@@ -28,6 +30,7 @@ final class LocalFinanceContainerService {
   final VaultRepository vaults;
   final CurrencyRepository currencies;
   final AccountAggregateRepository accounts;
+  final AccountLifecycleRepository? lifecycleAccounts;
   final LedgerRepository ledger;
   final LocalUnitOfWork unitOfWork;
   final LedgerEngine _ledgerEngine;
@@ -136,31 +139,75 @@ final class LocalFinanceContainerService {
 
   Future<AccountAggregate> addCurrencyPocket(
     AccountAggregate aggregate,
-    CurrencyCode currency,
-  ) async {
+    CurrencyCode currency, {
+    UtcInstant? now,
+  }) async {
     if (await currencies.find(currency) == null) {
       throw StateError('Currency must exist in the local catalog.');
     }
-    final revised = aggregate.addPocket(
-      AccountPocketProfile(
-        id: EntityId.generate(),
-        accountId: aggregate.account.id,
-        currency: currency,
-      ),
-    );
+    final revised = aggregate
+        .addPocket(
+          AccountPocketProfile(
+            id: EntityId.generate(),
+            accountId: aggregate.account.id,
+            currency: currency,
+          ),
+        )
+        .withAccount(aggregate.account.revise(at: now ?? UtcInstant.now()));
     await accounts.save(revised);
     return revised;
   }
 
+  Future<AccountRemovalAssessment> assessAccountRemoval({
+    required EntityId vaultId,
+    required EntityId accountId,
+    required UtcInstant now,
+  }) => _lifecycle.assessRemoval(
+    vaultId: vaultId,
+    accountId: accountId,
+    now: now,
+  );
+
+  Future<AccountLifecycleResult> removeAccount({
+    required EntityId vaultId,
+    required EntityId accountId,
+    required int expectedRevision,
+    required UtcInstant now,
+  }) => _lifecycle.remove(
+    vaultId: vaultId,
+    accountId: accountId,
+    expectedRevision: expectedRevision,
+    now: now,
+  );
+
+  Future<AccountAggregate> restoreAccount({
+    required EntityId vaultId,
+    required EntityId accountId,
+    required int expectedRevision,
+    required UtcInstant now,
+  }) => _lifecycle.restore(
+    vaultId: vaultId,
+    accountId: accountId,
+    expectedRevision: expectedRevision,
+    now: now,
+  );
+
+  AccountLifecycleRepository get _lifecycle =>
+      lifecycleAccounts ??
+      (throw StateError('Account lifecycle repository is not configured.'));
+
+  @Deprecated('Use removeAccount with the active vault and expected revision.')
   Future<AccountAggregate> archiveAccount(
     AccountAggregate aggregate, {
     required UtcInstant now,
   }) async {
-    final revised = aggregate.withAccount(
-      aggregate.account.revise(archived: true, at: now),
+    final result = await removeAccount(
+      vaultId: aggregate.account.vaultId,
+      accountId: aggregate.account.id,
+      expectedRevision: aggregate.account.revision,
+      now: now,
     );
-    await accounts.save(revised);
-    return revised;
+    return result.aggregate;
   }
 
   Future<AccountAggregate> setNetWorthInclusion(

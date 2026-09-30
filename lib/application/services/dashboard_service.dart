@@ -1,4 +1,5 @@
 import '../ports/dashboard_repository.dart';
+import '../ports/account_sync_read_status.dart';
 import 'recurring_transaction_service.dart';
 import '../../domain/entities/account_profile.dart';
 import '../../domain/reporting/dashboard_models.dart';
@@ -141,6 +142,10 @@ final class DashboardService {
       after: asOf,
       through: asOf.addDays(30),
     );
+    final Object syncStatus = repository;
+    final incompleteAccounts = syncStatus is AccountSyncReadStatus
+        ? await syncStatus.hasIncompleteAccounts(vaultId)
+        : false;
     final trend = <CashFlowPoint>[];
     for (
       var date = periodStart;
@@ -191,6 +196,7 @@ final class DashboardService {
       missingRates: missing,
       usesEstimatedRates: estimated,
       upcomingCount: recurringUpcoming.length + installmentCount,
+      hasIncompleteAccounts: incompleteAccounts,
     );
   }
 }

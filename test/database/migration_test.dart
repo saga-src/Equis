@@ -9,6 +9,46 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'generated_migrations/schema.dart';
 
 void main() {
+  test('v6 upgrade adds empty private lot terms and durable sync guards', () async {
+    final verifier = SchemaVerifier(GeneratedHelper());
+    final schema = await verifier.schemaAt(6);
+    addTearDown(schema.close);
+    schema.rawDatabase.execute(
+      "INSERT INTO vaults (id,name,base_currency_code,timezone,created_at,updated_at) "
+      "VALUES ('old-vault','Existing','BRL','UTC',1,1)",
+    );
+    schema.rawDatabase.execute(
+      "INSERT INTO sync_outbox (operation_id,vault_id,entity_type,record_id,new_revision,operation,created_at) "
+      "VALUES ('old-account-op','old-vault','account','old-account',2,'upsert',1)",
+    );
+    final db = EquisDatabase(schema.newConnection());
+    addTearDown(db.close);
+    await verifier.migrateAndValidate(
+      db,
+      7,
+      options: const ValidationOptions(validateDropped: true),
+    );
+    expect(
+      await db.customSelect('SELECT * FROM fixed_income_contracts').get(),
+      isEmpty,
+    );
+    expect(
+      await db.customSelect('SELECT * FROM fixed_income_manual_values').get(),
+      isEmpty,
+    );
+    expect(
+      await db.customSelect('SELECT * FROM sync_quarantine').get(),
+      isEmpty,
+    );
+    final dependency = await db
+        .customSelect(
+          "SELECT account_id FROM sync_outbox_dependencies WHERE operation_id='old-account-op'",
+        )
+        .getSingle();
+    expect(dependency.read<String>('account_id'), 'old-account');
+    expect(await db.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
+  });
+
   test(
     'v5 upgrade preserves vault and pending changes without inventing activity',
     () async {
@@ -25,7 +65,7 @@ void main() {
       addTearDown(db.close);
       await verifier.migrateAndValidate(
         db,
-        6,
+        7,
         options: const ValidationOptions(validateDropped: true),
       );
       expect(
@@ -73,7 +113,7 @@ void main() {
       addTearDown(database.close);
       await verifier.migrateAndValidate(
         database,
-        6,
+        7,
         options: const ValidationOptions(validateDropped: true),
       );
       final row = await database
@@ -109,7 +149,7 @@ void main() {
     addTearDown(database.close);
     await verifier.migrateAndValidate(
       database,
-      6,
+      7,
       options: const ValidationOptions(validateDropped: true),
     );
     final indexes = await database
@@ -138,7 +178,7 @@ void main() {
 
     await verifier.migrateAndValidate(
       database,
-      6,
+      7,
       options: const ValidationOptions(validateDropped: true),
     );
 
@@ -160,7 +200,7 @@ void main() {
 
     await verifier.migrateAndValidate(
       database,
-      6,
+      7,
       options: const ValidationOptions(validateDropped: true),
     );
 
@@ -204,12 +244,12 @@ void main() {
     'every historical schema survives repeated integrity validation',
     () async {
       final verifier = SchemaVerifier(GeneratedHelper());
-      for (final version in [1, 2, 3, 4, 5]) {
+      for (final version in [1, 2, 3, 4, 5, 6]) {
         final schema = await verifier.schemaAt(version);
         final database = EquisDatabase(schema.newConnection());
         await verifier.migrateAndValidate(
           database,
-          6,
+          7,
           options: const ValidationOptions(validateDropped: true),
         );
         final integrity = await database

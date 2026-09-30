@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/services/investment_service.dart';
 import '../../application/services/market_data_service.dart';
+import '../../application/ports/investment_repository.dart';
+import '../../domain/investments/fixed_income_contract.dart';
 import '../../domain/investments/investment_models.dart';
 import '../../domain/ledger/ledger_models.dart';
 import '../../domain/market/market_models.dart';
@@ -102,6 +104,7 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
     String fees = '',
     String taxes = '',
     LocalDate? date,
+    FixedIncomeTerms? contractTerms,
   }) => _mutate(() async {
     final selected = candidate;
     final initial = initialMode == null
@@ -120,6 +123,7 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
             taxesMinor: taxes.trim().isEmpty
                 ? 0
                 : _minor(taxes, selected?.currency ?? currency),
+            contractTerms: contractTerms,
           );
     final instrument = await _required.createInstrumentWithInitialPosition(
       vaultId: _requiredVault,
@@ -181,6 +185,7 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
     required String taxes,
     required LocalDate date,
     required bool sell,
+    FixedIncomeTerms? contractTerms,
   }) => _mutate(() async {
     final q = _decimal(quantity), price = _decimal(unitPrice);
     final fee = fees.trim().isEmpty ? 0 : _minor(fees, instrument.currency);
@@ -206,8 +211,93 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
         taxesMinor: tax,
         date: date,
         now: UtcInstant.now(),
+        contractTerms: contractTerms,
       );
     }
+  });
+
+  Future<InvestmentLotEditorSnapshot?> loadLotEditor(EntityId lotId) =>
+      _required.loadLotEditor(
+        vaultId: _requiredVault,
+        lotId: lotId,
+        asOf: _today(),
+      );
+
+  Future<void> reviseContract({
+    required EntityId lotId,
+    required FixedIncomeTerms terms,
+    required int expectedRevision,
+    String? expectedDisposalFingerprint,
+  }) => _mutate(() async {
+    await _required.reviseContract(
+      vaultId: _requiredVault,
+      contract: FixedIncomeContract(lotId: lotId, terms: terms),
+      expectedTransactionRevision: expectedRevision,
+      now: UtcInstant.now(),
+      expectedDisposalFingerprint: expectedDisposalFingerprint,
+    );
+  });
+
+  Future<void> recordManualValue({
+    required EntityId lotId,
+    required LocalDate valueDate,
+    required String amount,
+    required CurrencyCode currency,
+    required int expectedRevision,
+    String? notes,
+    String? expectedDisposalFingerprint,
+  }) => _mutate(() async {
+    await _required.recordManualValue(
+      vaultId: _requiredVault,
+      lotId: lotId,
+      valueDate: valueDate,
+      amountMinor: _minor(amount, currency),
+      currency: currency,
+      expectedTransactionRevision: expectedRevision,
+      now: UtcInstant.now(),
+      notes: notes,
+      expectedDisposalFingerprint: expectedDisposalFingerprint,
+    );
+  });
+
+  Future<void> replaceManualValue({
+    required EntityId lotId,
+    required EntityId valueId,
+    required LocalDate valueDate,
+    required String amount,
+    required CurrencyCode currency,
+    required int expectedRevision,
+    String? notes,
+    String? expectedDisposalFingerprint,
+  }) => _mutate(() async {
+    await _required.replaceManualValue(
+      vaultId: _requiredVault,
+      lotId: lotId,
+      valueId: valueId,
+      valueDate: valueDate,
+      amountMinor: _minor(amount, currency),
+      currency: currency,
+      expectedTransactionRevision: expectedRevision,
+      now: UtcInstant.now(),
+      notes: notes,
+      expectedDisposalFingerprint: expectedDisposalFingerprint,
+    );
+  });
+
+  Future<void> removeManualValue({
+    required EntityId lotId,
+    required EntityId valueId,
+    required int expectedRevision,
+    String? expectedDisposalFingerprint,
+  }) => _mutate(() async {
+    await _required.removeManualValue(
+      vaultId: _requiredVault,
+      lotId: lotId,
+      valueId: valueId,
+      expectedTransactionRevision: expectedRevision,
+      now: UtcInstant.now(),
+      expectedDisposalFingerprint: expectedDisposalFingerprint,
+    );
   });
   Future<void> income({
     required InvestmentInstrument instrument,
@@ -263,7 +353,12 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
       _mutate(() async => _required.deleteInstrument(value, UtcInstant.now()));
   Future<void> refreshPrices() async {
     final market = _market;
-    if (market == null) return;
+    if (_service == null ||
+        _vaultId == null ||
+        _currency == null ||
+        state.loading) {
+      return;
+    }
     state = InvestmentState(
       report: state.report,
       prices: state.prices,
@@ -272,26 +367,39 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
     );
     try {
       final today = _today();
-      final prices = await market.load(
+      final series = await _required.refreshEconomicSeries(
         vaultId: _requiredVault,
         asOf: today,
-        now: UtcInstant.now(),
-        refresh: true,
+        isActive: () => mounted,
       );
+      if (!mounted) return;
+      final prices = market == null
+          ? <MarketPriceState>[]
+          : await market.load(
+              vaultId: _requiredVault,
+              asOf: today,
+              now: UtcInstant.now(),
+              refresh: true,
+            );
+      if (!mounted) return;
       final report = await _required.report(
         vaultId: _requiredVault,
         currency: _requiredCurrency,
         asOf: today,
       );
+      if (!mounted) return;
       state = InvestmentState(
         report: report,
         prices: prices,
         lastRefresh: MarketRefreshSummary(
           updated: prices.where((item) => item.refreshed).length,
-          failed: prices.where((item) => item.refreshFailed).length,
+          failed:
+              prices.where((item) => item.refreshFailed).length +
+              series.failedCodes,
         ),
       );
     } catch (error, stackTrace) {
+      if (!mounted) return;
       state = InvestmentState(
         report: state.report,
         prices: state.prices,
@@ -317,7 +425,9 @@ final class InvestmentController extends StateNotifier<InvestmentState> {
     );
   });
   Future<void> _mutate(Future<void> Function() action) async {
-    if (state.loading) return;
+    if (state.loading) {
+      throw StateError('An investment action is already in progress.');
+    }
     state = InvestmentState(
       report: state.report,
       prices: state.prices,

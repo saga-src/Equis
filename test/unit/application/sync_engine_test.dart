@@ -193,6 +193,47 @@ void main() {
     expect(aggregates.payloads, hasLength(250));
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
   });
+
+  test('activates the format floor and pulls again before a push', () async {
+    metadata.pending.add(_pending());
+    aggregates.payloads[_record] = {
+      'format_version': 2,
+      'root': {'revision': 2},
+    };
+    cloud.onActivate = () async {
+      cloud.pullRecords.add(
+        await _cloudRecord(
+          cipher,
+          recordId: _otherRecord,
+          payload: const {'name': 'old client write'},
+          revision: 1,
+          serverVersion: 1,
+        ),
+      );
+    };
+    cloud.pushHandler = (mutations) => [
+      CloudPushResult(
+        operationId: mutations.single.operationId,
+        status: CloudPushStatus.accepted,
+        revision: 2,
+        serverVersion: 2,
+      ),
+    ];
+
+    final result = await engine.synchronize(vaultId: _vault, deviceId: _device);
+
+    expect(result.status, SyncRunStatus.succeeded);
+    expect(result.pulled, 1);
+    expect(result.pushed, 1);
+    expect(cloud.events, ['pull', 'activate', 'pull', 'push']);
+    expect(aggregates.payloads[_otherRecord], {'name': 'old client write'});
+  });
+
+  test('read-only sync leaves the format floor unchanged', () async {
+    final result = await engine.synchronize(vaultId: _vault, deviceId: _device);
+    expect(result.status, SyncRunStatus.succeeded);
+    expect(cloud.events, ['pull']);
+  });
 }
 
 PendingSyncMutation _pending({Map<String, Object?>? base}) =>
@@ -233,11 +274,20 @@ Future<CloudSyncRecord> _cloudRecord(
   );
 }
 
-final class _Cloud implements CloudSyncGateway {
+final class _Cloud
+    implements CloudSyncGateway, CloudSyncAggregateFormatGateway {
   CloudSyncFailure? failure;
   CloudSyncFailure? pushFailure;
   List<CloudSyncRecord> pullRecords = [];
   List<CloudPushResult> Function(List<CloudSyncMutation>)? pushHandler;
+  Future<void> Function()? onActivate;
+  final List<String> events = [];
+
+  @override
+  Future<void> activateAggregateFormat2({required String vaultId}) async {
+    events.add('activate');
+    await onActivate?.call();
+  }
 
   @override
   Future<void> acknowledgeCursor({
@@ -269,16 +319,20 @@ final class _Cloud implements CloudSyncGateway {
     required String vaultId,
     required int afterServerVersion,
     int limit = 100,
-  }) async => pullRecords
-      .where((item) => item.serverVersion > afterServerVersion)
-      .take(limit)
-      .toList();
+  }) async {
+    events.add('pull');
+    return pullRecords
+        .where((item) => item.serverVersion > afterServerVersion)
+        .take(limit)
+        .toList();
+  }
 
   @override
   Future<List<CloudPushResult>> pushBatch({
     required String vaultId,
     required List<CloudSyncMutation> mutations,
   }) async {
+    events.add('push');
     if (pushFailure case final value?) throw value;
     final handler = pushHandler;
     if (handler != null) return handler(mutations);
@@ -468,3 +522,4 @@ const _vault = '018f47c2-9b72-7cc1-8b83-5d0fead0a001';
 const _record = '018f47c2-9b72-7cc1-8b83-5d0fead0a002';
 const _operation = '018f47c2-9b72-7cc1-8b83-5d0fead0a003';
 const _device = '018f47c2-9b72-7cc1-8b83-5d0fead0a004';
+const _otherRecord = '018f47c2-9b72-7cc1-8b83-5d0fead0a005';

@@ -66,15 +66,22 @@ final class VaultLogicalSnapshot {
       }
       tables[entry.key! as String] = rows;
     }
-    if (!tables.keys.toSet().containsAll(_tableOrder)) {
+    final schemaVersion = json['schema_version']! as int;
+    final requiredTables = schemaVersion >= 7
+        ? _tableOrder
+        : _tableOrder.where((table) => !_v7PrivateTables.contains(table));
+    if (!tables.keys.toSet().containsAll(requiredTables)) {
       throw const VaultSnapshotFormatException();
+    }
+    for (final table in _v7PrivateTables) {
+      tables.putIfAbsent(table, () => []);
     }
     return VaultLogicalSnapshot(
       portableKeys: json['portable_keys'],
       vaultIdentity: json['vault_identity'] == null
           ? null
           : Map<String, Object?>.from(json['vault_identity']! as Map),
-      schemaVersion: json['schema_version']! as int,
+      schemaVersion: schemaVersion,
       createdAtMicros: json['created_at_micros']! as int,
       tables: tables,
     );
@@ -89,28 +96,62 @@ final class VaultLogicalSnapshotStore {
   Future<VaultLogicalSnapshot> capture(
     String vaultId, {
     int? createdAtMicros,
+    bool requireSyncSettled = true,
   }) async {
-    final tables = <String, List<Map<String, Object?>>>{};
-    for (final table in _tableOrder) {
-      final query = _captureSql(table);
-      final rows = await database
+    return database.transaction(() async {
+      final unresolved = await database
           .customSelect(
-            query.sql,
-            variables: query.usesVault ? [Variable(vaultId)] : const [],
+            'SELECT 1 FROM sync_quarantine WHERE vault_id = ? '
+            "AND (replayed_at IS NULL OR replay_state <> 'replayed') LIMIT 1",
+            variables: [Variable(vaultId)],
           )
           .get();
-      tables[table] = [for (final row in rows) _portableRow(table, row.data)];
-    }
-    final vaultRows = tables['vaults']!;
-    if (vaultRows.length != 1 || vaultRows.single['id'] != vaultId) {
-      throw const VaultSnapshotSourceNotFound();
-    }
-    return VaultLogicalSnapshot(
-      schemaVersion: database.schemaVersion,
-      createdAtMicros:
-          createdAtMicros ?? DateTime.now().toUtc().microsecondsSinceEpoch,
-      tables: tables,
-    );
+      if (unresolved.isNotEmpty) {
+        throw const VaultSnapshotUnresolvedSyncConflict();
+      }
+      // Sync metadata is intentionally absent from a portable backup. A
+      // pending write or unresolved review would lose its protection after
+      // restore, allowing the next cloud pull to replace local data.
+      if (requireSyncSettled) {
+        final pending = await database
+            .customSelect(
+              'SELECT 1 FROM sync_outbox WHERE vault_id = ? LIMIT 1',
+              variables: [Variable(vaultId)],
+            )
+            .get();
+        final conflicts = await database
+            .customSelect(
+              'SELECT 1 FROM sync_conflicts WHERE vault_id = ? '
+              'AND resolved_at IS NULL LIMIT 1',
+              variables: [Variable(vaultId)],
+            )
+            .get();
+        if (pending.isNotEmpty || conflicts.isNotEmpty) {
+          throw const VaultSnapshotUnresolvedSyncConflict();
+        }
+      }
+      final tables = <String, List<Map<String, Object?>>>{};
+      for (final table in _tableOrder) {
+        final query = _captureSql(table);
+        final rows = await database
+            .customSelect(
+              query.sql,
+              variables: query.usesVault ? [Variable(vaultId)] : const [],
+            )
+            .get();
+        tables[table] = [for (final row in rows) _portableRow(table, row.data)];
+      }
+      final vaultRows = tables['vaults']!;
+      if (vaultRows.length != 1 || vaultRows.single['id'] != vaultId) {
+        throw const VaultSnapshotSourceNotFound();
+      }
+      return VaultLogicalSnapshot(
+        schemaVersion: database.schemaVersion,
+        createdAtMicros:
+            createdAtMicros ?? DateTime.now().toUtc().microsecondsSinceEpoch,
+        tables: tables,
+      );
+    });
   }
 
   Future<void> restore(
@@ -136,7 +177,11 @@ final class VaultLogicalSnapshotStore {
         throw const VaultRestoreRequiresCleanProfile();
       }
       for (final table in _tableOrder) {
-        final rows = snapshot.tables[table];
+        final rows =
+            snapshot.tables[table] ??
+            (snapshot.schemaVersion <= 6 && _v7PrivateTables.contains(table)
+                ? const <Map<String, Object?>>[]
+                : null);
         if (rows == null) throw const VaultSnapshotFormatException();
         final actualColumns = await _columns(table);
         for (final sourceRow in rows) {
@@ -237,6 +282,8 @@ const _tableOrder = <String>[
   'investment_instruments',
   'investment_events',
   'investment_lots',
+  'fixed_income_contracts',
+  'fixed_income_manual_values',
   'investment_lot_disposals',
   'manual_fx_rates',
   'manual_market_prices',
@@ -297,6 +344,12 @@ const _filters = <String, String>{
       'instrument_id IN (SELECT id FROM investment_instruments WHERE vault_id = ?)',
   'investment_lots':
       'instrument_id IN (SELECT id FROM investment_instruments WHERE vault_id = ?)',
+  'fixed_income_contracts':
+      'lot_id IN (SELECT id FROM investment_lots WHERE instrument_id IN '
+      '(SELECT id FROM investment_instruments WHERE vault_id = ?))',
+  'fixed_income_manual_values':
+      'lot_id IN (SELECT id FROM investment_lots WHERE instrument_id IN '
+      '(SELECT id FROM investment_instruments WHERE vault_id = ?))',
   'investment_lot_disposals':
       'lot_id IN (SELECT lot.id FROM investment_lots lot '
       'INNER JOIN investment_instruments instrument '
@@ -309,12 +362,21 @@ const _filters = <String, String>{
   'vault_preferences': 'vault_id = ?',
 };
 
+const _v7PrivateTables = <String>{
+  'fixed_income_contracts',
+  'fixed_income_manual_values',
+};
+
 final class VaultSnapshotFormatException implements Exception {
   const VaultSnapshotFormatException();
 }
 
 final class VaultSnapshotSourceNotFound implements Exception {
   const VaultSnapshotSourceNotFound();
+}
+
+final class VaultSnapshotUnresolvedSyncConflict implements Exception {
+  const VaultSnapshotUnresolvedSyncConflict();
 }
 
 final class VaultRestoreRequiresCleanProfile implements Exception {

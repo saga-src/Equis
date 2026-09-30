@@ -27,9 +27,9 @@ void main() {
         jsonEncode({
           'format': 1,
           'applicationId': 'app.saga.equis',
-          'version': '1.1.1',
-          'build': 8,
-          'tag': 'v1.1.1',
+          'version': '1.2.1',
+          'build': 13,
+          'tag': 'v1.2.1',
           'packages': [
             {
               'platform': 'android',
@@ -50,7 +50,7 @@ void main() {
         if (r.url.path.endsWith('/latest')) {
           return http.Response(
             jsonEncode({
-              'tag_name': 'v1.1.1',
+              'tag_name': 'v1.2.1',
               'draft': false,
               'prerelease': false,
             }),
@@ -80,6 +80,30 @@ void main() {
       expect(requests, previousRequests);
       await service.download(allowMobile: true);
       expect(service.status, UpdateStatus.ready);
+      expect(
+        await (await service.validateForInstallation()).readAsBytes(),
+        data,
+      );
+      final staleManifest = utf8.encode(
+        jsonEncode({
+          ...jsonDecode(utf8.decode(raw)) as Map<String, dynamic>,
+          'version': '1.0.0',
+          'build': 6,
+          'tag': 'v1.0.0',
+        }),
+      );
+      await File('${dir.path}/manifest.json').writeAsBytes(staleManifest);
+      await File('${dir.path}/manifest.sig').writeAsString(
+        base64Encode((await Ed25519().sign(staleManifest, keyPair: key)).bytes),
+      );
+      await expectLater(
+        service.validateForInstallation(),
+        throwsA(isA<StateError>()),
+      );
+      expect(service.manifest, isNull);
+      expect(service.package, isNull);
+      await File('${dir.path}/manifest.json').writeAsBytes(raw);
+      await File('${dir.path}/manifest.sig').writeAsString(signature);
       expect(
         await (await service.validateForInstallation()).readAsBytes(),
         data,

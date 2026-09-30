@@ -4,6 +4,7 @@ import '../../domain/shared/uuid_v7.dart';
 abstract interface class LedgerRepository {
   Future<void> save(LedgerTransaction transaction);
   Future<LedgerTransaction?> find(EntityId id);
+  Future<LedgerTransaction?> findActiveForVault(EntityId id, EntityId vaultId);
   Future<List<LedgerTransaction>> listRecentForVault(
     EntityId vaultId, {
     int limit = 20,

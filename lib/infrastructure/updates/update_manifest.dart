@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:cryptography/cryptography.dart';
+import 'windows_update_identity.dart';
 
 final class UpdateVersion implements Comparable<UpdateVersion> {
   const UpdateVersion(this.version, this.build);
@@ -28,15 +29,23 @@ final class UpdateVersion implements Comparable<UpdateVersion> {
 }
 
 final class UpdatePackage {
-  const UpdatePackage(this.platform, this.name, this.size, this.sha256);
+  const UpdatePackage(
+    this.platform,
+    this.name,
+    this.size,
+    this.sha256, {
+    this.trustCatalogSha256,
+  });
   final String platform, name, sha256;
   final int size;
+  final String? trustCatalogSha256;
   factory UpdatePackage.fromJson(Map<String, dynamic> json) {
     final p = UpdatePackage(
       json['platform'] as String,
       json['file'] as String,
       json['size'] as int,
       json['sha256'] as String,
+      trustCatalogSha256: json['trustCatalogSha256'] as String?,
     );
     if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9._+-]+$').hasMatch(p.name) ||
         p.size <= 0 ||
@@ -47,6 +56,9 @@ final class UpdatePackage {
           'windows-installed',
           'windows-portable',
         ].contains(p.platform) ||
+        (p.trustCatalogSha256 != null &&
+            !RegExp(r'^[a-f0-9]{64}$').hasMatch(p.trustCatalogSha256!)) ||
+        (p.platform != 'windows-installed' && p.trustCatalogSha256 != null) ||
         !p.name.endsWith(switch (p.platform) {
           'android' => '.apk',
           'windows-installed' => '.exe',
@@ -81,8 +93,9 @@ final class UpdateManifest {
   static Future<UpdateManifest> verify(
     List<int> bytes,
     List<int> signature,
-    List<int> publicKey,
-  ) async {
+    List<int> publicKey, {
+    String expectedApplicationId = windowsUpdateApplicationId,
+  }) async {
     if (bytes.length > 65536 ||
         signature.length != 64 ||
         publicKey.length != 32 ||
@@ -96,7 +109,7 @@ final class UpdateManifest {
       throw const FormatException('Invalid manifest signature');
     }
     final j = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
-    if (j['format'] != 1 || j['applicationId'] != 'app.saga.equis') {
+    if (j['format'] != 1 || j['applicationId'] != expectedApplicationId) {
       throw const FormatException('Incompatible manifest');
     }
     final version = UpdateVersion(j['version'] as String, j['build'] as int);

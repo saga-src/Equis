@@ -2,11 +2,13 @@ import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:equis/application/ports/investment_repository.dart';
+import 'package:equis/application/ports/ledger_repository.dart';
 import 'package:equis/application/services/investment_service.dart';
 import 'package:equis/application/services/wealth_service.dart';
 import 'package:equis/application/sync/sync_models.dart';
 import 'package:equis/domain/entities/account_profile.dart';
 import 'package:equis/domain/investments/investment_models.dart';
+import 'package:equis/domain/investments/fixed_income_contract.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/market/market_models.dart';
 import 'package:equis/domain/shared/currency.dart';
@@ -14,7 +16,11 @@ import 'package:equis/domain/shared/local_date.dart';
 import 'package:equis/domain/shared/utc_instant.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
 import 'package:equis/infrastructure/persistence/database/equis_database.dart'
-    hide InvestmentInstrument, InvestmentLot;
+    hide
+        InvestmentInstrument,
+        InvestmentLot,
+        FixedIncomeContract,
+        FixedIncomeManualValue;
 import 'package:equis/infrastructure/persistence/database/drift_local_unit_of_work.dart';
 import 'package:equis/infrastructure/repositories/drift_dashboard_repository.dart';
 import 'package:equis/infrastructure/repositories/drift_investment_repository.dart';
@@ -158,6 +164,620 @@ void main() {
     );
   });
   tearDown(() => database.close());
+
+  test('quarantined account sync marks portfolio as a known subtotal', () async {
+    final baseline = await service.report(
+      vaultId: vaultId,
+      currency: CurrencyCode.brl,
+      asOf: LocalDate(2026, 8, 13),
+    );
+    expect(baseline.hasIncompleteAccountSync, isFalse);
+    final event = EntityId.generate().value;
+    await database.customStatement(
+      'INSERT INTO sync_quarantine '
+      '(event_id, vault_id, server_version, entity_type, entity_id, entity_revision, '
+      'authenticated_envelope, reason, detected_at) '
+      "VALUES (?, ?, 1, 'transaction', ?, 1, '{}', 'account_conflict', 1)",
+      [event, vaultId.value, EntityId.generate().value],
+    );
+    final partial = await service.report(
+      vaultId: vaultId,
+      currency: CurrencyCode.brl,
+      asOf: LocalDate(2026, 8, 13),
+    );
+    expect(partial.hasIncompleteAccountSync, isTrue);
+    expect(partial.isKnownSubtotal, isTrue);
+    expect(partial.marketValueMinor, baseline.marketValueMinor);
+    await database.customStatement(
+      "UPDATE sync_quarantine SET replay_state = 'replayed', replayed_at = 2 WHERE event_id = ?",
+      [event],
+    );
+    final resolved = await service.report(
+      vaultId: vaultId,
+      currency: CurrencyCode.brl,
+      asOf: LocalDate(2026, 8, 13),
+    );
+    expect(resolved.hasIncompleteAccountSync, isFalse);
+  });
+
+  test(
+    'fixed-income terms persist per lot without changing acquisition cost',
+    () async {
+      final fixed = await service.createInstrument(
+        vaultId: vaultId,
+        name: 'Two applications',
+        assetClass: InvestmentAssetClass.fixedIncome,
+        currency: CurrencyCode.brl,
+        now: now,
+      );
+      FixedIncomeTerms terms(String rate, String principal) => FixedIncomeTerms(
+        principal: Decimal.parse(principal),
+        currency: CurrencyCode.brl,
+        productName: 'CDB',
+        issuerName: 'Bank',
+        accrualStart: LocalDate(2026, 1, 10),
+        mode: FixedIncomeRemunerationMode.fixedAnnual,
+        updateRule: FixedIncomeUpdateRule.annualCompound,
+        annualRate: Decimal.parse(rate),
+        dayCountBasis: 365,
+      );
+
+      final first = await service.buy(
+        instrument: fixed,
+        cashPocket: cash,
+        quantity: Decimal.one,
+        unitPrice: Decimal.fromInt(1000),
+        date: LocalDate(2026, 1, 10),
+        now: now,
+        contractTerms: terms('0.1208', '950'),
+      );
+      await service.buy(
+        instrument: fixed,
+        cashPocket: cash,
+        quantity: Decimal.one,
+        unitPrice: Decimal.fromInt(2000),
+        date: LocalDate(2026, 1, 11),
+        now: now,
+        contractTerms: terms('0.15', '2000'),
+      );
+      final lots = await repository.lotPositions(
+        fixed.id,
+        asOf: LocalDate(2026, 1, 12),
+      );
+      expect(lots.map((p) => p.remainingCostMinor), [100000, 200000]);
+      final contract1 = (await repository.findContract(
+        vaultId,
+        lots[0].lot.id,
+      ))!;
+      final contract2 = (await repository.findContract(
+        vaultId,
+        lots[1].lot.id,
+      ))!;
+      expect(contract1.terms.principal, Decimal.fromInt(950));
+      expect(contract1.terms.annualRate, Decimal.parse('0.1208'));
+      expect(contract2.terms.annualRate, Decimal.parse('0.15'));
+
+      final revised = FixedIncomeContract(
+        lotId: contract1.lotId,
+        terms: terms('0.13', '950'),
+      );
+      expect(
+        await service.reviseContract(
+          vaultId: vaultId,
+          contract: revised,
+          expectedTransactionRevision: first.revision,
+          now: const UtcInstant.fromEpochMicroseconds(2000),
+        ),
+        2,
+      );
+      await expectLater(
+        service.reviseContract(
+          vaultId: vaultId,
+          contract: revised,
+          expectedTransactionRevision: first.revision,
+          now: const UtcInstant.fromEpochMicroseconds(3000),
+        ),
+        throwsA(isA<LedgerRevisionConflict>()),
+      );
+      expect(
+        (await repository.findContract(
+          vaultId,
+          contract1.lotId,
+        ))!.terms.annualRate,
+        Decimal.parse('0.13'),
+      );
+      expect(
+        (await database
+                .customSelect(
+                  'SELECT COUNT(*) AS n FROM investment_events WHERE transaction_id=?',
+                  variables: [Variable(first.id.value)],
+                )
+                .getSingle())
+            .read<int>('n'),
+        1,
+      );
+
+      expect(
+        await service.recordManualValue(
+          vaultId: vaultId,
+          lotId: contract1.lotId,
+          valueDate: LocalDate(2026, 2, 1),
+          amountMinor: 96000,
+          currency: CurrencyCode.brl,
+          expectedTransactionRevision: 2,
+          now: const UtcInstant.fromEpochMicroseconds(4000),
+        ),
+        3,
+      );
+      final manual = (await repository.manualValues(
+        vaultId,
+        contract1.lotId,
+      )).single;
+      expect(manual.amountMinor, 96000);
+      expect(
+        manual.disposalFingerprint,
+        await repository.disposalFingerprint(
+          contract1.lotId,
+          asOf: manual.valueDate,
+        ),
+      );
+      expect(
+        await service.removeManualValue(
+          vaultId: vaultId,
+          lotId: contract1.lotId,
+          valueId: manual.id,
+          expectedTransactionRevision: 3,
+          now: const UtcInstant.fromEpochMicroseconds(5000),
+        ),
+        4,
+      );
+      expect(
+        (await repository.manualValues(
+          vaultId,
+          contract1.lotId,
+        )).single.removedAt,
+        const UtcInstant.fromEpochMicroseconds(5000),
+      );
+      expect(
+        await database.customSelect('PRAGMA foreign_key_check').get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test('initial fixed-income positions persist their own terms', () async {
+    for (final mode in InitialPositionMode.values) {
+      final rate = mode == InitialPositionMode.historicalBuy
+          ? Decimal.parse('0.1208')
+          : Decimal.parse('0.15');
+      final created = await service.createInstrumentWithInitialPosition(
+        vaultId: vaultId,
+        name: 'Initial ${mode.name}',
+        assetClass: InvestmentAssetClass.fixedIncome,
+        currency: CurrencyCode.brl,
+        now: now,
+        initialPosition: InitialPositionDraft(
+          mode: mode,
+          cashPocket: cash,
+          quantity: Decimal.one,
+          unitPrice: Decimal.fromInt(1000),
+          date: LocalDate(2026, 1, 10),
+          contractTerms: FixedIncomeTerms(
+            principal: Decimal.fromInt(1000),
+            currency: CurrencyCode.brl,
+            productName: 'LCI',
+            accrualStart: LocalDate(2026, 1, 10),
+            mode: FixedIncomeRemunerationMode.fixedAnnual,
+            updateRule: FixedIncomeUpdateRule.annualCompound,
+            annualRate: rate,
+            dayCountBasis: 365,
+          ),
+        ),
+      );
+      final lot = (await repository.lotPositions(
+        created.id,
+        asOf: LocalDate(2026, 1, 11),
+      )).single.lot;
+      expect(
+        (await repository.findContract(vaultId, lot.id))!.terms.annualRate,
+        rate,
+      );
+    }
+  });
+
+  test('lot editor snapshot is vault-scoped and revisioned', () async {
+    final fixed = await service.createInstrument(
+      vaultId: vaultId,
+      name: 'Snapshot CDB',
+      assetClass: InvestmentAssetClass.fixedIncome,
+      currency: CurrencyCode.brl,
+      now: now,
+    );
+    final purchase = await service.buy(
+      instrument: fixed,
+      cashPocket: cash,
+      quantity: Decimal.one,
+      unitPrice: Decimal.fromInt(1000),
+      date: LocalDate(2026, 1, 10),
+      now: now,
+      contractTerms: FixedIncomeTerms(
+        principal: Decimal.fromInt(1000),
+        currency: CurrencyCode.brl,
+        productName: 'CDB',
+        accrualStart: LocalDate(2026, 1, 10),
+        mode: FixedIncomeRemunerationMode.manualOnly,
+        updateRule: FixedIncomeUpdateRule.manualValue,
+      ),
+    );
+    final lotId = (await repository.lotPositions(
+      fixed.id,
+      asOf: LocalDate(2026, 1, 11),
+    )).single.lot.id;
+    Future<InvestmentLotEditorSnapshot?> snapshot(LocalDate date) =>
+        service.loadLotEditor(vaultId: vaultId, lotId: lotId, asOf: date);
+
+    expect(await snapshot(LocalDate(2026, 1, 9)), isNull);
+    expect(
+      await service.loadLotEditor(
+        vaultId: EntityId.generate(),
+        lotId: lotId,
+        asOf: LocalDate(2026, 1, 11),
+      ),
+      isNull,
+    );
+    final initial = (await snapshot(LocalDate(2026, 1, 11)))!;
+    expect(initial.lotId, lotId);
+    expect(initial.contract!.terms.productName, 'CDB');
+    expect(initial.manualValues, isEmpty);
+    expect(initial.acquisitionTransactionRevision, purchase.revision);
+
+    final nextRevision = await service.recordManualValue(
+      vaultId: vaultId,
+      lotId: lotId,
+      valueDate: LocalDate(2026, 1, 11),
+      amountMinor: 101000,
+      currency: CurrencyCode.brl,
+      expectedTransactionRevision: initial.acquisitionTransactionRevision,
+      now: const UtcInstant.fromEpochMicroseconds(2000),
+    );
+    final withManual = (await snapshot(LocalDate(2026, 1, 11)))!;
+    expect(withManual.acquisitionTransactionRevision, nextRevision);
+    expect(withManual.manualValues.single.amountMinor, 101000);
+    expect(initial.manualValues, isEmpty);
+    await expectLater(
+      service.removeManualValue(
+        vaultId: vaultId,
+        lotId: lotId,
+        valueId: withManual.manualValues.single.id,
+        expectedTransactionRevision: initial.acquisitionTransactionRevision,
+        now: const UtcInstant.fromEpochMicroseconds(3000),
+      ),
+      throwsA(isA<LedgerRevisionConflict>()),
+    );
+    await service.removeManualValue(
+      vaultId: vaultId,
+      lotId: lotId,
+      valueId: withManual.manualValues.single.id,
+      expectedTransactionRevision: withManual.acquisitionTransactionRevision,
+      now: const UtcInstant.fromEpochMicroseconds(3000),
+    );
+    final afterRemoval = (await snapshot(LocalDate(2026, 1, 11)))!;
+    expect(afterRemoval.acquisitionTransactionRevision, nextRevision + 1);
+    expect(afterRemoval.manualValues, isEmpty);
+
+    await service.sell(
+      instrument: fixed,
+      cashPocket: cash,
+      quantity: Decimal.one,
+      unitPrice: Decimal.fromInt(1000),
+      date: LocalDate(2026, 1, 12),
+      now: const UtcInstant.fromEpochMicroseconds(4000),
+    );
+    expect(await snapshot(LocalDate(2026, 1, 11)), isNotNull);
+    expect(await snapshot(LocalDate(2026, 1, 12)), isNull);
+    expect(
+      await database.customSelect('PRAGMA foreign_key_check').get(),
+      isEmpty,
+    );
+  });
+
+  test('manual balance edit retires the selected value atomically', () async {
+    final fixed = await service.createInstrument(
+      vaultId: vaultId,
+      name: 'Manual revision',
+      assetClass: InvestmentAssetClass.fixedIncome,
+      currency: CurrencyCode.brl,
+      now: now,
+    );
+    await service.buy(
+      instrument: fixed,
+      cashPocket: cash,
+      quantity: Decimal.one,
+      unitPrice: Decimal.fromInt(1000),
+      date: LocalDate(2026, 1, 10),
+      now: now,
+      contractTerms: FixedIncomeTerms(
+        principal: Decimal.fromInt(1000),
+        currency: CurrencyCode.brl,
+        productName: 'CDB',
+        accrualStart: LocalDate(2026, 1, 10),
+        mode: FixedIncomeRemunerationMode.manualOnly,
+        updateRule: FixedIncomeUpdateRule.manualValue,
+      ),
+    );
+    final lotId = (await repository.lotPositions(
+      fixed.id,
+      asOf: LocalDate(2026, 1, 13),
+    )).single.lot.id;
+    Future<InvestmentLotEditorSnapshot> snapshot() async =>
+        (await service.loadLotEditor(
+          vaultId: vaultId,
+          lotId: lotId,
+          asOf: LocalDate(2026, 1, 13),
+        ))!;
+    final initial = await snapshot();
+    await service.recordManualValue(
+      vaultId: vaultId,
+      lotId: lotId,
+      valueDate: LocalDate(2026, 1, 12),
+      amountMinor: 102000,
+      currency: CurrencyCode.brl,
+      expectedTransactionRevision: initial.acquisitionTransactionRevision,
+      now: const UtcInstant.fromEpochMicroseconds(2000),
+    );
+    final beforeEdit = await snapshot();
+    final oldId = beforeEdit.manualValues.single.id;
+    final editedRevision = await service.replaceManualValue(
+      vaultId: vaultId,
+      lotId: lotId,
+      valueId: oldId,
+      valueDate: LocalDate(2026, 1, 11),
+      amountMinor: 101000,
+      currency: CurrencyCode.brl,
+      expectedTransactionRevision: beforeEdit.acquisitionTransactionRevision,
+      now: const UtcInstant.fromEpochMicroseconds(3000),
+    );
+    final afterEdit = await snapshot();
+    expect(afterEdit.acquisitionTransactionRevision, editedRevision);
+    expect(afterEdit.manualValues, hasLength(1));
+    expect(afterEdit.manualValues.single.id, isNot(oldId));
+    expect(afterEdit.manualValues.single.valueDate, LocalDate(2026, 1, 11));
+    expect(afterEdit.manualValues.single.amountMinor, 101000);
+    final allValues = await repository.manualValues(vaultId, lotId);
+    expect(allValues.where((value) => value.removedAt == null), hasLength(1));
+    expect(
+      allValues.singleWhere((value) => value.id == oldId).removedAt,
+      isNotNull,
+    );
+    final report = await service.report(
+      vaultId: vaultId,
+      currency: CurrencyCode.brl,
+      asOf: LocalDate(2026, 1, 13),
+    );
+    expect(
+      report.holdings
+          .singleWhere((holding) => holding.instrument.id == fixed.id)
+          .lotValuations
+          .single
+          .amountMinor,
+      101000,
+    );
+    await expectLater(
+      service.replaceManualValue(
+        vaultId: vaultId,
+        lotId: lotId,
+        valueId: oldId,
+        valueDate: LocalDate(2026, 1, 13),
+        amountMinor: 103000,
+        currency: CurrencyCode.brl,
+        expectedTransactionRevision: editedRevision,
+        now: const UtcInstant.fromEpochMicroseconds(4000),
+      ),
+      throwsStateError,
+    );
+    expect((await snapshot()).acquisitionTransactionRevision, editedRevision);
+    await expectLater(
+      service.replaceManualValue(
+        vaultId: vaultId,
+        lotId: lotId,
+        valueId: afterEdit.manualValues.single.id,
+        valueDate: LocalDate(2026, 1, 13),
+        amountMinor: 103000,
+        currency: CurrencyCode.brl,
+        expectedTransactionRevision: beforeEdit.acquisitionTransactionRevision,
+        now: const UtcInstant.fromEpochMicroseconds(5000),
+      ),
+      throwsA(isA<LedgerRevisionConflict>()),
+    );
+  });
+
+  test('lot edit rejects a sale made after opening the editor', () async {
+    final fixed = await service.createInstrument(
+      vaultId: vaultId,
+      name: 'Manual balance race',
+      assetClass: InvestmentAssetClass.fixedIncome,
+      currency: CurrencyCode.brl,
+      now: now,
+    );
+    await service.buy(
+      instrument: fixed,
+      cashPocket: cash,
+      quantity: Decimal.fromInt(10),
+      unitPrice: Decimal.fromInt(100),
+      date: LocalDate(2026, 1, 10),
+      now: now,
+      contractTerms: FixedIncomeTerms(
+        principal: Decimal.fromInt(1000),
+        currency: CurrencyCode.brl,
+        productName: 'CDB',
+        accrualStart: LocalDate(2026, 1, 10),
+        mode: FixedIncomeRemunerationMode.manualOnly,
+        updateRule: FixedIncomeUpdateRule.manualValue,
+      ),
+    );
+    final lotId = (await repository.lotPositions(
+      fixed.id,
+      asOf: LocalDate(2026, 1, 12),
+    )).single.lot.id;
+    final opened = (await service.loadLotEditor(
+      vaultId: vaultId,
+      lotId: lotId,
+      asOf: LocalDate(2026, 1, 12),
+    ))!;
+    await service.sell(
+      instrument: fixed,
+      cashPocket: cash,
+      quantity: Decimal.fromInt(2),
+      unitPrice: Decimal.fromInt(110),
+      date: LocalDate(2026, 1, 13),
+      now: const UtcInstant.fromEpochMicroseconds(2000),
+    );
+    await expectLater(
+      service.recordManualValue(
+        vaultId: vaultId,
+        lotId: lotId,
+        valueDate: LocalDate(2026, 1, 14),
+        amountMinor: 88000,
+        currency: CurrencyCode.brl,
+        expectedTransactionRevision: opened.acquisitionTransactionRevision,
+        expectedDisposalFingerprint: opened.disposalFingerprint,
+        now: const UtcInstant.fromEpochMicroseconds(3000),
+      ),
+      throwsA(isA<InvestmentLotStateConflict>()),
+    );
+    expect(await repository.manualValues(vaultId, lotId), isEmpty);
+    final reopened = (await service.loadLotEditor(
+      vaultId: vaultId,
+      lotId: lotId,
+      asOf: LocalDate(2026, 1, 14),
+    ))!;
+    expect(reopened.disposalFingerprint, isNot(opened.disposalFingerprint));
+    expect(
+      reopened.acquisitionTransactionRevision,
+      opened.acquisitionTransactionRevision,
+    );
+    await service.recordManualValue(
+      vaultId: vaultId,
+      lotId: lotId,
+      valueDate: LocalDate(2026, 1, 14),
+      amountMinor: 88000,
+      currency: CurrencyCode.brl,
+      expectedTransactionRevision: reopened.acquisitionTransactionRevision,
+      expectedDisposalFingerprint: reopened.disposalFingerprint,
+      now: const UtcInstant.fromEpochMicroseconds(4000),
+    );
+    expect(
+      (await repository.manualValues(vaultId, lotId)).single.amountMinor,
+      88000,
+    );
+  });
+
+  test(
+    'manual balance tracks effective disposals through financial date',
+    () async {
+      final fixed = await service.createInstrument(
+        vaultId: vaultId,
+        name: 'Manual balance lot',
+        assetClass: InvestmentAssetClass.fixedIncome,
+        currency: CurrencyCode.brl,
+        now: now,
+      );
+      final acquisition = await service.buy(
+        instrument: fixed,
+        cashPocket: cash,
+        quantity: Decimal.fromInt(10),
+        unitPrice: Decimal.fromInt(100),
+        date: LocalDate(2026, 1, 10),
+        now: now,
+        contractTerms: FixedIncomeTerms(
+          principal: Decimal.fromInt(1000),
+          currency: CurrencyCode.brl,
+          productName: 'CDB',
+          accrualStart: LocalDate(2026, 1, 10),
+          mode: FixedIncomeRemunerationMode.manualOnly,
+          updateRule: FixedIncomeUpdateRule.manualValue,
+        ),
+      );
+      final lotId = (await repository.lotPositions(
+        fixed.id,
+        asOf: LocalDate(2026, 2, 1),
+      )).single.lot.id;
+      final before = await repository.disposalFingerprint(
+        lotId,
+        asOf: LocalDate(2026, 2, 1),
+      );
+      await expectLater(
+        service.recordManualValue(
+          vaultId: vaultId,
+          lotId: lotId,
+          valueDate: LocalDate(2026, 1, 9),
+          amountMinor: 100000,
+          currency: CurrencyCode.brl,
+          expectedTransactionRevision: acquisition.revision,
+          now: const UtcInstant.fromEpochMicroseconds(1900),
+        ),
+        throwsArgumentError,
+      );
+      expect(await repository.manualValues(vaultId, lotId), isEmpty);
+      await service.recordManualValue(
+        vaultId: vaultId,
+        lotId: lotId,
+        valueDate: LocalDate(2026, 2, 1),
+        amountMinor: 102000,
+        currency: CurrencyCode.brl,
+        expectedTransactionRevision: acquisition.revision,
+        now: const UtcInstant.fromEpochMicroseconds(2000),
+      );
+      final manual = (await repository.manualValues(vaultId, lotId)).single;
+      expect(manual.disposalFingerprint, before);
+      expect(before, matches(RegExp(r'^[0-9a-f]{64}$')));
+
+      // A sale recorded later can have a financial date before the manual value.
+      final sale = await service.sell(
+        instrument: fixed,
+        cashPocket: cash,
+        quantity: Decimal.fromInt(2),
+        unitPrice: Decimal.fromInt(110),
+        date: LocalDate(2026, 1, 20),
+        now: const UtcInstant.fromEpochMicroseconds(3000),
+      );
+      final afterSale = await repository.disposalFingerprint(
+        lotId,
+        asOf: LocalDate(2026, 2, 1),
+      );
+      expect(afterSale, isNot(before));
+      expect(
+        await repository.disposalFingerprint(
+          lotId,
+          asOf: LocalDate(2026, 1, 15),
+        ),
+        before,
+      );
+      expect(
+        (await repository.manualValues(
+          vaultId,
+          lotId,
+        )).single.disposalFingerprint,
+        before,
+      );
+
+      await database.customStatement(
+        "UPDATE transactions SET status='cancelled' WHERE id=?",
+        [sale.id.value],
+      );
+      expect(
+        await repository.disposalFingerprint(
+          lotId,
+          asOf: LocalDate(2026, 2, 1),
+        ),
+        before,
+      );
+      expect(
+        await database.customSelect('PRAGMA foreign_key_check').get(),
+        isEmpty,
+      );
+    },
+  );
 
   test(
     'partial FIFO sale preserves lots and reconciles realized and unrealized results',

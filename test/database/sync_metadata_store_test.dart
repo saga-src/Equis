@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:equis/application/sync/sync_models.dart';
 import 'package:equis/infrastructure/persistence/database/equis_database.dart';
 import 'package:equis/infrastructure/sync/drift_sync_metadata_store.dart';
@@ -17,7 +18,7 @@ void main() {
   test('editing an unsent creation keeps its absent remote base', () async {
     await store.enqueue(
       vaultId: _vault,
-      entityType: SyncEntityType.transaction,
+      entityType: SyncEntityType.tag,
       recordId: _record,
       baseRevision: null,
       baseSnapshot: null,
@@ -26,7 +27,7 @@ void main() {
     );
     await store.enqueue(
       vaultId: _vault,
-      entityType: SyncEntityType.transaction,
+      entityType: SyncEntityType.tag,
       recordId: _record,
       baseRevision: 1,
       baseSnapshot: const {'amount_minor': 100},
@@ -45,7 +46,7 @@ void main() {
   test('coalesces mutations and retains the oldest merge base', () async {
     await store.enqueue(
       vaultId: _vault,
-      entityType: SyncEntityType.transaction,
+      entityType: SyncEntityType.tag,
       recordId: _record,
       baseRevision: 1,
       baseSnapshot: const {'amount_minor': 100},
@@ -59,7 +60,7 @@ void main() {
 
     await store.enqueue(
       vaultId: _vault,
-      entityType: SyncEntityType.transaction,
+      entityType: SyncEntityType.tag,
       recordId: _record,
       baseRevision: 2,
       baseSnapshot: const {'amount_minor': 200},
@@ -109,7 +110,7 @@ void main() {
   test('retry survives restart and acceptance is revision-safe', () async {
     await store.enqueue(
       vaultId: _vault,
-      entityType: SyncEntityType.transaction,
+      entityType: SyncEntityType.tag,
       recordId: _record,
       baseRevision: null,
       baseSnapshot: null,
@@ -154,7 +155,7 @@ void main() {
     () async {
       await store.enqueue(
         vaultId: _vault,
-        entityType: SyncEntityType.transaction,
+        entityType: SyncEntityType.tag,
         recordId: _record,
         baseRevision: null,
         baseSnapshot: null,
@@ -203,8 +204,91 @@ void main() {
       throwsStateError,
     );
   });
+
+  test('transaction dependencies are persisted and pauses survive restart', () async {
+    await database.customStatement(
+      "INSERT INTO vaults (id, name, base_currency_code, timezone, created_at, updated_at) VALUES (?, 'Vault', 'BRL', 'UTC', 1, 1)",
+      [_vault],
+    );
+    await database.customStatement(
+      "INSERT INTO currencies (code, name_key, symbol, minor_units) VALUES ('BRL', 'brl', 'BRL', 2)",
+    );
+    await database.customStatement(
+      "INSERT INTO accounts (id, vault_id, name, account_type, nature, created_at, updated_at) VALUES (?, ?, 'Account', 'checking', 'asset', 1, 1)",
+      [_account, _vault],
+    );
+    await database.customStatement(
+      "INSERT INTO account_pockets (id, account_id, currency_code) VALUES (?, ?, 'BRL')",
+      [_pocket, _account],
+    );
+    await database.customStatement(
+      "INSERT INTO transactions (id, vault_id, transaction_type, financial_date, created_at, updated_at) VALUES (?, ?, 'expense', '2026-09-28', 1, 1)",
+      [_record, _vault],
+    );
+    await database.customStatement(
+      'INSERT INTO account_movements (id, transaction_id, account_pocket_id, amount_minor, sort_order) VALUES (?, ?, ?, -10, 0)',
+      [_movement, _record, _pocket],
+    );
+    await store.enqueue(
+      vaultId: _vault,
+      entityType: SyncEntityType.transaction,
+      recordId: _record,
+      baseRevision: null,
+      baseSnapshot: null,
+      newRevision: 1,
+      operation: SyncOperation.upsert,
+    );
+    final mutation = (await store.readyMutations(
+      vaultId: _vault,
+      nowMicros: _future,
+    )).single;
+    final dependency = await database
+        .customSelect(
+          'SELECT account_id FROM sync_outbox_dependencies WHERE operation_id = ?',
+          variables: [Variable(mutation.operationId)],
+        )
+        .getSingle();
+    expect(dependency.read<String>('account_id'), _account);
+    await database.customStatement(
+      "INSERT INTO sync_quarantine (event_id, vault_id, server_version, entity_type, entity_id, entity_revision, authenticated_envelope, reason, detected_at) VALUES (?, ?, 1, 'account', ?, 2, '{}', 'account_tombstone_has_movements', 1)",
+      [_event, _vault, _account],
+    );
+    await database.customStatement(
+      'INSERT INTO sync_dependency_pause (vault_id, account_id, blocking_event_id, created_at) VALUES (?, ?, ?, 1)',
+      [_vault, _account, _event],
+    );
+    expect(
+      await DriftSyncMetadataStore(
+        database,
+      ).readyMutations(vaultId: _vault, nowMicros: _future),
+      isEmpty,
+    );
+  });
+
+  test('unresolved transaction dependencies roll back the outbox', () async {
+    await expectLater(
+      store.enqueue(
+        vaultId: _vault,
+        entityType: SyncEntityType.transaction,
+        recordId: _record,
+        baseRevision: null,
+        baseSnapshot: null,
+        newRevision: 1,
+        operation: SyncOperation.upsert,
+      ),
+      throwsStateError,
+    );
+    expect(
+      await database.customSelect('SELECT * FROM sync_outbox').get(),
+      isEmpty,
+    );
+  });
 }
 
 const _vault = '018f47c2-9b72-7cc1-8b83-5d0fead0a001';
 const _record = '018f47c2-9b72-7cc1-8b83-5d0fead0a002';
+const _account = '018f47c2-9b72-7cc1-8b83-5d0fead0a003';
+const _pocket = '018f47c2-9b72-7cc1-8b83-5d0fead0a004';
+const _movement = '018f47c2-9b72-7cc1-8b83-5d0fead0a005';
+const _event = '018f47c2-9b72-7cc1-8b83-5d0fead0a006';
 const _future = 9999999999999999;

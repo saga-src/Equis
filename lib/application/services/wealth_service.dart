@@ -8,6 +8,7 @@ import '../../domain/shared/uuid_v7.dart';
 import '../../domain/wealth/asset_models.dart';
 import '../../domain/wealth/net_worth_models.dart';
 import '../ports/dashboard_repository.dart';
+import '../ports/account_sync_read_status.dart';
 import '../ports/wealth_repository.dart';
 import 'investment_service.dart';
 
@@ -142,6 +143,7 @@ final class WealthService {
     var assetTotal = 0;
     var liabilityTotal = 0;
     var estimated = false;
+    var incompleteInvestments = false;
     final missing = <CurrencyCode>{};
     for (final row in await repository.accountBalances(vaultId, date)) {
       final converted = await reporting.convertMinor(
@@ -169,6 +171,10 @@ final class WealthService {
     );
     if (investmentReport != null) {
       assetTotal += investmentReport.marketValueMinor;
+      incompleteInvestments = investmentReport.isKnownSubtotal;
+      for (final holding in investmentReport.holdings) {
+        estimated |= holding.estimatedFx;
+      }
     }
     final values = <AssetValue>[];
     for (final asset in assets.where((item) => _activeAssetAt(item, date))) {
@@ -203,6 +209,10 @@ final class WealthService {
         ),
       );
     }
+    final Object syncStatus = repository;
+    final incompleteAccounts = syncStatus is AccountSyncReadStatus
+        ? await syncStatus.hasIncompleteAccounts(vaultId)
+        : false;
     return (
       NetWorthPoint(
         date: date,
@@ -210,6 +220,8 @@ final class WealthService {
         liabilitiesMinor: liabilityTotal,
         missingRates: missing,
         usesEstimatedRates: estimated,
+        hasIncompleteInvestments: incompleteInvestments,
+        hasIncompleteAccounts: incompleteAccounts,
       ),
       values,
     );

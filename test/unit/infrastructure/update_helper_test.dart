@@ -6,6 +6,73 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../tool/update_helper.dart' as helper;
 
 void main() {
+  test('installed helper fails closed before invoking a launcher', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'equis installed helper fail closed ',
+    );
+    addTearDown(() => root.delete(recursive: true));
+    final cache = await Directory('${root.path}/update cache').create();
+    final target = await Directory('${root.path}/installed app').create();
+    var launched = false;
+
+    for (final command in ['prepare', 'apply']) {
+      expect(
+        await helper.runUpdate(
+          [command, cache.path, target.path, 'windows-installed', '987654321'],
+          launch: (_) async {
+            launched = true;
+          },
+        ),
+        isFalse,
+      );
+      final journal =
+          jsonDecode(
+                await File('${cache.path}/installation.json').readAsString(),
+              )
+              as Map<String, dynamic>;
+      expect(journal, {
+        'state': 'preflight_failed',
+        'phase': 'helper',
+        'code': 'installed_session_required',
+      });
+    }
+
+    expect(launched, isFalse);
+    expect(await File('${target.path}/equis.exe').exists(), isFalse);
+  });
+
+  test(
+    'legacy installed helper leaves a pending recovery journal untouched',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'equis installed pending journal ',
+      );
+      addTearDown(() => root.delete(recursive: true));
+      final cache = await Directory('${root.path}/update cache').create();
+      final target = await Directory('${root.path}/installed app').create();
+      final journal = File('${cache.path}/installation.json');
+      const pending = {
+        'state': 'manual_recovery',
+        'target': 'C:\\Program Files\\Equis',
+        'diagnostic': 'retain this recovery record',
+      };
+      await journal.writeAsString(jsonEncode(pending), flush: true);
+
+      expect(
+        await helper.runUpdate([
+          'prepare',
+          cache.path,
+          target.path,
+          'windows-installed',
+          '$pid',
+        ]),
+        isFalse,
+      );
+      expect(jsonDecode(await journal.readAsString()), pending);
+      expect(await File('${target.path}/equis.exe').exists(), isFalse);
+    },
+  );
+
   test(
     'portable update verifies staging and preserves extras in paths with spaces',
     () async {

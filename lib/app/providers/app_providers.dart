@@ -7,6 +7,7 @@ import 'package:equis/application/services/everyday_transaction_service.dart';
 import 'package:equis/application/services/local_finance_session_service.dart';
 import 'package:equis/application/services/credit_card_service.dart';
 import 'package:equis/application/services/quick_transaction_routing.dart';
+import 'package:equis/application/ports/sync_aggregate_store.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/credit_cards/credit_card_models.dart';
 import 'package:equis/domain/entities/category_node.dart';
@@ -24,6 +25,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:equis/presentation/history/transaction_history_controller.dart';
+import 'package:equis/presentation/transactions/transaction_detail_controller.dart';
 import 'package:equis/presentation/recurring/recurring_controller.dart';
 import 'package:equis/presentation/credit_cards/credit_card_controller.dart';
 import 'package:equis/presentation/home/dashboard_controller.dart';
@@ -81,6 +83,30 @@ final localFinanceControllerProvider =
       return controller;
     });
 
+final accountManagementAccountsProvider = FutureProvider.autoDispose
+    .family<List<AccountAggregate>, EntityId>((ref, vaultId) async {
+      final dependencies = ref.watch(localAppDependenciesProvider);
+      ref.watch(localFinanceControllerProvider);
+      final subscription = dependencies?.syncCoordinator?.results.listen((_) {
+        ref.invalidateSelf();
+      });
+      ref.onDispose(() => unawaited(subscription?.cancel()));
+      if (dependencies == null) return const [];
+      return dependencies.session.loadAccountsForManagement(vaultId);
+    });
+
+final accountRecoveryStatesProvider = FutureProvider.autoDispose
+    .family<List<AccountSyncRecoveryState>, EntityId>((ref, vaultId) async {
+      final dependencies = ref.watch(localAppDependenciesProvider);
+      ref.watch(localFinanceControllerProvider);
+      final subscription = dependencies?.syncCoordinator?.results.listen((_) {
+        ref.invalidateSelf();
+      });
+      ref.onDispose(() => unawaited(subscription?.cancel()));
+      if (dependencies == null) return const [];
+      return dependencies.session.loadAccountRecoveryStates(vaultId);
+    });
+
 final startupRefreshProvider = FutureProvider<void>((ref) async {
   final dependencies = ref.watch(localAppDependenciesProvider);
   final vaultId = ref.watch(
@@ -126,6 +152,33 @@ final transactionHistoryControllerProvider =
       return controller;
     });
 
+final transactionDetailControllerProvider = StateNotifierProvider.autoDispose
+    .family<
+      TransactionDetailController,
+      TransactionDetailState,
+      TransactionDetailKey
+    >((ref, key) {
+      final dependencies = ref.watch(localAppDependenciesProvider);
+      final controller = TransactionDetailController(() {
+        final session = dependencies?.session;
+        if (session == null) {
+          throw StateError('Local services are not available.');
+        }
+        return session.loadTransactionDetailData(
+          id: key.transactionId,
+          vaultId: key.vaultId,
+        );
+      });
+      final subscription = dependencies?.syncCoordinator?.results.listen((
+        result,
+      ) {
+        if (result.pulled > 0) unawaited(controller.reload());
+      });
+      ref.onDispose(() => unawaited(subscription?.cancel()));
+      unawaited(controller.reload());
+      return controller;
+    });
+
 final recurringControllerProvider =
     StateNotifierProvider.autoDispose<RecurringController, RecurringState>((
       ref,
@@ -150,8 +203,11 @@ final creditCardContextsProvider = Provider<List<CreditCardContext>>((ref) {
   if (snapshot == null || vault == null) return const [];
   return [
     for (final aggregate in snapshot.accounts)
-      if (aggregate.account.type == AccountType.creditCard)
+      if (aggregate.account.type == AccountType.creditCard &&
+          !aggregate.account.archived &&
+          aggregate.account.deletedAt == null)
         for (final pocket in aggregate.pockets)
+          if (!pocket.archived)
           CreditCardContext(
             vaultId: vault.id,
             accountId: aggregate.account.id,
@@ -170,8 +226,8 @@ final creditCardControllerProvider =
       final controller = CreditCardController(
         service: dependencies?.creditCards,
         initialCard: cards.isEmpty ? null : cards.first,
-        onLedgerChanged: () =>
-            ref.read(localFinanceControllerProvider.notifier).reload(),
+        onLedgerChanged:
+            ref.read(localFinanceControllerProvider.notifier).reload,
       );
       unawaited(controller.reload());
       return controller;
@@ -324,17 +380,21 @@ final class LocalFinanceController
 
   final LocalFinanceSessionService? _session;
   final CreditCardService? _creditCards;
+  int _stateGeneration = 0;
 
   Future<void> reload() async {
+    final generation = ++_stateGeneration;
     if (_session == null) {
-      state = const AsyncValue.data(null);
+      if (mounted && generation == _stateGeneration) {
+        state = const AsyncValue.data(null);
+      }
       return;
     }
     state = const AsyncValue<LocalFinanceSnapshot?>.loading().copyWithPrevious(
       state,
     );
     final loaded = await AsyncValue.guard(_session.load);
-    if (mounted) state = loaded;
+    if (mounted && generation == _stateGeneration) state = loaded;
   }
 
   Future<void> setup({
@@ -527,6 +587,25 @@ final class LocalFinanceController
     ),
   );
 
+  Future<void> removeAccount(AccountAggregate account) => _mutate(
+    () => _requiredSession.removeAccount(account, now: UtcInstant.now()),
+  );
+
+  Future<void> restoreAccount(AccountAggregate account) => _mutate(
+    () => _requiredSession.restoreAccount(account, now: UtcInstant.now()),
+  );
+
+  Future<void> requestAccountRestore({
+    required EntityId vaultId,
+    required AccountSyncRecoveryState recovery,
+  }) => _mutate(
+    () => _requiredSession.requestAccountRestore(
+      vaultId: vaultId,
+      recovery: recovery,
+      now: UtcInstant.now(),
+    ),
+  );
+
   Future<void> setAccountNetWorthInclusion(
     AccountAggregate account,
     bool included,
@@ -545,14 +624,22 @@ final class LocalFinanceController
       (throw StateError('Credit-card services are unavailable.'));
 
   Future<void> _mutate(Future<LocalFinanceSnapshot> Function() action) async {
+    final generation = ++_stateGeneration;
     final previous = state.valueOrNull;
     state = const AsyncValue<LocalFinanceSnapshot?>.loading().copyWithPrevious(
       state,
     );
     try {
-      state = AsyncValue.data(await action());
+      final updated = await action();
+      if (mounted && generation == _stateGeneration) {
+        state = AsyncValue.data(updated);
+      } else if (mounted) {
+        unawaited(reload());
+      }
     } catch (error, stackTrace) {
-      state = AsyncValue.data(previous);
+      if (mounted && generation == _stateGeneration) {
+        state = AsyncValue.data(previous);
+      }
       Error.throwWithStackTrace(error, stackTrace);
     }
   }

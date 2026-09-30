@@ -73,6 +73,11 @@ abstract interface class CloudSyncWakeupGateway {
   Stream<void> wakeups({required String vaultId});
 }
 
+/// Raises the server's per-vault aggregate format floor before any 1.2 write.
+abstract interface class CloudSyncAggregateFormatGateway {
+  Future<void> activateAggregateFormat2({required String vaultId});
+}
+
 enum CloudSyncFailureCode {
   keyMismatch,
   clientObsolete,

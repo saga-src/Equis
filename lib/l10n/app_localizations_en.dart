@@ -107,6 +107,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transactionSaveFailedMessage => 'Could not save the transaction';
 
   @override
+  String get transactionRevisionConflictMessage =>
+      'This transaction changed elsewhere. Your draft is still here; reload to review the current version.';
+
+  @override
   String get editTransactionAction => 'Edit transaction';
 
   @override
@@ -143,6 +147,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transactionNotFoundMessage => 'Transaction not found.';
+
+  @override
+  String get transactionDetailTitle => 'Transaction details';
+
+  @override
+  String get transactionDetailLoadFailedMessage =>
+      'Could not load this transaction from the local vault.';
+
+  @override
+  String get transactionDetailRetryAction => 'Reload';
+
+  @override
+  String get transactionDetailMovementsTitle => 'Account movements';
+
+  @override
+  String get transactionDetailSplitsTitle => 'Categories and splits';
+
+  @override
+  String get transactionDetailTagsTitle => 'Tags';
+
+  @override
+  String get transactionDetailArchivedAccountLabel => 'Archived account';
+
+  @override
+  String get transactionDetailArchivedPocketLabel => 'Archived pocket';
+
+  @override
+  String get transactionDetailDeletedAccountLabel => 'Deleted account';
+
+  @override
+  String get transactionDetailStatementLabel => 'Statement';
+
+  @override
+  String get transactionDetailFxTitle => 'Currency conversion';
+
+  @override
+  String get transactionDetailRateLabel => 'Exchange rate';
+
+  @override
+  String get transactionDetailRateSourceLabel => 'Rate source';
+
+  @override
+  String get transactionDetailProviderLabel => 'Provider';
+
+  @override
+  String get transactionDetailInvestmentEventsTitle => 'Investment events';
+
+  @override
+  String get transactionDetailEventTypeLabel => 'Event';
+
+  @override
+  String get transactionDetailInstrumentLabel => 'Instrument ID';
+
+  @override
+  String get transactionDetailQuantityLabel => 'Quantity';
+
+  @override
+  String get transactionDetailUnitPriceLabel => 'Unit price';
+
+  @override
+  String get transactionDetailGrossLabel => 'Gross amount';
+
+  @override
+  String get transactionDetailFeesLabel => 'Fees';
+
+  @override
+  String get transactionDetailTaxesLabel => 'Taxes';
+
+  @override
+  String get transactionDetailRecurrenceTitle => 'Recurrence';
+
+  @override
+  String get transactionDetailRuleLabel => 'Rule ID';
+
+  @override
+  String get transactionDetailReversalTitle => 'Reversal';
+
+  @override
+  String get transactionDetailReversalOfLabel => 'Reversal of';
 
   @override
   String get setupLocalVaultTitle => 'Set up your local vault';
@@ -1650,6 +1733,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The operation could not be completed. Check the file, password, and destination.';
 
   @override
+  String get portabilityPendingSyncMessage =>
+      'Operation postponed: local changes, a sync conflict, or incoming data are still pending. Connect, finish syncing, and resolve any conflicts before trying again. No file was created.';
+
+  @override
   String get receiptAttachmentsTitle => 'Receipts and attachments';
 
   @override
@@ -1759,6 +1846,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tagOverlapMessage =>
       'Each expense counts in full for every tag. Tag totals may overlap.';
+
+  @override
+  String get otherTagValuesTitle => 'Other tag values';
+
+  @override
+  String get negativeTagValuesTitle => 'Negative adjustments by tag';
 
   @override
   String get syncRunningLabel => 'Synchronizing...';
@@ -1897,6 +1990,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Update unavailable or verification failed. You can try again; your data is unchanged.';
 
   @override
+  String get updateCancelled =>
+      'Update cancelled. Your data is unchanged; you can try again.';
+
+  @override
+  String get windowsUpdateManualInstallRequired =>
+      'Automatic updating is unavailable for this Windows installation. Download the official installer, close Equis, and run it with the same Windows account.';
+
+  @override
+  String get windowsUpdateRegistrationIssue =>
+      'This Windows installation\'s registration does not match its files. Automatic updates are disabled. Close Equis and run the official installer with the same Windows account to repair it.';
+
+  @override
   String get updateInstalling => 'Preparing installation…';
 
   @override
@@ -1929,6 +2034,304 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get updateRecoveryRequired =>
       'Equis file replacement is running or was interrupted. Close this window. If the update does not finish, use the recovery helper as described in the release instructions. Your vaults have not been opened.';
+
+  @override
+  String get fixedIncomeProductLabel => 'Product name';
+
+  @override
+  String get fixedIncomeIssuerLabel => 'Issuer (optional)';
+
+  @override
+  String get fixedIncomePrincipalLabel => 'Principal invested';
+
+  @override
+  String get fixedIncomeAccrualStartLabel => 'Accrual start';
+
+  @override
+  String get fixedIncomeMaturityLabel => 'Maturity date (optional)';
+
+  @override
+  String get fixedIncomeLiquidityLabel => 'Liquidity date (optional)';
+
+  @override
+  String get fixedIncomeFormulaLabel => 'Contract formula';
+
+  @override
+  String get fixedIncomeFixedAnnualMode => 'Fixed annual rate';
+
+  @override
+  String get fixedIncomeDailyPercentMode => 'Percentage of daily index';
+
+  @override
+  String get fixedIncomeDailySpreadMode => 'Daily index + annual spread';
+
+  @override
+  String get fixedIncomeMonthlyMode => 'Monthly index + optional spread';
+
+  @override
+  String get fixedIncomeTrMode => 'TR validity periods';
+
+  @override
+  String get fixedIncomeManualMode => 'Manual balance only';
+
+  @override
+  String get fixedIncomeIndexLabel => 'Index';
+
+  @override
+  String get fixedIncomeAnnualRateLabel => 'Annual rate';
+
+  @override
+  String get fixedIncomeMultiplierLabel => 'Percentage of index (e.g. 118)';
+
+  @override
+  String get fixedIncomeSpreadLabel => 'Annual spread in percentage points';
+
+  @override
+  String get fixedIncomeDayBasisLabel => 'Day count basis';
+
+  @override
+  String get fixedIncomeAnniversaryLabel => 'Monthly anniversary day (1–31)';
+
+  @override
+  String get fixedIncomeLagLabel => 'Additional publication lag (months)';
+
+  @override
+  String get fixedIncomeTrValidityDescription =>
+      'TR compounds only after each published validity period is complete.';
+
+  @override
+  String get fixedIncomePositiveAmountMessage =>
+      'Enter a positive principal amount.';
+
+  @override
+  String get fixedIncomeInvalidDateMessage =>
+      'Enter a valid date as YYYY-MM-DD.';
+
+  @override
+  String get fixedIncomeDateBeforeStartMessage =>
+      'Date cannot be before accrual starts.';
+
+  @override
+  String get fixedIncomeInvalidPercentageMessage =>
+      'Enter a valid percentage (greater than -100%).';
+
+  @override
+  String get fixedIncomeAnniversaryError => 'Enter a day from 1 to 31.';
+
+  @override
+  String get fixedIncomeLagError => 'Enter a lag from 0 to 120 months.';
+
+  @override
+  String get fixedIncomeInvalidCombinationMessage =>
+      'Check the contract formula and its required fields.';
+
+  @override
+  String get fixedIncomeKnownSubtotalLabel => 'Known investment subtotal';
+
+  @override
+  String get fixedIncomeEstimatedGrossLabel => 'Estimated gross balance';
+
+  @override
+  String get fixedIncomeManualBalanceLabel => 'Manual balance';
+
+  @override
+  String get fixedIncomeMarketValueLabel => 'Market value';
+
+  @override
+  String get fixedIncomeEditTermsAction => 'Edit contract terms';
+
+  @override
+  String get fixedIncomeSetManualAction => 'Add manual balance';
+
+  @override
+  String get fixedIncomeEditManualAction => 'Edit manual balance';
+
+  @override
+  String get fixedIncomeNoManualToEditMessage =>
+      'This lot has no active manual balance to edit or remove.';
+
+  @override
+  String get fixedIncomeLotsLabel => 'Applications and lots';
+
+  @override
+  String get fixedIncomeContractSourceLabel => 'Contract + BCB SGS';
+
+  @override
+  String get fixedIncomeContractOnlySourceLabel => 'Contract';
+
+  @override
+  String get fixedIncomeDatedManualNotice =>
+      'This manual balance is from an earlier date; review it before relying on it.';
+
+  @override
+  String get fixedIncomeRemoveManualAction => 'Remove manual balance';
+
+  @override
+  String get fixedIncomeManualNoteLabel => 'Note (optional)';
+
+  @override
+  String get fixedIncomeValueDateLabel => 'Balance date';
+
+  @override
+  String get fixedIncomeSourceLabel => 'Source';
+
+  @override
+  String get fixedIncomeIncompleteLabel => 'Incomplete valuation';
+
+  @override
+  String get fixedIncomeManualRequiredLabel =>
+      'Add a dated manual balance to value this lot.';
+
+  @override
+  String get fixedIncomeMaturedLabel => 'Matured; action may be required';
+
+  @override
+  String get fixedIncomeNotStartedLabel => 'Accrual has not started';
+
+  @override
+  String get fixedIncomeMissingPeriodsLabel => 'Missing index periods';
+
+  @override
+  String get fixedIncomeCachedDataNotice =>
+      'Uses locally cached published index data; newer periods may be missing.';
+
+  @override
+  String get fixedIncomeNoRedemptionQuoteNotice =>
+      'Reported or estimated gross balance; not a redemption quote.';
+
+  @override
+  String get fixedIncomeRevisionConflictMessage =>
+      'This lot changed on another device. Reload it before saving.';
+
+  @override
+  String get fixedIncomeNoBalanceLabel => 'No balance available';
+
+  @override
+  String get netWorthKnownSubtotalLabel => 'Known net worth (partial)';
+
+  @override
+  String get fixedIncomeBrlIndexOnlyMessage =>
+      'Brazilian index formulas require BRL.';
+
+  @override
+  String get accountManagementTitle => 'Manage accounts and cards';
+
+  @override
+  String get activeAccountsTitle => 'Active accounts and cards';
+
+  @override
+  String get archivedAccountsTitle => 'Archived accounts and cards';
+
+  @override
+  String get noActiveAccountsMessage => 'No active accounts or cards.';
+
+  @override
+  String get noArchivedAccountsMessage => 'No archived accounts or cards.';
+
+  @override
+  String get reviewAccountRemovalAction => 'Review removal';
+
+  @override
+  String get archiveAccountAction => 'Archive account';
+
+  @override
+  String get deleteAccountAction => 'Delete account';
+
+  @override
+  String get restoreAccountAction => 'Restore account';
+
+  @override
+  String get archiveAccountConfirmation =>
+      'This account has history. Archiving removes it from active choices while preserving its records and pockets. Continue?';
+
+  @override
+  String get deleteAccountConfirmation =>
+      'This account has no linked records. Delete it from active choices?';
+
+  @override
+  String get restoreAccountConfirmation =>
+      'Restore this account and its pockets to active choices?';
+
+  @override
+  String get accountRemovalBlockedMessage =>
+      'Resolve these items before removing this account.';
+
+  @override
+  String get accountReferencesLabel => 'Linked records';
+
+  @override
+  String get accountChangedMessage =>
+      'This account changed. Review its current state and try again.';
+
+  @override
+  String get accountActionFailedMessage =>
+      'Could not update this account. Try again.';
+
+  @override
+  String get accountBlockerBalance => 'A pocket has a nonzero balance.';
+
+  @override
+  String get accountBlockerStatement => 'A card statement is open or unpaid.';
+
+  @override
+  String get accountBlockerInstallment => 'A scheduled installment remains.';
+
+  @override
+  String get accountBlockerRecurrence =>
+      'An active recurring payment uses this account.';
+
+  @override
+  String get accountBlockerTransaction =>
+      'A pending transaction uses this account.';
+
+  @override
+  String get accountBlockerGoal => 'An active goal uses this account.';
+
+  @override
+  String get accountBlockerBudget => 'An enabled budget uses this account.';
+
+  @override
+  String get accountSyncIncompleteMessage =>
+      'Known subtotal: some account data is waiting for a sync conflict to be resolved.';
+
+  @override
+  String get accountRecoveryTitle => 'Accounts with sync conflicts';
+
+  @override
+  String get accountRecoveryExplanation =>
+      'A concurrent change left this account pending. Review it and confirm restoration to keep its records.';
+
+  @override
+  String get accountRecoveryPendingMessage =>
+      'Restoration requested. Waiting for synchronization.';
+
+  @override
+  String get accountRecoveryConfirmation =>
+      'Request restoration of this account on the next sync? Records and pockets will be preserved.';
+
+  @override
+  String get accountReferencesMovements => 'Movements';
+
+  @override
+  String get accountReferencesStatements => 'Statements';
+
+  @override
+  String get accountReferencesInstallmentPlans => 'Installment plans';
+
+  @override
+  String get accountReferencesRecurrenceTemplates => 'Recurrences';
+
+  @override
+  String get accountReferencesTransactions => 'Transactions';
+
+  @override
+  String get accountReferencesGoals => 'Goals';
+
+  @override
+  String get accountReferencesBudgets => 'Budgets';
+
+  @override
+  String get accountReferencesAttachments => 'Attachments';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -2034,6 +2437,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get transactionSaveFailedMessage => 'Could not save the transaction';
 
   @override
+  String get transactionRevisionConflictMessage =>
+      'This transaction changed elsewhere. Your draft is still here; reload to review the current version.';
+
+  @override
   String get editTransactionAction => 'Edit transaction';
 
   @override
@@ -2070,6 +2477,85 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get transactionNotFoundMessage => 'Transaction not found.';
+
+  @override
+  String get transactionDetailTitle => 'Transaction details';
+
+  @override
+  String get transactionDetailLoadFailedMessage =>
+      'Could not load this transaction from the local vault.';
+
+  @override
+  String get transactionDetailRetryAction => 'Reload';
+
+  @override
+  String get transactionDetailMovementsTitle => 'Account movements';
+
+  @override
+  String get transactionDetailSplitsTitle => 'Categories and splits';
+
+  @override
+  String get transactionDetailTagsTitle => 'Tags';
+
+  @override
+  String get transactionDetailArchivedAccountLabel => 'Archived account';
+
+  @override
+  String get transactionDetailArchivedPocketLabel => 'Archived pocket';
+
+  @override
+  String get transactionDetailDeletedAccountLabel => 'Deleted account';
+
+  @override
+  String get transactionDetailStatementLabel => 'Statement';
+
+  @override
+  String get transactionDetailFxTitle => 'Currency conversion';
+
+  @override
+  String get transactionDetailRateLabel => 'Exchange rate';
+
+  @override
+  String get transactionDetailRateSourceLabel => 'Rate source';
+
+  @override
+  String get transactionDetailProviderLabel => 'Provider';
+
+  @override
+  String get transactionDetailInvestmentEventsTitle => 'Investment events';
+
+  @override
+  String get transactionDetailEventTypeLabel => 'Event';
+
+  @override
+  String get transactionDetailInstrumentLabel => 'Instrument ID';
+
+  @override
+  String get transactionDetailQuantityLabel => 'Quantity';
+
+  @override
+  String get transactionDetailUnitPriceLabel => 'Unit price';
+
+  @override
+  String get transactionDetailGrossLabel => 'Gross amount';
+
+  @override
+  String get transactionDetailFeesLabel => 'Fees';
+
+  @override
+  String get transactionDetailTaxesLabel => 'Taxes';
+
+  @override
+  String get transactionDetailRecurrenceTitle => 'Recurrence';
+
+  @override
+  String get transactionDetailRuleLabel => 'Rule ID';
+
+  @override
+  String get transactionDetailReversalTitle => 'Reversal';
+
+  @override
+  String get transactionDetailReversalOfLabel => 'Reversal of';
 
   @override
   String get setupLocalVaultTitle => 'Set up your local vault';
@@ -3577,6 +4063,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'The operation could not be completed. Check the file, password, and destination.';
 
   @override
+  String get portabilityPendingSyncMessage =>
+      'Operation postponed: local changes, a sync conflict, or incoming data are still pending. Connect, finish syncing, and resolve any conflicts before trying again. No file was created.';
+
+  @override
   String get receiptAttachmentsTitle => 'Receipts and attachments';
 
   @override
@@ -3686,6 +4176,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tagOverlapMessage =>
       'Each expense counts in full for every tag. Tag totals may overlap.';
+
+  @override
+  String get otherTagValuesTitle => 'Other tag values';
+
+  @override
+  String get negativeTagValuesTitle => 'Negative adjustments by tag';
 
   @override
   String get syncRunningLabel => 'Synchronizing...';
@@ -3824,6 +4320,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Update unavailable or verification failed. You can try again; your data is unchanged.';
 
   @override
+  String get updateCancelled =>
+      'Update cancelled. Your data is unchanged; you can try again.';
+
+  @override
+  String get windowsUpdateManualInstallRequired =>
+      'Automatic updating is unavailable for this Windows installation. Download the official installer, close Equis, and run it with the same Windows account.';
+
+  @override
+  String get windowsUpdateRegistrationIssue =>
+      'This Windows installation\'s registration does not match its files. Automatic updates are disabled. Close Equis and run the official installer with the same Windows account to repair it.';
+
+  @override
   String get updateInstalling => 'Preparing installation…';
 
   @override
@@ -3856,4 +4364,302 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get updateRecoveryRequired =>
       'Equis file replacement is running or was interrupted. Close this window. If the update does not finish, use the recovery helper as described in the release instructions. Your vaults have not been opened.';
+
+  @override
+  String get fixedIncomeProductLabel => 'Product name';
+
+  @override
+  String get fixedIncomeIssuerLabel => 'Issuer (optional)';
+
+  @override
+  String get fixedIncomePrincipalLabel => 'Principal invested';
+
+  @override
+  String get fixedIncomeAccrualStartLabel => 'Accrual start';
+
+  @override
+  String get fixedIncomeMaturityLabel => 'Maturity date (optional)';
+
+  @override
+  String get fixedIncomeLiquidityLabel => 'Liquidity date (optional)';
+
+  @override
+  String get fixedIncomeFormulaLabel => 'Contract formula';
+
+  @override
+  String get fixedIncomeFixedAnnualMode => 'Fixed annual rate';
+
+  @override
+  String get fixedIncomeDailyPercentMode => 'Percentage of daily index';
+
+  @override
+  String get fixedIncomeDailySpreadMode => 'Daily index + annual spread';
+
+  @override
+  String get fixedIncomeMonthlyMode => 'Monthly index + optional spread';
+
+  @override
+  String get fixedIncomeTrMode => 'TR validity periods';
+
+  @override
+  String get fixedIncomeManualMode => 'Manual balance only';
+
+  @override
+  String get fixedIncomeIndexLabel => 'Index';
+
+  @override
+  String get fixedIncomeAnnualRateLabel => 'Annual rate';
+
+  @override
+  String get fixedIncomeMultiplierLabel => 'Percentage of index (e.g. 118)';
+
+  @override
+  String get fixedIncomeSpreadLabel => 'Annual spread in percentage points';
+
+  @override
+  String get fixedIncomeDayBasisLabel => 'Day count basis';
+
+  @override
+  String get fixedIncomeAnniversaryLabel => 'Monthly anniversary day (1–31)';
+
+  @override
+  String get fixedIncomeLagLabel => 'Additional publication lag (months)';
+
+  @override
+  String get fixedIncomeTrValidityDescription =>
+      'TR compounds only after each published validity period is complete.';
+
+  @override
+  String get fixedIncomePositiveAmountMessage =>
+      'Enter a positive principal amount.';
+
+  @override
+  String get fixedIncomeInvalidDateMessage =>
+      'Enter a valid date as YYYY-MM-DD.';
+
+  @override
+  String get fixedIncomeDateBeforeStartMessage =>
+      'Date cannot be before accrual starts.';
+
+  @override
+  String get fixedIncomeInvalidPercentageMessage =>
+      'Enter a valid percentage (greater than -100%).';
+
+  @override
+  String get fixedIncomeAnniversaryError => 'Enter a day from 1 to 31.';
+
+  @override
+  String get fixedIncomeLagError => 'Enter a lag from 0 to 120 months.';
+
+  @override
+  String get fixedIncomeInvalidCombinationMessage =>
+      'Check the contract formula and its required fields.';
+
+  @override
+  String get fixedIncomeKnownSubtotalLabel => 'Known investment subtotal';
+
+  @override
+  String get fixedIncomeEstimatedGrossLabel => 'Estimated gross balance';
+
+  @override
+  String get fixedIncomeManualBalanceLabel => 'Manual balance';
+
+  @override
+  String get fixedIncomeMarketValueLabel => 'Market value';
+
+  @override
+  String get fixedIncomeEditTermsAction => 'Edit contract terms';
+
+  @override
+  String get fixedIncomeSetManualAction => 'Add manual balance';
+
+  @override
+  String get fixedIncomeEditManualAction => 'Edit manual balance';
+
+  @override
+  String get fixedIncomeNoManualToEditMessage =>
+      'This lot has no active manual balance to edit or remove.';
+
+  @override
+  String get fixedIncomeLotsLabel => 'Applications and lots';
+
+  @override
+  String get fixedIncomeContractSourceLabel => 'Contract + BCB SGS';
+
+  @override
+  String get fixedIncomeContractOnlySourceLabel => 'Contract';
+
+  @override
+  String get fixedIncomeDatedManualNotice =>
+      'This manual balance is from an earlier date; review it before relying on it.';
+
+  @override
+  String get fixedIncomeRemoveManualAction => 'Remove manual balance';
+
+  @override
+  String get fixedIncomeManualNoteLabel => 'Note (optional)';
+
+  @override
+  String get fixedIncomeValueDateLabel => 'Balance date';
+
+  @override
+  String get fixedIncomeSourceLabel => 'Source';
+
+  @override
+  String get fixedIncomeIncompleteLabel => 'Incomplete valuation';
+
+  @override
+  String get fixedIncomeManualRequiredLabel =>
+      'Add a dated manual balance to value this lot.';
+
+  @override
+  String get fixedIncomeMaturedLabel => 'Matured; action may be required';
+
+  @override
+  String get fixedIncomeNotStartedLabel => 'Accrual has not started';
+
+  @override
+  String get fixedIncomeMissingPeriodsLabel => 'Missing index periods';
+
+  @override
+  String get fixedIncomeCachedDataNotice =>
+      'Uses locally cached published index data; newer periods may be missing.';
+
+  @override
+  String get fixedIncomeNoRedemptionQuoteNotice =>
+      'Reported or estimated gross balance; not a redemption quote.';
+
+  @override
+  String get fixedIncomeRevisionConflictMessage =>
+      'This lot changed on another device. Reload it before saving.';
+
+  @override
+  String get fixedIncomeNoBalanceLabel => 'No balance available';
+
+  @override
+  String get netWorthKnownSubtotalLabel => 'Known net worth (partial)';
+
+  @override
+  String get fixedIncomeBrlIndexOnlyMessage =>
+      'Brazilian index formulas require BRL.';
+
+  @override
+  String get accountManagementTitle => 'Manage accounts and cards';
+
+  @override
+  String get activeAccountsTitle => 'Active accounts and cards';
+
+  @override
+  String get archivedAccountsTitle => 'Archived accounts and cards';
+
+  @override
+  String get noActiveAccountsMessage => 'No active accounts or cards.';
+
+  @override
+  String get noArchivedAccountsMessage => 'No archived accounts or cards.';
+
+  @override
+  String get reviewAccountRemovalAction => 'Review removal';
+
+  @override
+  String get archiveAccountAction => 'Archive account';
+
+  @override
+  String get deleteAccountAction => 'Delete account';
+
+  @override
+  String get restoreAccountAction => 'Restore account';
+
+  @override
+  String get archiveAccountConfirmation =>
+      'This account has history. Archiving removes it from active choices while preserving its records and pockets. Continue?';
+
+  @override
+  String get deleteAccountConfirmation =>
+      'This account has no linked records. Delete it from active choices?';
+
+  @override
+  String get restoreAccountConfirmation =>
+      'Restore this account and its pockets to active choices?';
+
+  @override
+  String get accountRemovalBlockedMessage =>
+      'Resolve these items before removing this account.';
+
+  @override
+  String get accountReferencesLabel => 'Linked records';
+
+  @override
+  String get accountChangedMessage =>
+      'This account changed. Review its current state and try again.';
+
+  @override
+  String get accountActionFailedMessage =>
+      'Could not update this account. Try again.';
+
+  @override
+  String get accountBlockerBalance => 'A pocket has a nonzero balance.';
+
+  @override
+  String get accountBlockerStatement => 'A card statement is open or unpaid.';
+
+  @override
+  String get accountBlockerInstallment => 'A scheduled installment remains.';
+
+  @override
+  String get accountBlockerRecurrence =>
+      'An active recurring payment uses this account.';
+
+  @override
+  String get accountBlockerTransaction =>
+      'A pending transaction uses this account.';
+
+  @override
+  String get accountBlockerGoal => 'An active goal uses this account.';
+
+  @override
+  String get accountBlockerBudget => 'An enabled budget uses this account.';
+
+  @override
+  String get accountSyncIncompleteMessage =>
+      'Known subtotal: some account data is waiting for a sync conflict to be resolved.';
+
+  @override
+  String get accountRecoveryTitle => 'Accounts with sync conflicts';
+
+  @override
+  String get accountRecoveryExplanation =>
+      'A concurrent change left this account pending. Review it and confirm restoration to keep its records.';
+
+  @override
+  String get accountRecoveryPendingMessage =>
+      'Restoration requested. Waiting for synchronization.';
+
+  @override
+  String get accountRecoveryConfirmation =>
+      'Request restoration of this account on the next sync? Records and pockets will be preserved.';
+
+  @override
+  String get accountReferencesMovements => 'Movements';
+
+  @override
+  String get accountReferencesStatements => 'Statements';
+
+  @override
+  String get accountReferencesInstallmentPlans => 'Installment plans';
+
+  @override
+  String get accountReferencesRecurrenceTemplates => 'Recurrences';
+
+  @override
+  String get accountReferencesTransactions => 'Transactions';
+
+  @override
+  String get accountReferencesGoals => 'Goals';
+
+  @override
+  String get accountReferencesBudgets => 'Budgets';
+
+  @override
+  String get accountReferencesAttachments => 'Attachments';
 }

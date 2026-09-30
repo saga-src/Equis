@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 
+import 'fixed_income_valuation.dart';
 import '../shared/currency.dart';
 import '../shared/decimal_value.dart';
 import '../shared/local_date.dart';
@@ -197,8 +198,12 @@ final class HoldingReport {
     required this.price,
     required this.lots,
     this.reportingMarketValueMinor,
+    this.knownValueMinor,
+    this.reportingKnownValueMinor,
     this.missingFx = false,
     this.estimatedFx = false,
+    this.lotValuations = const [],
+    this.hasIncompleteValuations = false,
   });
   final InvestmentInstrument instrument;
   final Decimal quantity;
@@ -206,6 +211,10 @@ final class HoldingReport {
   final Decimal averageCost;
   final int? marketValueMinor;
   final int? reportingMarketValueMinor;
+
+  /// Known subtotal for this holding, including when another lot is missing.
+  final int? knownValueMinor;
+  final int? reportingKnownValueMinor;
   final int? unrealizedMinor;
   final int realizedMinor;
   final int incomeMinor;
@@ -214,6 +223,8 @@ final class HoldingReport {
   final List<LotPosition> lots;
   final bool missingFx;
   final bool estimatedFx;
+  final List<PositionValuation> lotValuations;
+  final bool hasIncompleteValuations;
 }
 
 final class PortfolioReport {
@@ -225,7 +236,11 @@ final class PortfolioReport {
     required this.unrealizedMinor,
     required this.realizedMinor,
     required this.incomeMinor,
-  }) : holdings = List.unmodifiable(holdings);
+    this.hasIncompleteValuations = false,
+    this.hasIncompleteAccountSync = false,
+    List<EntityId> incompleteLotIds = const [],
+  }) : holdings = List.unmodifiable(holdings),
+       incompleteLotIds = List.unmodifiable(incompleteLotIds);
   final CurrencyCode currency;
   final List<HoldingReport> holdings;
   final int marketValueMinor;
@@ -233,6 +248,13 @@ final class PortfolioReport {
   final int unrealizedMinor;
   final int realizedMinor;
   final int incomeMinor;
+
+  /// The monetary totals are known subtotals when this is true.
+  final bool hasIncompleteValuations;
+  final bool hasIncompleteAccountSync;
+  bool get isKnownSubtotal =>
+      hasIncompleteValuations || hasIncompleteAccountSync;
+  final List<EntityId> incompleteLotIds;
 }
 
 Decimal _positive(Decimal value, String name) {

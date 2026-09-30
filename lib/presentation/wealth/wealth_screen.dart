@@ -53,6 +53,8 @@ class WealthScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 children: [
                   _Summary(report: report),
+                  if (report.current.hasIncompleteAccounts)
+                    _Notice(l10n.accountSyncIncompleteMessage),
                   if (report.current.missingRates.isNotEmpty)
                     _Notice(l10n.wealthIncompleteFxMessage),
                   if (report.current.usesEstimatedRates)
@@ -193,7 +195,9 @@ class _Summary extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.netWorthLabel,
+              point.hasIncompleteInvestments || point.hasIncompleteAccounts
+                  ? l10n.netWorthKnownSubtotalLabel
+                  : l10n.netWorthLabel,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(

@@ -1,6 +1,12 @@
 import 'dart:async';
 import 'infrastructure/updates/app_update_service.dart';
 import 'infrastructure/updates/update_installer.dart';
+import 'infrastructure/updates/windows_install_preflight.dart';
+import 'infrastructure/updates/windows_update_identity.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'infrastructure/security/secure_string_store.dart';
 import 'presentation/settings/update_card.dart';
 import 'l10n/app_localizations.dart';
 
@@ -17,11 +23,30 @@ import 'package:equis/background/android_background_jobs.dart';
 import 'package:equis/infrastructure/settings/shared_preferences_theme_store.dart';
 import 'package:equis/infrastructure/settings/shared_preferences_locale_store.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  LicenseRegistry.addLicense(() async* {
+    final notice = await rootBundle.loadString(
+      'assets/licenses/BCB-SGS-Selic-ODbL-1.0.txt',
+    );
+    yield LicenseEntryWithLineBreaks(['BCB SGS 11 - Selic'], notice);
+  });
+  if (windowsUpdateTestMode) {
+    final profile = (await windowsUpdateSupportDirectoryRoot())!;
+    final fixtureId = p.basename(p.dirname(profile.path));
+    final nativeSupport = await getApplicationSupportDirectory();
+    // Windows plugins derive preferences, DPAPI storage and logs from the
+    // executable's ProductName. Refuse a test build with production metadata.
+    if (!RegExp(r'^[0-9a-f]{32}$').hasMatch(fixtureId) ||
+        p.basename(nativeSupport.path) != 'Equis Update Test $fixtureId') {
+      throw StateError('Isolated Windows fixture metadata is required');
+    }
+  }
   // Never open/migrate a vault from a partially replaced portable installation.
   if (await UpdateInstaller.replacementInterrupted()) {
     runApp(
@@ -63,7 +88,16 @@ Future<void> main() async {
   LocalAppDependencies? localDependencies;
   VaultWorkspace? workspace;
   try {
-    workspace = await VaultWorkspace.open();
+    workspace = await VaultWorkspace.open(
+      cloudEnabled: !windowsUpdateTestMode,
+      storage: windowsUpdateTestMode
+          ? const FlutterSecureStringStore(
+              FlutterSecureStorage(
+                wOptions: WindowsOptions(useBackwardCompatibility: false),
+              ),
+            )
+          : null,
+    );
     localDependencies = workspace.active;
     await AndroidBackgroundJobs.initializeAndSchedule();
   } catch (_) {
@@ -100,10 +134,13 @@ Future<void> main() async {
   final dependencies = localDependencies;
   final preferences = themeStore;
   AppUpdateService? updateService;
+  var windowsUpdateRegistrationIssue = false;
   try {
     updateService = await AppUpdateService.create(
       await UpdateInstaller.platform(),
     );
+  } on WindowsUpdatePreflightException {
+    windowsUpdateRegistrationIssue = true;
   } catch (_) {
     /* Updates never prevent offline access. */
   }
@@ -113,6 +150,9 @@ Future<void> main() async {
         ProviderScope(
           overrides: [
             appUpdateServiceProvider.overrideWithValue(updateService),
+            windowsUpdateRegistrationIssueProvider.overrideWithValue(
+              windowsUpdateRegistrationIssue,
+            ),
             localeProvider.overrideWith((ref) => supportedLocale),
             localePreferenceStoreProvider.overrideWithValue(localeStore),
             themeVariantProvider.overrideWith(
@@ -129,6 +169,8 @@ Future<void> main() async {
               : WorkspaceHost(
                   workspace: workspace,
                   updateService: updateService,
+                  windowsUpdateRegistrationIssue:
+                      windowsUpdateRegistrationIssue,
                   initialLocale: supportedLocale,
                   initialTheme: initialTheme,
                   themeStore: preferences,

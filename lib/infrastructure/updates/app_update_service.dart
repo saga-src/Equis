@@ -5,9 +5,10 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'update_manifest.dart';
-import 'update_public_key.dart';
+import 'windows_update_identity.dart';
 
 enum UpdateStatus {
   idle,
@@ -24,16 +25,17 @@ enum UpdateStatus {
 final class AppUpdateService extends ChangeNotifier
     with WidgetsBindingObserver {
   AppUpdateService({
-    required this.directory,
+    required Directory directory,
     required this.preferences,
     required this.platform,
     http.Client? client,
-    this.verificationKey = updatePublicKey,
+    this.verificationKey = windowsUpdateVerificationKey,
     this.network,
-  }) : _client = client ?? http.Client();
+  }) : directory = Directory(p.normalize(directory.path)),
+       _client = client ?? http.Client();
   static const current = UpdateVersion(
-    String.fromEnvironment('EQUIS_VERSION', defaultValue: '1.1.0'),
-    int.fromEnvironment('EQUIS_BUILD', defaultValue: 11),
+    String.fromEnvironment('EQUIS_VERSION', defaultValue: '1.2.0'),
+    int.fromEnvironment('EQUIS_BUILD', defaultValue: 12),
   );
   final Directory directory;
   final SharedPreferences preferences;
@@ -50,13 +52,20 @@ final class AppUpdateService extends ChangeNotifier
   String? errorCode;
   bool _busy = false;
   StreamSubscription<List<ConnectivityResult>>? _connectivity;
-  bool get automatic => preferences.getBool('updates.automatic') ?? true;
+  String get _preferencePrefix => windowsUpdateTestMode
+      ? 'updates.test.${directory.absolute.path}'
+      : 'updates';
+  bool get automatic =>
+      preferences.getBool('$_preferencePrefix.automatic') ??
+      !windowsUpdateTestMode;
   File? get packageFile =>
       package == null ? null : File('${directory.path}/${package!.name}');
   static Future<AppUpdateService> create(String platform) async {
-    final root = await getApplicationSupportDirectory();
+    final root =
+        await windowsUpdateSupportDirectoryRoot() ??
+        await getApplicationSupportDirectory();
     final service = AppUpdateService(
-      directory: Directory('${root.path}/updates'),
+      directory: Directory(p.join(root.path, 'updates')),
       preferences: await SharedPreferences.getInstance(),
       platform: platform,
     );
@@ -98,14 +107,18 @@ final class AppUpdateService extends ChangeNotifier
       sig,
       base64Decode(verificationKey),
     );
-    if (candidate.version.compareTo(current) <= 0) return;
+    if (candidate.version.compareTo(current) <= 0) {
+      manifest = null;
+      package = null;
+      return;
+    }
     final p = candidate.packages.where((p) => p.platform == platform).single;
     manifest = candidate;
     package = p;
   }
 
   Future<void> setAutomatic(bool value) async {
-    await preferences.setBool('updates.automatic', value);
+    await preferences.setBool('$_preferencePrefix.automatic', value);
     notifyListeners();
     if (value && package != null && status != UpdateStatus.ready) {
       await download();
@@ -150,8 +163,29 @@ final class AppUpdateService extends ChangeNotifier
       Uri.https('github.com', '/saga-src/Equis/releases/download/$tag/$name');
   Future<void> check({bool manual = false}) async {
     if (_busy || status == UpdateStatus.installing) return;
+    if (windowsUpdateTestMode) {
+      // Disposable builds consume their signed local cache. They never query
+      // production releases or share the production update preferences.
+      _busy = true;
+      try {
+        await _readCachedManifest();
+        if (package == null) {
+          _set(UpdateStatus.idle);
+        } else if (await packageFile!.exists()) {
+          await package!.validate(packageFile!);
+          _set(UpdateStatus.ready);
+        } else {
+          _set(UpdateStatus.failed, 'test_payload_missing');
+        }
+      } catch (_) {
+        _set(UpdateStatus.failed, 'test_cache_invalid');
+      } finally {
+        _busy = false;
+      }
+      return;
+    }
     final now = DateTime.now().toUtc();
-    final last = preferences.getInt('updates.lastCheck');
+    final last = preferences.getInt('$_preferencePrefix.lastCheck');
     if (!manual &&
         last != null &&
         now.millisecondsSinceEpoch - last <
@@ -216,7 +250,10 @@ final class AppUpdateService extends ChangeNotifier
         'verification_or_network',
       );
     } finally {
-      await preferences.setInt('updates.lastCheck', now.millisecondsSinceEpoch);
+      await preferences.setInt(
+        '$_preferencePrefix.lastCheck',
+        now.millisecondsSinceEpoch,
+      );
       _busy = false;
     }
     if (automatic && status == UpdateStatus.available) await download();
@@ -227,6 +264,10 @@ final class AppUpdateService extends ChangeNotifier
         package == null ||
         manifest == null ||
         status == UpdateStatus.installing) {
+      return;
+    }
+    if (windowsUpdateTestMode) {
+      await check(manual: true);
       return;
     }
     _busy = true;
@@ -297,7 +338,8 @@ final class AppUpdateService extends ChangeNotifier
   }
 
   void installing() => _set(UpdateStatus.installing);
-  void installationFailed() => _set(UpdateStatus.ready, 'installation');
+  void installationFailed([String code = 'installation']) =>
+      _set(UpdateStatus.ready, code);
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);

@@ -7,11 +7,14 @@ import '../formatting/equis_formatters.dart';
 
 import '../../app/providers/app_providers.dart';
 import '../../application/ports/investment_repository.dart';
+import '../../application/ports/ledger_repository.dart';
 import '../../application/services/investment_service.dart';
 import '../../application/services/local_finance_session_service.dart';
 import '../../domain/entities/account_profile.dart';
 import '../../domain/entities/category_node.dart';
 import '../../domain/investments/investment_models.dart';
+import '../../domain/investments/fixed_income_contract.dart';
+import '../../domain/investments/fixed_income_valuation.dart';
 import '../../domain/ledger/ledger_models.dart';
 import '../../domain/market/market_models.dart';
 import '../../domain/shared/currency.dart';
@@ -21,6 +24,7 @@ import '../../domain/shared/uuid_v7.dart';
 import '../../l10n/app_localizations.dart';
 import '../formatting/taxonomy_labels.dart';
 import 'investment_controller.dart';
+import 'fixed_income_terms_form.dart';
 
 class InvestmentScreen extends ConsumerWidget {
   const InvestmentScreen({this.financeOverride, this.stateOverride, super.key});
@@ -133,7 +137,10 @@ class InvestmentScreen extends ConsumerWidget {
                   for (final holding in report.holdings)
                     _HoldingCard(
                       holding: holding,
+                      portfolioIncomplete: report.isKnownSubtotal,
                       price: _priceFor(state.prices, holding.instrument.id),
+                      onLotAction: (lotId, action) =>
+                          _lotAction(context, ref, holding, lotId, action),
                       onAction: (action) => _instrumentAction(
                         context,
                         ref,
@@ -247,6 +254,7 @@ class InvestmentScreen extends ConsumerWidget {
               fees: draft.fees,
               taxes: draft.taxes,
               date: draft.date,
+              contractTerms: draft.contractTerms,
             ),
       );
     }
@@ -255,6 +263,145 @@ class InvestmentScreen extends ConsumerWidget {
   Future<void> _refreshPrices(BuildContext context, WidgetRef ref) async {
     final controller = ref.read(investmentControllerProvider.notifier);
     await _runInvestmentMutation(context, controller.refreshPrices);
+  }
+
+  Future<void> _lotAction(
+    BuildContext context,
+    WidgetRef ref,
+    HoldingReport holding,
+    EntityId lotId,
+    String action,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final controller = ref.read(investmentControllerProvider.notifier);
+    try {
+      final snapshot = await controller.loadLotEditor(lotId);
+      if (!context.mounted) return;
+      if (snapshot == null) {
+        _showMessage(context, l.investmentLoadFailedMessage);
+        return;
+      }
+      final lot = holding.lots.singleWhere((p) => p.lot.id == lotId).lot;
+      if (action == 'terms') {
+        final terms = await showDialog<FixedIncomeTerms>(
+          context: context,
+          builder: (_) => _EditFixedIncomeTermsDialog(
+            initial: snapshot.contract?.terms,
+            currency: holding.instrument.currency,
+            acquiredOn: lot.acquiredOn,
+            productName: holding.instrument.name,
+          ),
+        );
+        if (terms == null || !context.mounted) return;
+        await controller.reviseContract(
+          lotId: lotId,
+          terms: terms,
+          expectedRevision: snapshot.acquisitionTransactionRevision,
+          expectedDisposalFingerprint: snapshot.disposalFingerprint,
+        );
+      } else if (action == 'manual') {
+        final draft = await showDialog<_ManualBalanceDraft>(
+          context: context,
+          builder: (_) => _ManualBalanceDialog(
+            currency: holding.instrument.currency,
+            acquiredOn: lot.acquiredOn,
+          ),
+        );
+        if (draft == null || !context.mounted) return;
+        await controller.recordManualValue(
+          lotId: lotId,
+          valueDate: draft.date,
+          amount: draft.amount,
+          currency: holding.instrument.currency,
+          expectedRevision: snapshot.acquisitionTransactionRevision,
+          expectedDisposalFingerprint: snapshot.disposalFingerprint,
+          notes: draft.notes,
+        );
+      } else if (action == 'editManual') {
+        if (snapshot.manualValues.isEmpty) {
+          _showMessage(context, l.fixedIncomeNoManualToEditMessage);
+          return;
+        }
+        final chosen = await showDialog<FixedIncomeManualValue>(
+          context: context,
+          builder: (dialogContext) => SimpleDialog(
+            title: Text(l.fixedIncomeEditManualAction),
+            children: [
+              for (final value in snapshot.manualValues)
+                SimpleDialogOption(
+                  onPressed: () => Navigator.pop(dialogContext, value),
+                  child: Text(
+                    '${EquisFormatters.date(dialogContext, value.valueDate)} · '
+                    '${_money(dialogContext, value.currency, value.amountMinor)}',
+                  ),
+                ),
+            ],
+          ),
+        );
+        if (chosen == null || !context.mounted) return;
+        final draft = await showDialog<_ManualBalanceDraft>(
+          context: context,
+          builder: (_) => _ManualBalanceDialog(
+            currency: holding.instrument.currency,
+            acquiredOn: lot.acquiredOn,
+            initial: chosen,
+          ),
+        );
+        if (draft == null || !context.mounted) return;
+        await controller.replaceManualValue(
+          lotId: lotId,
+          valueId: chosen.id,
+          valueDate: draft.date,
+          amount: draft.amount,
+          currency: holding.instrument.currency,
+          expectedRevision: snapshot.acquisitionTransactionRevision,
+          expectedDisposalFingerprint: snapshot.disposalFingerprint,
+          notes: draft.notes,
+        );
+      } else if (action == 'removeManual') {
+        if (snapshot.manualValues.isEmpty) {
+          _showMessage(context, l.fixedIncomeNoManualToEditMessage);
+          return;
+        }
+        final chosen = await showDialog<FixedIncomeManualValue>(
+          context: context,
+          builder: (dialogContext) => SimpleDialog(
+            title: Text(l.fixedIncomeRemoveManualAction),
+            children: [
+              for (final value in snapshot.manualValues)
+                SimpleDialogOption(
+                  onPressed: () => Navigator.pop(dialogContext, value),
+                  child: Text(
+                    '${EquisFormatters.date(dialogContext, value.valueDate)} · '
+                    '${_money(dialogContext, value.currency, value.amountMinor)}',
+                  ),
+                ),
+            ],
+          ),
+        );
+        if (chosen == null || !context.mounted) return;
+        await controller.removeManualValue(
+          lotId: lotId,
+          valueId: chosen.id,
+          expectedRevision: snapshot.acquisitionTransactionRevision,
+          expectedDisposalFingerprint: snapshot.disposalFingerprint,
+        );
+      }
+    } on LedgerRevisionConflict {
+      await controller.reload();
+      if (context.mounted) {
+        _showMessage(context, l.fixedIncomeRevisionConflictMessage);
+      }
+    } on InvestmentLotStateConflict {
+      await controller.reload();
+      if (context.mounted) {
+        _showMessage(context, l.fixedIncomeRevisionConflictMessage);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(context, l.investmentActionFailedMessage);
+      }
+    }
   }
 
   Future<void> _instrumentAction(
@@ -324,7 +471,14 @@ class InvestmentScreen extends ConsumerWidget {
         builder: (_) => _TradeDialog(
           sell: action == 'sell',
           pockets: pockets,
-          initialUnitPrice: latestPrice,
+          initialUnitPrice:
+              holding.instrument.assetClass == InvestmentAssetClass.fixedIncome
+              ? null
+              : latestPrice,
+          fixedIncome:
+              holding.instrument.assetClass == InvestmentAssetClass.fixedIncome,
+          currency: holding.instrument.currency,
+          productName: holding.instrument.name,
         ),
       );
       if (!context.mounted) return;
@@ -342,6 +496,7 @@ class InvestmentScreen extends ConsumerWidget {
                 taxes: draft.taxes,
                 date: draft.date,
                 sell: action == 'sell',
+                contractTerms: draft.contractTerms,
               ),
         );
       }
@@ -735,13 +890,21 @@ class _PortfolioSummary extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l.portfolioValueLabel),
+            Text(
+              report.isKnownSubtotal
+                  ? l.fixedIncomeKnownSubtotalLabel
+                  : l.portfolioValueLabel,
+            ),
             Text(
               _money(context, report.currency, report.marketValueMinor),
               key: const Key('portfolio-value'),
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
+            if (report.hasIncompleteAccountSync) ...[
+              Text(l.accountSyncIncompleteMessage),
+              const SizedBox(height: 12),
+            ],
             Wrap(
               spacing: 24,
               runSpacing: 12,
@@ -750,10 +913,11 @@ class _PortfolioSummary extends StatelessWidget {
                   l.portfolioCostLabel,
                   _money(context, report.currency, report.costBasisMinor),
                 ),
-                _Metric(
-                  l.unrealizedResultLabel,
-                  _money(context, report.currency, report.unrealizedMinor),
-                ),
+                if (!report.isKnownSubtotal)
+                  _Metric(
+                    l.unrealizedResultLabel,
+                    _money(context, report.currency, report.unrealizedMinor),
+                  ),
                 _Metric(
                   l.realizedResultLabel,
                   _money(context, report.currency, report.realizedMinor),
@@ -776,7 +940,7 @@ class _Metric extends StatelessWidget {
   final String label, value;
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: 180,
+    width: 210,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -790,16 +954,30 @@ class _Metric extends StatelessWidget {
 class _HoldingCard extends StatelessWidget {
   const _HoldingCard({
     required this.holding,
+    required this.portfolioIncomplete,
     required this.price,
     required this.onAction,
+    required this.onLotAction,
   });
   final HoldingReport holding;
+  final bool portfolioIncomplete;
   final MarketPriceState? price;
   final ValueChanged<String> onAction;
+  final void Function(EntityId lotId, String action) onLotAction;
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final i = holding.instrument;
+    final fixedIncome = i.assetClass == InvestmentAssetClass.fixedIncome;
+    final hasMarketLot = holding.lotValuations.any(
+      (value) => value.origin == ValuationOrigin.market,
+    );
+    final displayedValue = holding.hasIncompleteValuations
+        ? holding.knownValueMinor
+        : holding.marketValueMinor;
+    final activeLots = holding.lots
+        .where((position) => position.remainingQuantity > Decimal.zero)
+        .toList();
     return EquisGlassCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -835,11 +1013,13 @@ class _HoldingCard extends StatelessWidget {
                       value: 'interest',
                       child: Text(l.interestInvestmentAction),
                     ),
-                    PopupMenuItem(
-                      value: 'price',
-                      child: Text(l.manualPriceAction),
-                    ),
-                    if (i.providerSymbol == null || i.providerName == null)
+                    if (!fixedIncome || hasMarketLot)
+                      PopupMenuItem(
+                        value: 'price',
+                        child: Text(l.manualPriceAction),
+                      ),
+                    if ((!fixedIncome || hasMarketLot) &&
+                        (i.providerSymbol == null || i.providerName == null))
                       PopupMenuItem(
                         value: 'link',
                         child: Text(l.linkMarketAssetAction),
@@ -857,28 +1037,55 @@ class _HoldingCard extends StatelessWidget {
               '${l.quantityLabel}: ${holding.quantity}  ·  ${l.averageCostLabel}: ${holding.averageCost} ${i.currency.value}',
             ),
             const SizedBox(height: 8),
-            LinearProgressIndicator(value: holding.allocationBps / 10000),
-            const SizedBox(height: 6),
-            Text(
-              '${l.allocationLabel}: ${(holding.allocationBps / 100).toStringAsFixed(1)}%',
-            ),
+            if (!portfolioIncomplete)
+              LinearProgressIndicator(value: holding.allocationBps / 10000),
+            if (!portfolioIncomplete) const SizedBox(height: 6),
+            if (!portfolioIncomplete)
+              Text(
+                '${l.allocationLabel}: ${(holding.allocationBps / 100).toStringAsFixed(1)}%',
+              ),
             if (holding.marketValueMinor == null &&
-                holding.quantity > Decimal.zero)
+                holding.quantity > Decimal.zero &&
+                !fixedIncome)
               Text(l.missingMarketPriceMessage),
-            if (price?.stale ?? false)
+            if ((!fixedIncome || hasMarketLot) && (price?.stale ?? false))
               Text(
                 l.stalePriceMessage,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
-            if (price?.refreshFailed ?? false)
+            if ((!fixedIncome || hasMarketLot) &&
+                (price?.refreshFailed ?? false))
               Text(
                 l.priceRefreshFailedMessage,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
-            if (holding.marketValueMinor != null)
+            if (displayedValue != null)
               Text(
-                '${l.portfolioValueLabel}: ${_money(context, i.currency, holding.marketValueMinor!)} · '
-                '${l.unrealizedResultLabel}: ${_money(context, i.currency, holding.unrealizedMinor ?? 0)}',
+                '${holding.hasIncompleteValuations ? l.fixedIncomeKnownSubtotalLabel : l.portfolioValueLabel}: '
+                '${_money(context, i.currency, displayedValue)}'
+                '${holding.unrealizedMinor == null ? '' : ' · ${l.unrealizedResultLabel}: ${_money(context, i.currency, holding.unrealizedMinor!)}'}',
+              ),
+            if (fixedIncome && holding.hasIncompleteValuations)
+              Text(l.fixedIncomeIncompleteLabel),
+            if (fixedIncome && activeLots.isNotEmpty)
+              ExpansionTile(
+                key: Key('fixed-income-lots-${i.id.value}'),
+                tilePadding: EdgeInsets.zero,
+                title: Text(l.fixedIncomeLotsLabel),
+                children: [
+                  for (
+                    var index = 0;
+                    index < activeLots.length &&
+                        index < holding.lotValuations.length;
+                    index++
+                  )
+                    _FixedIncomeLotTile(
+                      position: activeLots[index],
+                      valuation: holding.lotValuations[index],
+                      onAction: (action) =>
+                          onLotAction(activeLots[index].lot.id, action),
+                    ),
+                ],
               ),
             Text(
               '${l.realizedResultLabel}: ${_money(context, i.currency, holding.realizedMinor)} · '
@@ -887,6 +1094,288 @@ class _HoldingCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FixedIncomeLotTile extends StatelessWidget {
+  const _FixedIncomeLotTile({
+    required this.position,
+    required this.valuation,
+    required this.onAction,
+  });
+
+  final LotPosition position;
+  final PositionValuation valuation;
+  final ValueChanged<String> onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final originLabel = switch (valuation.origin) {
+      ValuationOrigin.contractual => l.fixedIncomeEstimatedGrossLabel,
+      ValuationOrigin.manual => l.fixedIncomeManualBalanceLabel,
+      ValuationOrigin.market => l.fixedIncomeMarketValueLabel,
+    };
+    final stateLabel = switch (valuation.state) {
+      ValuationState.current => null,
+      ValuationState.incomplete => l.fixedIncomeIncompleteLabel,
+      ValuationState.maturedActionRequired => l.fixedIncomeMaturedLabel,
+      ValuationState.manualRequired => l.fixedIncomeManualRequiredLabel,
+      ValuationState.closed => l.fixedIncomeNoBalanceLabel,
+      ValuationState.notStarted => l.fixedIncomeNotStartedLabel,
+    };
+    final amount = valuation.amountMinor;
+    return ListTile(
+      key: Key('fixed-income-lot-${position.lot.id.value}'),
+      contentPadding: EdgeInsets.zero,
+      title: Text(
+        '$originLabel · ${EquisFormatters.date(context, position.lot.acquiredOn)}',
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$originLabel: ${amount == null ? l.fixedIncomeNoBalanceLabel : _money(context, valuation.currency, amount)}',
+          ),
+          Text(
+            '${l.fixedIncomeValueDateLabel}: ${EquisFormatters.date(context, valuation.valueDate)}',
+          ),
+          Text(
+            '${l.fixedIncomeSourceLabel}: ${_fixedIncomeSourceLabel(l, valuation)}',
+          ),
+          if (valuation.source == 'contract+BCB_SGS:11')
+            TextButton(
+              onPressed: () => showLicensePage(context: context),
+              child: Text(
+                'BCB · ODbL 1.0 · ${MaterialLocalizations.of(context).licensesPageTitle}',
+              ),
+            ),
+          if (stateLabel != null) Text(stateLabel),
+          if (valuation.origin == ValuationOrigin.manual &&
+              valuation.amountMinor != null &&
+              valuation.valueDate.compareTo(_today()) < 0)
+            Text(l.fixedIncomeDatedManualNotice),
+          if (valuation.missingPeriods.isNotEmpty)
+            Text(
+              '${l.fixedIncomeMissingPeriodsLabel}: ${valuation.missingPeriods.map((period) => '${period.start}–${period.end}').join(', ')}',
+            ),
+          if (valuation.origin == ValuationOrigin.contractual &&
+              valuation.source.contains('BCB_SGS'))
+            Text(l.fixedIncomeCachedDataNotice),
+          if (valuation.origin != ValuationOrigin.market)
+            Text(l.fixedIncomeNoRedemptionQuoteNotice),
+        ],
+      ),
+      trailing: PopupMenuButton<String>(
+        onSelected: onAction,
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: 'terms',
+            child: Text(l.fixedIncomeEditTermsAction),
+          ),
+          if (valuation.origin != ValuationOrigin.market) ...[
+            PopupMenuItem(
+              value: 'manual',
+              child: Text(l.fixedIncomeSetManualAction),
+            ),
+            PopupMenuItem(
+              value: 'editManual',
+              child: Text(l.fixedIncomeEditManualAction),
+            ),
+            PopupMenuItem(
+              value: 'removeManual',
+              child: Text(l.fixedIncomeRemoveManualAction),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+String _fixedIncomeSourceLabel(AppLocalizations l, PositionValuation value) {
+  if (value.origin == ValuationOrigin.manual) {
+    return l.fixedIncomeManualBalanceLabel;
+  }
+  if (value.source.startsWith('contract+BCB_SGS:')) {
+    return '${l.fixedIncomeContractSourceLabel} ${value.source.substring('contract+BCB_SGS:'.length)}';
+  }
+  if (value.origin == ValuationOrigin.market) {
+    return l.fixedIncomeMarketValueLabel;
+  }
+  return l.fixedIncomeContractOnlySourceLabel;
+}
+
+class _EditFixedIncomeTermsDialog extends StatefulWidget {
+  const _EditFixedIncomeTermsDialog({
+    required this.initial,
+    required this.currency,
+    required this.acquiredOn,
+    required this.productName,
+  });
+  final FixedIncomeTerms? initial;
+  final CurrencyCode currency;
+  final LocalDate acquiredOn;
+  final String productName;
+
+  @override
+  State<_EditFixedIncomeTermsDialog> createState() =>
+      _EditFixedIncomeTermsDialogState();
+}
+
+class _EditFixedIncomeTermsDialogState
+    extends State<_EditFixedIncomeTermsDialog> {
+  final _termsKey = GlobalKey<FixedIncomeTermsFormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l.fixedIncomeEditTermsAction),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: FixedIncomeTermsForm(
+            key: _termsKey,
+            initial: widget.initial,
+            currency: widget.currency,
+            acquiredOn: widget.acquiredOn,
+            defaultProductName: widget.productName,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.cancelAction),
+        ),
+        FilledButton(
+          onPressed: () {
+            final terms = _termsKey.currentState?.buildTerms();
+            if (terms != null) Navigator.pop(context, terms);
+          },
+          child: Text(l.saveAction),
+        ),
+      ],
+    );
+  }
+}
+
+final class _ManualBalanceDraft {
+  const _ManualBalanceDraft(this.amount, this.date, this.notes);
+  final String amount;
+  final LocalDate date;
+  final String? notes;
+}
+
+class _ManualBalanceDialog extends StatefulWidget {
+  const _ManualBalanceDialog({
+    required this.currency,
+    required this.acquiredOn,
+    this.initial,
+  });
+  final CurrencyCode currency;
+  final LocalDate acquiredOn;
+  final FixedIncomeManualValue? initial;
+  @override
+  State<_ManualBalanceDialog> createState() => _ManualBalanceDialogState();
+}
+
+class _ManualBalanceDialogState extends State<_ManualBalanceDialog> {
+  final amount = TextEditingController();
+  final notes = TextEditingController();
+  var date = _today();
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initial;
+    if (initial != null) {
+      amount.text = Decimal.fromInt(initial.amountMinor).shift(-2).toString();
+      notes.text = initial.notes ?? '';
+      date = initial.valueDate;
+    }
+  }
+
+  @override
+  void dispose() {
+    amount.dispose();
+    notes.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l.fixedIncomeSetManualAction),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: amount,
+              key: const Key('fixed-income-manual-amount'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText:
+                    '${l.fixedIncomeManualBalanceLabel} (${widget.currency.value})',
+                errorText: error,
+              ),
+            ),
+            TextField(
+              controller: notes,
+              decoration: InputDecoration(
+                labelText: l.fixedIncomeManualNoteLabel,
+              ),
+            ),
+            _DateRow(
+              label: l.fixedIncomeValueDateLabel,
+              date: date,
+              onChanged: (value) => setState(() => date = value),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.cancelAction),
+        ),
+        FilledButton(
+          onPressed: () {
+            try {
+              final value = Decimal.parse(
+                amount.text.trim().replaceAll(',', '.'),
+              );
+              if (value < Decimal.zero) {
+                setState(() => error = l.fixedIncomePositiveAmountMessage);
+                return;
+              }
+              if (date.compareTo(widget.acquiredOn) < 0) {
+                setState(() => error = l.fixedIncomeDateBeforeStartMessage);
+                return;
+              }
+              Navigator.pop(
+                context,
+                _ManualBalanceDraft(
+                  amount.text.trim(),
+                  date,
+                  notes.text.trim().isEmpty ? null : notes.text.trim(),
+                ),
+              );
+            } catch (_) {
+              setState(() => error = l.fixedIncomePositiveAmountMessage);
+            }
+          },
+          child: Text(l.saveAction),
+        ),
+      ],
     );
   }
 }
@@ -968,6 +1457,7 @@ class _InstrumentDialog extends StatefulWidget {
 }
 
 class _InstrumentDialogState extends State<_InstrumentDialog> {
+  final _termsKey = GlobalKey<FixedIncomeTermsFormState>();
   final name = TextEditingController(),
       symbol = TextEditingController(),
       exchange = TextEditingController(),
@@ -1011,7 +1501,10 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
 
   void _scheduleSearch(String value) {
     _debounce?.cancel();
-    if (_manual || _selected != null || value.trim().length < 2) {
+    if (assetClass == InvestmentAssetClass.fixedIncome ||
+        _manual ||
+        _selected != null ||
+        value.trim().length < 2) {
       setState(() {
         _results = const [];
         _searching = false;
@@ -1097,6 +1590,7 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final fixedIncome = assetClass == InvestmentAssetClass.fixedIncome;
     final currencies = <CurrencyCode>{...widget.currencies, currency}.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
     final pockets = widget.pockets
@@ -1129,7 +1623,18 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
                 onChanged: _selected != null
                     ? null
                     : (value) {
-                        setState(() => assetClass = value!);
+                        setState(() {
+                          assetClass = value!;
+                          if (fixedIncome ||
+                              value == InvestmentAssetClass.fixedIncome) {
+                            _manual = value == InvestmentAssetClass.fixedIncome;
+                            _selected = null;
+                            _preview = null;
+                            _results = const [];
+                            symbol.clear();
+                            exchange.clear();
+                          }
+                        });
                         _scheduleSearch(symbol.text);
                       },
               ),
@@ -1151,22 +1656,23 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
                         _scheduleSearch(symbol.text);
                       },
               ),
-              TextField(
-                controller: symbol,
-                readOnly: _selected != null,
-                onChanged: _scheduleSearch,
-                decoration: InputDecoration(
-                  labelText: l.assetSearchLabel,
-                  hintText: l.assetSearchHint,
-                  suffixIcon: _searching
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : null,
+              if (!fixedIncome)
+                TextField(
+                  controller: symbol,
+                  readOnly: _selected != null,
+                  onChanged: _scheduleSearch,
+                  decoration: InputDecoration(
+                    labelText: l.assetSearchLabel,
+                    hintText: l.assetSearchHint,
+                    suffixIcon: _searching
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : null,
+                  ),
                 ),
-              ),
-              if (_results.isNotEmpty)
+              if (!fixedIncome && _results.isNotEmpty)
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 220),
                   child: ListView.builder(
@@ -1189,7 +1695,8 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
                     },
                   ),
                 ),
-              if (!_searching &&
+              if (!fixedIncome &&
+                  !_searching &&
                   !_manual &&
                   _selected == null &&
                   symbol.text.trim().length >= 2 &&
@@ -1197,7 +1704,7 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
                 Text(
                   _searchFailed ? l.assetSearchFailed : l.assetSearchNoResults,
                 ),
-              if (_selected != null)
+              if (!fixedIncome && _selected != null)
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
@@ -1206,7 +1713,7 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
                     label: Text(l.clearAssetSelectionAction),
                   ),
                 )
-              else if (!_manual)
+              else if (!fixedIncome && !_manual)
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
@@ -1224,13 +1731,14 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(labelText: l.instrumentNameLabel),
               ),
-              TextField(
-                controller: exchange,
-                readOnly: _selected != null,
-                decoration: InputDecoration(
-                  labelText: l.instrumentExchangeLabel,
+              if (!fixedIncome)
+                TextField(
+                  controller: exchange,
+                  readOnly: _selected != null,
+                  decoration: InputDecoration(
+                    labelText: l.instrumentExchangeLabel,
+                  ),
                 ),
-              ),
               if (_preview != null)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -1328,6 +1836,13 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
                   date: _date,
                   onChanged: (value) => setState(() => _date = value),
                 ),
+                if (fixedIncome)
+                  FixedIncomeTermsForm(
+                    key: _termsKey,
+                    currency: currency,
+                    acquiredOn: _date,
+                    defaultProductName: name.text.trim(),
+                  ),
               ],
             ],
           ),
@@ -1340,25 +1855,32 @@ class _InstrumentDialogState extends State<_InstrumentDialog> {
         ),
         FilledButton(
           onPressed: canSave
-              ? () => Navigator.pop(
-                  context,
-                  _InstrumentDraft(
-                    name: name.text.trim(),
-                    symbol: symbol.text.trim(),
-                    exchange: exchange.text.trim(),
-                    assetClass: assetClass,
-                    currency: currency,
-                    candidate: _selected,
-                    preview: _preview,
-                    initialMode: _addPosition ? _mode : null,
-                    initialPocket: _addPosition ? _pocket : null,
-                    quantity: quantity.text.trim(),
-                    price: price.text.trim(),
-                    fees: fees.text.trim(),
-                    taxes: taxes.text.trim(),
-                    date: _date,
-                  ),
-                )
+              ? () {
+                  final terms = fixedIncome && _addPosition
+                      ? _termsKey.currentState?.buildTerms()
+                      : null;
+                  if (fixedIncome && _addPosition && terms == null) return;
+                  Navigator.pop(
+                    context,
+                    _InstrumentDraft(
+                      name: name.text.trim(),
+                      symbol: symbol.text.trim(),
+                      exchange: exchange.text.trim(),
+                      assetClass: assetClass,
+                      currency: currency,
+                      candidate: _selected,
+                      preview: _preview,
+                      initialMode: _addPosition ? _mode : null,
+                      initialPocket: _addPosition ? _pocket : null,
+                      quantity: quantity.text.trim(),
+                      price: price.text.trim(),
+                      fees: fees.text.trim(),
+                      taxes: taxes.text.trim(),
+                      date: _date,
+                      contractTerms: terms,
+                    ),
+                  );
+                }
               : null,
           child: Text(l.saveAction),
         ),
@@ -1630,16 +2152,23 @@ class _TradeDialog extends StatefulWidget {
   const _TradeDialog({
     required this.sell,
     required this.pockets,
+    required this.fixedIncome,
+    required this.currency,
+    required this.productName,
     this.initialUnitPrice,
   });
   final bool sell;
   final List<_NamedPocket> pockets;
+  final bool fixedIncome;
+  final CurrencyCode currency;
+  final String productName;
   final Decimal? initialUnitPrice;
   @override
   State<_TradeDialog> createState() => _TradeDialogState();
 }
 
 class _TradeDialogState extends State<_TradeDialog> {
+  final _termsKey = GlobalKey<FixedIncomeTermsFormState>();
   final quantity = TextEditingController(),
       price = TextEditingController(),
       fees = TextEditingController(),
@@ -1668,44 +2197,53 @@ class _TradeDialogState extends State<_TradeDialog> {
       title: Text(widget.sell ? l.sellInvestmentAction : l.buyInvestmentAction),
       content: SizedBox(
         width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField(
-              initialValue: pocket,
-              decoration: InputDecoration(labelText: l.cashAccountLabel),
-              items: [
-                for (final p in widget.pockets)
-                  DropdownMenuItem(value: p, child: Text(p.name)),
-              ],
-              onChanged: (v) => setState(() => pocket = v!),
-            ),
-            TextField(
-              controller: quantity,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.quantityLabel),
-            ),
-            TextField(
-              controller: price,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.unitPriceLabel),
-            ),
-            TextField(
-              controller: fees,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.feesLabel),
-            ),
-            TextField(
-              controller: taxes,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.taxesLabel),
-            ),
-            _DateRow(
-              label: l.investmentDateLabel,
-              date: date,
-              onChanged: (v) => setState(() => date = v),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField(
+                initialValue: pocket,
+                decoration: InputDecoration(labelText: l.cashAccountLabel),
+                items: [
+                  for (final p in widget.pockets)
+                    DropdownMenuItem(value: p, child: Text(p.name)),
+                ],
+                onChanged: (v) => setState(() => pocket = v!),
+              ),
+              TextField(
+                controller: quantity,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l.quantityLabel),
+              ),
+              TextField(
+                controller: price,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l.unitPriceLabel),
+              ),
+              TextField(
+                controller: fees,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l.feesLabel),
+              ),
+              TextField(
+                controller: taxes,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l.taxesLabel),
+              ),
+              _DateRow(
+                label: l.investmentDateLabel,
+                date: date,
+                onChanged: (v) => setState(() => date = v),
+              ),
+              if (widget.fixedIncome && !widget.sell)
+                FixedIncomeTermsForm(
+                  key: _termsKey,
+                  currency: widget.currency,
+                  acquiredOn: date,
+                  defaultProductName: widget.productName,
+                ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -1716,6 +2254,10 @@ class _TradeDialogState extends State<_TradeDialog> {
         FilledButton(
           onPressed: () {
             if (quantity.text.isNotEmpty && price.text.isNotEmpty) {
+              final terms = widget.fixedIncome && !widget.sell
+                  ? _termsKey.currentState?.buildTerms()
+                  : null;
+              if (widget.fixedIncome && !widget.sell && terms == null) return;
               Navigator.pop(
                 context,
                 _TradeDraft(
@@ -1725,6 +2267,7 @@ class _TradeDialogState extends State<_TradeDialog> {
                   fees.text,
                   taxes.text,
                   date,
+                  terms,
                 ),
               );
             }
@@ -2131,6 +2674,7 @@ final class _InstrumentDraft {
     this.preview,
     this.initialMode,
     this.initialPocket,
+    this.contractTerms,
   });
   final String name, symbol, exchange;
   final InvestmentAssetClass assetClass;
@@ -2141,6 +2685,7 @@ final class _InstrumentDraft {
   final LedgerPocket? initialPocket;
   final String quantity, price, fees, taxes;
   final LocalDate date;
+  final FixedIncomeTerms? contractTerms;
 }
 
 final class _MarketLinkDraft {
@@ -2163,10 +2708,12 @@ final class _TradeDraft {
     this.fees,
     this.taxes,
     this.date,
+    this.contractTerms,
   );
   final LedgerPocket pocket;
   final String quantity, price, fees, taxes;
   final LocalDate date;
+  final FixedIncomeTerms? contractTerms;
 }
 
 final class _IncomeDraft {

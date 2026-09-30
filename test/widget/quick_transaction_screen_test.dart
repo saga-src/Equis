@@ -1,7 +1,9 @@
 import 'package:equis/domain/entities/account_profile.dart';
 import 'package:equis/domain/entities/category_node.dart';
+import 'package:equis/application/ports/ledger_repository.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/shared/currency.dart';
+import 'package:equis/domain/shared/local_date.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
 import 'package:equis/l10n/app_localizations.dart';
 import 'package:equis/presentation/transactions/quick_transaction_screen.dart';
@@ -89,6 +91,46 @@ void main() {
     await tester.tap(find.text('Income'));
     await tester.pumpAndSettle();
     expect(find.text('Visa · BRL'), findsNothing);
+  });
+
+  testWidgets('revision conflict keeps the draft until explicit reload', (
+    tester,
+  ) async {
+    var reloads = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: QuickTransactionScreen(
+          accounts: _accounts,
+          categories: _categories,
+          tags: const [],
+          initialDraft: QuickTransactionDraft(
+            type: QuickTransactionType.expense,
+            amountText: '10.00',
+            sourcePocketId: _sourceId,
+            categoryId: _expenseCategoryId,
+            date: LocalDate(2026, 9, 1),
+          ),
+          onSave: (_) async => throw LedgerRevisionConflict(
+            transactionId: EntityId.generate(),
+            expectedRevision: 1,
+            actualRevision: 2,
+          ),
+          onRevisionConflict: () => reloads++,
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextFormField).first, '12.34');
+    await tester.tap(find.text('Save locally'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('This transaction changed elsewhere'), findsOneWidget);
+    expect(tester.widget<TextFormField>(find.byType(TextFormField).first).controller!.text,
+        '12.34');
+    expect(reloads, 0);
+    await tester.tap(find.text('Reload'));
+    await tester.pumpAndSettle();
+    expect(reloads, 1);
   });
 }
 

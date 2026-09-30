@@ -14,6 +14,7 @@ docs/
 .pub-cache/
 build/
 coverage/
+__pycache__/
 # Distributable artifacts are kept locally or published as release assets.
 dist/
 

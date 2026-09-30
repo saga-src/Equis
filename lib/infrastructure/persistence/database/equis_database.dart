@@ -51,7 +51,7 @@ final class EquisDatabase extends _$EquisDatabase {
   }
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -97,6 +97,28 @@ final class EquisDatabase extends _$EquisDatabase {
           from5To6: (migrator, schema) async {
             await migrator.create(schema.syncActivityEvents);
             await migrator.create(schema.idxSyncActivityTime);
+          },
+          from6To7: (migrator, schema) async {
+            await migrator.create(schema.economicSeriesCache);
+            await migrator.create(schema.economicSeriesRefreshState);
+            await migrator.create(schema.fixedIncomeContracts);
+            await migrator.create(schema.fixedIncomeManualValues);
+            await migrator.create(schema.syncOutboxDependencies);
+            await migrator.create(schema.syncQuarantine);
+            await migrator.create(schema.syncDependencyPause);
+            await customStatement(
+              'INSERT OR IGNORE INTO sync_outbox_dependencies (operation_id, account_id) '
+              'SELECT DISTINCT outbox.operation_id, pocket.account_id '
+              'FROM sync_outbox outbox '
+              'INNER JOIN account_movements movement ON movement.transaction_id = outbox.record_id '
+              'INNER JOIN account_pockets pocket ON pocket.id = movement.account_pocket_id '
+              "WHERE outbox.entity_type = 'transaction'",
+            );
+            await customStatement(
+              'INSERT OR IGNORE INTO sync_outbox_dependencies (operation_id, account_id) '
+              'SELECT operation_id, record_id FROM sync_outbox '
+              "WHERE entity_type = 'account'",
+            );
           },
         )(migrator, from, to),
       );

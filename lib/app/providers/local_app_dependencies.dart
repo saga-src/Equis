@@ -13,10 +13,12 @@ import '../../application/services/goal_service.dart';
 import '../../application/services/wealth_service.dart';
 import '../../application/services/investment_service.dart';
 import '../../application/services/market_data_service.dart';
+import '../../application/services/economic_series_service.dart';
 import '../../application/services/fx_rate_selector.dart';
 import '../../application/services/startup_refresh_service.dart';
 import '../../application/services/financial_intelligence_service.dart';
 import '../../core/config/app_config.dart';
+import '../../domain/investments/brazil_financial_calendar.dart';
 import '../../domain/cloud/cloud_identity_models.dart';
 import '../../application/services/cash_flow_projection_service.dart';
 import '../../application/services/credit_card_service.dart';
@@ -33,9 +35,11 @@ import '../../infrastructure/repositories/drift_goal_repository.dart';
 import '../../infrastructure/repositories/drift_wealth_repository.dart';
 import '../../infrastructure/repositories/drift_investment_repository.dart';
 import '../../infrastructure/repositories/drift_market_price_repository.dart';
+import '../../infrastructure/repositories/drift_economic_series_cache.dart';
 import '../../infrastructure/repositories/drift_fx_repositories.dart';
 import '../../infrastructure/repositories/drift_startup_refresh_gate.dart';
 import '../../infrastructure/market/edge_market_data_provider.dart';
+import '../../infrastructure/market/edge_economic_series_provider.dart';
 import '../../infrastructure/fx/frankfurter_fx_provider.dart';
 import '../../infrastructure/cloud/supabase_cloud_auth_gateway.dart';
 import '../../infrastructure/cloud/supabase_attachment_cloud_store.dart';
@@ -63,6 +67,7 @@ import '../../application/services/sync_engine.dart';
 import '../../application/services/sync_coordinator.dart';
 import '../../application/services/sync_mutation_notifications.dart';
 import '../../application/ports/sync_conflict_resolver.dart';
+import '../../application/ports/sync_aggregate_store.dart';
 import '../../infrastructure/network/connectivity_plus_reachability.dart';
 import '../../infrastructure/repositories/drift_ledger_repository.dart';
 import '../../infrastructure/repositories/drift_credit_card_repository.dart';
@@ -88,6 +93,7 @@ final class LocalAppDependencies {
     required this.wealth,
     required this.investments,
     required this.marketData,
+    required this.economicSeries,
     required this.fxRates,
     required this.startupRefresh,
     required this.intelligence,
@@ -103,6 +109,7 @@ final class LocalAppDependencies {
     required this.sync,
     required this.syncCoordinator,
     required this.syncConflicts,
+    this.accountSyncRecovery,
     required this.syncEnrollment,
     required this._syncMutationNotifications,
   });
@@ -119,6 +126,7 @@ final class LocalAppDependencies {
   final WealthService wealth;
   final InvestmentService investments;
   final MarketDataService marketData;
+  final EconomicSeriesService economicSeries;
   final FxRateSelector fxRates;
   final StartupRefreshService startupRefresh;
   final FinancialIntelligenceService intelligence;
@@ -134,6 +142,7 @@ final class LocalAppDependencies {
   final SyncEngine? sync;
   final SyncCoordinator? syncCoordinator;
   final SyncConflictResolver syncConflicts;
+  final AccountSyncRecoveryStore? accountSyncRecovery;
   final CloudSyncEnrollmentService? syncEnrollment;
   final SyncMutationNotifications _syncMutationNotifications;
 
@@ -191,9 +200,11 @@ final class LocalAppDependencies {
         ? SupabaseSyncGateway(cloudAuth.client, keys: vaultKeys)
         : null;
     final syncMetadata = DriftSyncMetadataStore(database);
+    final syncCipher = SyncPayloadCipher(keys: vaultKeys);
     final syncAggregates = DriftSyncAggregateStore(
       database: database,
       metadata: syncMetadata,
+      cipher: syncCipher,
     );
     final syncMutationNotifications = SyncMutationNotifications();
     final syncRecorder = DriftSyncMutationRecorder(
@@ -223,7 +234,6 @@ final class LocalAppDependencies {
               allowVerifiedOwnerBinding: profileId != null,
             ),
           );
-    final syncCipher = SyncPayloadCipher(keys: vaultKeys);
     final attachmentService = AttachmentService(
       repository: DriftAttachmentRepository(
         database,
@@ -301,11 +311,6 @@ final class LocalAppDependencies {
       ledger: ledger,
       syncRecorder: syncRecorder,
     );
-    final investmentService = InvestmentService(
-      repository: investmentRepository,
-      reporting: reportingRepository,
-      unitOfWork: unitOfWork,
-    );
     final marketData = MarketDataService(
       instruments: investmentRepository,
       prices: DriftMarketPriceRepository(database, syncRecorder: syncRecorder),
@@ -318,6 +323,26 @@ final class LocalAppDependencies {
             ? null
             : () async => cloudAuth.currentAccessToken,
       ),
+    );
+    final economicSeries = EconomicSeriesService(
+      cache: DriftEconomicSeriesCache(database),
+      provider: EdgeEconomicSeriesProvider(
+        endpoint: config.cloudConfigured
+            ? Uri.parse('${config.supabaseUrl}/functions/v1/economic-series')
+            : Uri(),
+        publishableKey: config.supabaseAnonKey,
+        accessTokenProvider: cloudAuth == null
+            ? null
+            : () async => cloudAuth.currentAccessToken,
+      ),
+      remoteReadsEnabled: config.economicSeriesReadEnabled,
+    );
+    final investmentService = InvestmentService(
+      repository: investmentRepository,
+      reporting: reportingRepository,
+      economicSeries: economicSeries,
+      businessCalendar: const BrazilFinancialCalendar(),
+      unitOfWork: unitOfWork,
     );
     final fxRates = FxRateSelector(
       manualRates: DriftManualFxRateRepository(
@@ -373,6 +398,7 @@ final class LocalAppDependencies {
       vaults: vaults,
       currencies: currencies,
       accounts: accounts,
+      lifecycleAccounts: accounts,
       ledger: ledger,
       unitOfWork: unitOfWork,
     );
@@ -387,6 +413,7 @@ final class LocalAppDependencies {
       containers: containers,
       taxonomy: taxonomy,
       everydayTransactions: EverydayTransactionService(ledger: ledger),
+      accountSyncRecovery: syncAggregates,
     );
     final cloudAccounts = CloudAccountService(
       repository: DriftCloudIdentityRepository(database),
@@ -430,10 +457,14 @@ final class LocalAppDependencies {
       wealth: wealthService,
       investments: investmentService,
       marketData: marketData,
+      economicSeries: economicSeries,
       fxRates: fxRates,
       startupRefresh: StartupRefreshService(
         session: sessionService,
         marketData: marketData,
+        economicSeries: economicSeries,
+        investments: investmentService,
+        isActive: () => economicSeries.isActive,
         fxRates: fxRates,
         gate: DriftStartupRefreshGate(database),
       ),
@@ -454,6 +485,7 @@ final class LocalAppDependencies {
       sync: syncEngine,
       syncCoordinator: syncCoordinator,
       syncConflicts: syncAggregates,
+      accountSyncRecovery: syncAggregates,
       syncEnrollment: syncEnrollment,
       syncMutationNotifications: syncMutationNotifications,
       session: sessionService,
@@ -461,6 +493,7 @@ final class LocalAppDependencies {
   }
 
   Future<void> close() async {
+    await economicSeries.close();
     await syncCoordinator?.dispose();
     await _syncMutationNotifications.dispose();
     await lifecycle.close();

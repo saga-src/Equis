@@ -16,7 +16,9 @@ import '../shared/equis_glass.dart';
 import '../formatting/taxonomy_labels.dart';
 
 class CreditCardScreen extends ConsumerWidget {
-  const CreditCardScreen({super.key});
+  const CreditCardScreen({super.key, this.onManageSelectedCard});
+
+  final ValueChanged<EntityId>? onManageSelectedCard;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -51,6 +53,7 @@ class CreditCardScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   DropdownButtonFormField<String>(
+                    key: ValueKey(state.card?.pocketId.value),
                     initialValue: state.card?.pocketId.value,
                     decoration: InputDecoration(
                       labelText: l10n.selectCardLabel,
@@ -75,6 +78,17 @@ class CreditCardScreen extends ConsumerWidget {
                                 .select(card);
                           },
                   ),
+                  if (onManageSelectedCard != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: state.loading || state.card == null
+                            ? null
+                            : () => onManageSelectedCard!(state.card!.accountId),
+                        icon: const Icon(Icons.manage_accounts_outlined),
+                        label: Text(l10n.reviewAccountRemovalAction),
+                      ),
+                    ),
                   const SizedBox(height: 10),
                   if (profile == null)
                     Align(

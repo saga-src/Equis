@@ -33,11 +33,50 @@ final class DriftBudgetRepository implements BudgetRepository {
   Future<void> _save(BudgetDefinition budget) => database.transaction(() async {
     final current = await database
         .customSelect(
-          'SELECT revision FROM budgets WHERE id = ?',
+          'SELECT revision, vault_id, deleted_at FROM budgets WHERE id = ?',
           variables: [Variable<String>(budget.id.value)],
           readsFrom: {database.budgets},
         )
         .getSingleOrNull();
+    if (current != null &&
+        (current.read<String>('vault_id') != budget.vaultId.value ||
+            (current.readNullable<int>('deleted_at') != null &&
+                budget.deletedAt == null))) {
+      throw StateError('Budget identity or deletion state cannot be replaced.');
+    }
+    final existingLinks = await database
+        .customSelect(
+          'SELECT account_id FROM budget_accounts WHERE budget_id = ?',
+          variables: [Variable<String>(budget.id.value)],
+          readsFrom: {database.budgetAccounts},
+        )
+        .get();
+    final existingAccountIds = {
+      for (final row in existingLinks) row.read<String>('account_id'),
+    };
+    final persistedAccountIds = {
+      ...budget.scope.accountIds.map((id) => id.value),
+      if (budget.deletedAt != null) ...existingAccountIds,
+    };
+    final requiresActive = budget.enabled && budget.deletedAt == null;
+    for (final accountId in persistedAccountIds) {
+      final account = await database
+          .customSelect(
+            'SELECT vault_id, archived, deleted_at FROM accounts WHERE id = ?',
+            variables: [Variable<String>(accountId)],
+            readsFrom: {database.accounts},
+          )
+          .getSingleOrNull();
+      final needsActive =
+          requiresActive || !existingAccountIds.contains(accountId);
+      if (account == null ||
+          account.read<String>('vault_id') != budget.vaultId.value ||
+          (needsActive &&
+              (account.read<int>('archived') != 0 ||
+                  account.readNullable<int>('deleted_at') != null))) {
+        throw StateError('Budget account is inactive or outside the vault.');
+      }
+    }
     if (current == null) {
       if (budget.revision != 1) {
         throw BudgetRevisionConflict(
@@ -135,10 +174,10 @@ final class DriftBudgetRepository implements BudgetRepository {
         ],
       );
     }
-    for (final accountId in budget.scope.accountIds) {
+    for (final accountId in persistedAccountIds) {
       await database.customStatement(
         'INSERT INTO budget_accounts (budget_id, account_id) VALUES (?, ?)',
-        [budget.id.value, accountId.value],
+        [budget.id.value, accountId],
       );
     }
     for (final tagId in budget.scope.tagIds) {

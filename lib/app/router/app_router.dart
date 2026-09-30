@@ -6,6 +6,7 @@ import 'package:equis/presentation/home/local_finance_home_screen.dart';
 import 'package:equis/presentation/history/transaction_history_screen.dart';
 import 'package:equis/presentation/recurring/recurring_screen.dart';
 import 'package:equis/presentation/credit_cards/credit_card_screen.dart';
+import 'package:equis/presentation/accounts/account_management_page.dart';
 import 'package:equis/presentation/budgets/budget_screen.dart';
 import 'package:equis/presentation/goals/goal_screen.dart';
 import 'package:equis/presentation/wealth/wealth_screen.dart';
@@ -17,6 +18,7 @@ import 'package:equis/presentation/settings/taxonomy_screen.dart';
 import 'package:equis/presentation/settings/portability_screen.dart';
 import 'package:equis/presentation/shell/equis_shell.dart';
 import 'package:equis/presentation/transactions/local_transaction_page.dart';
+import 'package:equis/presentation/transactions/transaction_detail_screen.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -56,8 +58,20 @@ GoRouter createAppRouter() {
           ),
           GoRoute(
             path: '/cards',
-            pageBuilder: (context, state) =>
-                _tabPage(state, const CreditCardScreen()),
+            pageBuilder: (context, state) => _tabPage(
+              state,
+              CreditCardScreen(
+                onManageSelectedCard: (accountId) => context.push(
+                  '/accounts?selected=${Uri.encodeQueryComponent(accountId.value)}',
+                ),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/accounts',
+            builder: (context, state) => AccountManagementPage(
+              initialAccountId: state.uri.queryParameters['selected'],
+            ),
           ),
           GoRoute(
             path: '/budgets',
@@ -110,6 +124,11 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/transactions/new',
         builder: (context, state) => const LocalTransactionPage(),
+      ),
+      GoRoute(
+        path: '/transactions/:id/details',
+        builder: (context, state) =>
+            TransactionDetailScreen(transactionId: state.pathParameters['id']),
       ),
       GoRoute(
         path: '/transactions/:id',

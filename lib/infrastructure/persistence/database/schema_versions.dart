@@ -8371,12 +8371,1802 @@ i1.GeneratedColumn<int> _column_200(String aliasedName) =>
       type: i1.DriftSqlType.int,
       $customConstraints: 'NOT NULL',
     );
+
+final class Schema7 extends i0.VersionedSchema {
+  Schema7({required super.database}) : super(version: 7);
+  @override
+  late final List<i1.DatabaseSchemaEntity> entities = [
+    vaults,
+    devices,
+    vaultCloudBindings,
+    currencies,
+    accounts,
+    accountPockets,
+    categories,
+    tags,
+    counterparties,
+    counterpartyAliases,
+    transactions,
+    accountMovements,
+    transactionSplits,
+    transactionTags,
+    fxConversions,
+    recurringRules,
+    recurringTemplates,
+    recurringTemplateMovements,
+    recurringTemplateSplits,
+    creditCardProfiles,
+    creditCardLimits,
+    creditCardStatements,
+    installmentPlans,
+    installments,
+    budgets,
+    budgetCategories,
+    budgetAccounts,
+    budgetTags,
+    goals,
+    goalAccounts,
+    goalContributions,
+    assets,
+    assetValuations,
+    investmentInstruments,
+    investmentEvents,
+    investmentLots,
+    fixedIncomeContracts,
+    fixedIncomeManualValues,
+    investmentLotDisposals,
+    fxRateCache,
+    manualFxRates,
+    marketPriceCache,
+    economicSeriesCache,
+    economicSeriesRefreshState,
+    manualMarketPrices,
+    attachments,
+    attachmentLinks,
+    syncEntityState,
+    syncOutbox,
+    syncOutboxDependencies,
+    syncCursors,
+    syncConflicts,
+    syncQuarantine,
+    syncDependencyPause,
+    devicePreferences,
+    vaultPreferences,
+    idxTransactionsVaultDate,
+    idxMovementsPocket,
+    idxCategoriesParent,
+    idxCounterpartiesName,
+    idxStatementsAccountDue,
+    idxGoalsStatus,
+    idxInvestmentEventsInstrument,
+    idxSyncOutboxRetry,
+    idxTransactionsVaultHistory,
+    idxTransactionsVaultTypeStatusDate,
+    idxMovementsAmount,
+    idxSplitsCategory,
+    idxTransactionTagsTag,
+    idxPocketsCurrency,
+    idxTransactionsRecurrence,
+    idxRecurringRulesVaultNext,
+    syncActivityEvents,
+    idxSyncActivityTime,
+  ];
+  late final Shape0 vaults = Shape0(
+    source: i0.VersionedTable(
+      entityName: 'vaults',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_3,
+        _column_4,
+        _column_5,
+        _column_6,
+        _column_7,
+        _column_8,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape1 devices = Shape1(
+    source: i0.VersionedTable(
+      entityName: 'devices',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['FOREIGN KEY(vault_id)REFERENCES vaults(id)'],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_1,
+        _column_10,
+        _column_5,
+        _column_11,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape2 vaultCloudBindings = Shape2(
+    source: i0.VersionedTable(
+      entityName: 'vault_cloud_bindings',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['FOREIGN KEY(vault_id)REFERENCES vaults(id)'],
+      columns: [_column_12, _column_13, _column_14, _column_15],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape3 currencies = Shape3(
+    source: i0.VersionedTable(
+      entityName: 'currencies',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_16, _column_17, _column_18, _column_19, _column_20],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape4 accounts = Shape4(
+    source: i0.VersionedTable(
+      entityName: 'accounts',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['FOREIGN KEY(vault_id)REFERENCES vaults(id)'],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_1,
+        _column_21,
+        _column_22,
+        _column_23,
+        _column_24,
+        _column_25,
+        _column_26,
+        _column_27,
+        _column_28,
+        _column_29,
+        _column_30,
+        _column_31,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape5 accountPockets = Shape5(
+    source: i0.VersionedTable(
+      entityName: 'account_pockets',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(account_id)REFERENCES accounts(id)ON DELETE CASCADE',
+        'FOREIGN KEY(currency_code)REFERENCES currencies(code)',
+        'UNIQUE(account_id, currency_code)',
+      ],
+      columns: [
+        _column_0,
+        _column_32,
+        _column_33,
+        _column_34,
+        _column_35,
+        _column_28,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape50 categories = Shape50(
+    source: i0.VersionedTable(
+      entityName: 'categories',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(vault_id)REFERENCES vaults(id)',
+        'FOREIGN KEY(parent_id)REFERENCES categories(id)',
+      ],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_36,
+        _column_37,
+        _column_38,
+        _column_39,
+        _column_195,
+        _column_196,
+        _column_24,
+        _column_25,
+        _column_28,
+        _column_31,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape51 tags = Shape51(
+    source: i0.VersionedTable(
+      entityName: 'tags',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['FOREIGN KEY(vault_id)REFERENCES vaults(id)'],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_1,
+        _column_197,
+        _column_198,
+        _column_25,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape8 counterparties = Shape8(
+    source: i0.VersionedTable(
+      entityName: 'counterparties',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['FOREIGN KEY(vault_id)REFERENCES vaults(id)'],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_1,
+        _column_40,
+        _column_26,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape9 counterpartyAliases = Shape9(
+    source: i0.VersionedTable(
+      entityName: 'counterparty_aliases',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(counterparty_id)REFERENCES counterparties(id)ON DELETE CASCADE',
+      ],
+      columns: [_column_0, _column_41, _column_42],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape10 transactions = Shape10(
+    source: i0.VersionedTable(
+      entityName: 'transactions',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(vault_id)REFERENCES vaults(id)',
+        'FOREIGN KEY(counterparty_id)REFERENCES counterparties(id)',
+        'FOREIGN KEY(reversal_of_id)REFERENCES transactions(id)',
+      ],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_43,
+        _column_44,
+        _column_45,
+        _column_46,
+        _column_47,
+        _column_26,
+        _column_48,
+        _column_49,
+        _column_50,
+        _column_51,
+        _column_52,
+        _column_53,
+        _column_54,
+        _column_55,
+        _column_56,
+        _column_57,
+        _column_58,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape11 accountMovements = Shape11(
+    source: i0.VersionedTable(
+      entityName: 'account_movements',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(transaction_id)REFERENCES transactions(id)ON DELETE CASCADE',
+        'FOREIGN KEY(account_pocket_id)REFERENCES account_pockets(id)',
+      ],
+      columns: [
+        _column_0,
+        _column_59,
+        _column_60,
+        _column_61,
+        _column_31,
+        _column_62,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape12 transactionSplits = Shape12(
+    source: i0.VersionedTable(
+      entityName: 'transaction_splits',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(transaction_id)REFERENCES transactions(id)ON DELETE CASCADE',
+        'FOREIGN KEY(category_id)REFERENCES categories(id)',
+        'FOREIGN KEY(currency_code)REFERENCES currencies(code)',
+      ],
+      columns: [
+        _column_0,
+        _column_59,
+        _column_63,
+        _column_33,
+        _column_61,
+        _column_64,
+        _column_31,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape13 transactionTags = Shape13(
+    source: i0.VersionedTable(
+      entityName: 'transaction_tags',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(transaction_id, tag_id)',
+        'FOREIGN KEY(transaction_id)REFERENCES transactions(id)ON DELETE CASCADE',
+        'FOREIGN KEY(tag_id)REFERENCES tags(id)',
+      ],
+      columns: [_column_59, _column_65],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape14 fxConversions = Shape14(
+    source: i0.VersionedTable(
+      entityName: 'fx_conversions',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(transaction_id)REFERENCES transactions(id)ON DELETE CASCADE',
+      ],
+      columns: [
+        _column_0,
+        _column_59,
+        _column_66,
+        _column_67,
+        _column_68,
+        _column_69,
+        _column_70,
+        _column_71,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape15 recurringRules = Shape15(
+    source: i0.VersionedTable(
+      entityName: 'recurring_rules',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['FOREIGN KEY(vault_id)REFERENCES vaults(id)'],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_1,
+        _column_72,
+        _column_4,
+        _column_73,
+        _column_74,
+        _column_75,
+        _column_76,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape16 recurringTemplates = Shape16(
+    source: i0.VersionedTable(
+      entityName: 'recurring_templates',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(recurring_rule_id)REFERENCES recurring_rules(id)ON DELETE CASCADE',
+      ],
+      columns: [
+        _column_77,
+        _column_43,
+        _column_45,
+        _column_46,
+        _column_47,
+        _column_26,
+        _column_48,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape17 recurringTemplateMovements = Shape17(
+    source: i0.VersionedTable(
+      entityName: 'recurring_template_movements',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(recurring_rule_id)REFERENCES recurring_rules(id)ON DELETE CASCADE',
+      ],
+      columns: [_column_0, _column_78, _column_60, _column_61],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape18 recurringTemplateSplits = Shape18(
+    source: i0.VersionedTable(
+      entityName: 'recurring_template_splits',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(recurring_rule_id)REFERENCES recurring_rules(id)ON DELETE CASCADE',
+      ],
+      columns: [_column_0, _column_78, _column_63, _column_33, _column_61],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape19 creditCardProfiles = Shape19(
+    source: i0.VersionedTable(
+      entityName: 'credit_card_profiles',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(account_id)REFERENCES accounts(id)ON DELETE CASCADE',
+      ],
+      columns: [_column_79, _column_80, _column_81],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape20 creditCardLimits = Shape20(
+    source: i0.VersionedTable(
+      entityName: 'credit_card_limits',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(account_pocket_id)REFERENCES account_pockets(id)ON DELETE CASCADE',
+      ],
+      columns: [_column_82, _column_83],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape21 creditCardStatements = Shape21(
+    source: i0.VersionedTable(
+      entityName: 'credit_card_statements',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(account_pocket_id)REFERENCES account_pockets(id)',
+      ],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_60,
+        _column_84,
+        _column_85,
+        _column_86,
+        _column_87,
+        _column_88,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape22 installmentPlans = Shape22(
+    source: i0.VersionedTable(
+      entityName: 'installment_plans',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_60,
+        _column_45,
+        _column_89,
+        _column_47,
+        _column_33,
+        _column_90,
+        _column_91,
+        _column_92,
+        _column_93,
+        _column_94,
+        _column_95,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape23 installments = Shape23(
+    source: i0.VersionedTable(
+      entityName: 'installments',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(installment_plan_id)REFERENCES installment_plans(id)ON DELETE CASCADE',
+        'UNIQUE(installment_plan_id, installment_number)',
+      ],
+      columns: [
+        _column_0,
+        _column_96,
+        _column_97,
+        _column_61,
+        _column_98,
+        _column_99,
+        _column_62,
+        _column_100,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape24 budgets = Shape24(
+    source: i0.VersionedTable(
+      entityName: 'budgets',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_1,
+        _column_33,
+        _column_83,
+        _column_101,
+        _column_102,
+        _column_74,
+        _column_103,
+        _column_104,
+        _column_75,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape25 budgetCategories = Shape25(
+    source: i0.VersionedTable(
+      entityName: 'budget_categories',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(budget_id, category_id)'],
+      columns: [_column_105, _column_63, _column_106],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape26 budgetAccounts = Shape26(
+    source: i0.VersionedTable(
+      entityName: 'budget_accounts',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(budget_id, account_id)'],
+      columns: [_column_105, _column_32],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape27 budgetTags = Shape27(
+    source: i0.VersionedTable(
+      entityName: 'budget_tags',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(budget_id, tag_id)'],
+      columns: [_column_105, _column_65],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape28 goals = Shape28(
+    source: i0.VersionedTable(
+      entityName: 'goals',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_1,
+        _column_107,
+        _column_33,
+        _column_108,
+        _column_102,
+        _column_109,
+        _column_110,
+        _column_111,
+        _column_112,
+        _column_95,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape29 goalAccounts = Shape29(
+    source: i0.VersionedTable(
+      entityName: 'goal_accounts',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(goal_id, account_pocket_id)'],
+      columns: [_column_113, _column_60],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape30 goalContributions = Shape30(
+    source: i0.VersionedTable(
+      entityName: 'goal_contributions',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(goal_id)REFERENCES goals(id)ON DELETE CASCADE',
+      ],
+      columns: [
+        _column_0,
+        _column_113,
+        _column_99,
+        _column_61,
+        _column_114,
+        _column_26,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape31 assets = Shape31(
+    source: i0.VersionedTable(
+      entityName: 'assets',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_1,
+        _column_115,
+        _column_33,
+        _column_116,
+        _column_117,
+        _column_118,
+        _column_119,
+        _column_120,
+        _column_121,
+        _column_27,
+        _column_26,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape32 assetValuations = Shape32(
+    source: i0.VersionedTable(
+      entityName: 'asset_valuations',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(asset_id)REFERENCES assets(id)ON DELETE CASCADE',
+      ],
+      columns: [
+        _column_0,
+        _column_122,
+        _column_123,
+        _column_124,
+        _column_125,
+        _column_26,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape33 investmentInstruments = Shape33(
+    source: i0.VersionedTable(
+      entityName: 'investment_instruments',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_126,
+        _column_1,
+        _column_127,
+        _column_128,
+        _column_33,
+        _column_129,
+        _column_130,
+        _column_131,
+        _column_132,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape34 investmentEvents = Shape34(
+    source: i0.VersionedTable(
+      entityName: 'investment_events',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(transaction_id)REFERENCES transactions(id)ON DELETE CASCADE',
+        'FOREIGN KEY(instrument_id)REFERENCES investment_instruments(id)',
+      ],
+      columns: [
+        _column_0,
+        _column_59,
+        _column_133,
+        _column_134,
+        _column_135,
+        _column_136,
+        _column_137,
+        _column_138,
+        _column_139,
+        _column_140,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape35 investmentLots = Shape35(
+    source: i0.VersionedTable(
+      entityName: 'investment_lots',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(acquisition_event_id)REFERENCES investment_events(id)',
+      ],
+      columns: [
+        _column_0,
+        _column_141,
+        _column_133,
+        _column_142,
+        _column_143,
+        _column_144,
+        _column_145,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape53 fixedIncomeContracts = Shape53(
+    source: i0.VersionedTable(
+      entityName: 'fixed_income_contracts',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['FOREIGN KEY(lot_id)REFERENCES investment_lots(id)'],
+      columns: [
+        _column_201,
+        _column_202,
+        _column_33,
+        _column_203,
+        _column_204,
+        _column_205,
+        _column_206,
+        _column_207,
+        _column_208,
+        _column_209,
+        _column_210,
+        _column_119,
+        _column_211,
+        _column_212,
+        _column_213,
+        _column_214,
+        _column_215,
+        _column_216,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape54 fixedIncomeManualValues = Shape54(
+    source: i0.VersionedTable(
+      entityName: 'fixed_income_manual_values',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['FOREIGN KEY(lot_id)REFERENCES investment_lots(id)'],
+      columns: [
+        _column_0,
+        _column_147,
+        _column_217,
+        _column_61,
+        _column_33,
+        _column_26,
+        _column_218,
+        _column_219,
+        _column_220,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape36 investmentLotDisposals = Shape36(
+    source: i0.VersionedTable(
+      entityName: 'investment_lot_disposals',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'FOREIGN KEY(disposal_event_id)REFERENCES investment_events(id)',
+        'FOREIGN KEY(lot_id)REFERENCES investment_lots(id)',
+      ],
+      columns: [_column_0, _column_146, _column_147, _column_148, _column_149],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape37 fxRateCache = Shape37(
+    source: i0.VersionedTable(
+      entityName: 'fx_rate_cache',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(base_currency, quote_currency, rate_date, provider)',
+      ],
+      columns: [
+        _column_150,
+        _column_151,
+        _column_152,
+        _column_153,
+        _column_154,
+        _column_155,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape38 manualFxRates = Shape38(
+    source: i0.VersionedTable(
+      entityName: 'manual_fx_rates',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_150,
+        _column_151,
+        _column_152,
+        _column_153,
+        _column_26,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape39 marketPriceCache = Shape39(
+    source: i0.VersionedTable(
+      entityName: 'market_price_cache',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(instrument_id, price_timestamp, provider)',
+      ],
+      columns: [
+        _column_133,
+        _column_156,
+        _column_157,
+        _column_33,
+        _column_154,
+        _column_155,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape55 economicSeriesCache = Shape55(
+    source: i0.VersionedTable(
+      entityName: 'economic_series_cache',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(code, reference_start)'],
+      columns: [
+        _column_221,
+        _column_222,
+        _column_223,
+        _column_193,
+        _column_224,
+        _column_125,
+        _column_155,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape56 economicSeriesRefreshState = Shape56(
+    source: i0.VersionedTable(
+      entityName: 'economic_series_refresh_state',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_225,
+        _column_226,
+        _column_227,
+        _column_228,
+        _column_183,
+        _column_179,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape40 manualMarketPrices = Shape40(
+    source: i0.VersionedTable(
+      entityName: 'manual_market_prices',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_133,
+        _column_158,
+        _column_157,
+        _column_33,
+        _column_26,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape41 attachments = Shape41(
+    source: i0.VersionedTable(
+      entityName: 'attachments',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_159,
+        _column_160,
+        _column_161,
+        _column_162,
+        _column_163,
+        _column_164,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape42 attachmentLinks = Shape42(
+    source: i0.VersionedTable(
+      entityName: 'attachment_links',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(attachment_id, entity_type, entity_id)'],
+      columns: [_column_165, _column_166, _column_167],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape43 syncEntityState = Shape43(
+    source: i0.VersionedTable(
+      entityName: 'sync_entity_state',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(entity_type, record_id)'],
+      columns: [
+        _column_166,
+        _column_168,
+        _column_169,
+        _column_170,
+        _column_171,
+        _column_172,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape49 syncOutbox = Shape49(
+    source: i0.VersionedTable(
+      entityName: 'sync_outbox',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_173,
+        _column_9,
+        _column_166,
+        _column_168,
+        _column_174,
+        _column_186,
+        _column_175,
+        _column_176,
+        _column_5,
+        _column_177,
+        _column_178,
+        _column_179,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape57 syncOutboxDependencies = Shape57(
+    source: i0.VersionedTable(
+      entityName: 'sync_outbox_dependencies',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(operation_id, account_id)',
+        'FOREIGN KEY(operation_id)REFERENCES sync_outbox(operation_id)ON DELETE CASCADE',
+      ],
+      columns: [_column_229, _column_32],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape45 syncCursors = Shape45(
+    source: i0.VersionedTable(
+      entityName: 'sync_cursors',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_12, _column_180, _column_181, _column_182, _column_183],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape46 syncConflicts = Shape46(
+    source: i0.VersionedTable(
+      entityName: 'sync_conflicts',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_166,
+        _column_168,
+        _column_184,
+        _column_169,
+        _column_185,
+        _column_186,
+        _column_187,
+        _column_188,
+        _column_189,
+        _column_190,
+        _column_191,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape58 syncQuarantine = Shape58(
+    source: i0.VersionedTable(
+      entityName: 'sync_quarantine',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'UNIQUE(vault_id, server_version, entity_type, entity_id)',
+      ],
+      columns: [
+        _column_230,
+        _column_9,
+        _column_231,
+        _column_166,
+        _column_167,
+        _column_232,
+        _column_233,
+        _column_234,
+        _column_235,
+        _column_236,
+        _column_237,
+        _column_189,
+        _column_238,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape59 syncDependencyPause = Shape59(
+    source: i0.VersionedTable(
+      entityName: 'sync_dependency_pause',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(vault_id, account_id)',
+        'FOREIGN KEY(blocking_event_id)REFERENCES sync_quarantine(event_id)',
+      ],
+      columns: [
+        _column_9,
+        _column_32,
+        _column_239,
+        _column_240,
+        _column_241,
+        _column_5,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape47 devicePreferences = Shape47(
+    source: i0.VersionedTable(
+      entityName: 'device_preferences',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_192, _column_193],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape48 vaultPreferences = Shape48(
+    source: i0.VersionedTable(
+      entityName: 'vault_preferences',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['UNIQUE(vault_id, "key")'],
+      columns: [
+        _column_0,
+        _column_9,
+        _column_194,
+        _column_193,
+        _column_8,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  final i1.Index idxTransactionsVaultDate = i1.Index(
+    'idx_transactions_vault_date',
+    'CREATE INDEX idx_transactions_vault_date ON transactions (vault_id, financial_date DESC)',
+  );
+  final i1.Index idxMovementsPocket = i1.Index(
+    'idx_movements_pocket',
+    'CREATE INDEX idx_movements_pocket ON account_movements (account_pocket_id, transaction_id)',
+  );
+  final i1.Index idxCategoriesParent = i1.Index(
+    'idx_categories_parent',
+    'CREATE INDEX idx_categories_parent ON categories (vault_id, parent_id)',
+  );
+  final i1.Index idxCounterpartiesName = i1.Index(
+    'idx_counterparties_name',
+    'CREATE INDEX idx_counterparties_name ON counterparties (vault_id, name)',
+  );
+  final i1.Index idxStatementsAccountDue = i1.Index(
+    'idx_statements_account_due',
+    'CREATE INDEX idx_statements_account_due ON credit_card_statements (account_pocket_id, due_date)',
+  );
+  final i1.Index idxGoalsStatus = i1.Index(
+    'idx_goals_status',
+    'CREATE INDEX idx_goals_status ON goals (vault_id, status)',
+  );
+  final i1.Index idxInvestmentEventsInstrument = i1.Index(
+    'idx_investment_events_instrument',
+    'CREATE INDEX idx_investment_events_instrument ON investment_events (instrument_id, transaction_id)',
+  );
+  final i1.Index idxSyncOutboxRetry = i1.Index(
+    'idx_sync_outbox_retry',
+    'CREATE INDEX idx_sync_outbox_retry ON sync_outbox (next_retry_at, created_at)',
+  );
+  final i1.Index idxTransactionsVaultHistory = i1.Index(
+    'idx_transactions_vault_history',
+    'CREATE INDEX idx_transactions_vault_history ON transactions (vault_id, financial_date DESC, created_at DESC, id DESC) WHERE deleted_at IS NULL',
+  );
+  final i1.Index idxTransactionsVaultTypeStatusDate = i1.Index(
+    'idx_transactions_vault_type_status_date',
+    'CREATE INDEX idx_transactions_vault_type_status_date ON transactions (vault_id, transaction_type, status, financial_date DESC) WHERE deleted_at IS NULL',
+  );
+  final i1.Index idxMovementsAmount = i1.Index(
+    'idx_movements_amount',
+    'CREATE INDEX idx_movements_amount ON account_movements (amount_minor, transaction_id)',
+  );
+  final i1.Index idxSplitsCategory = i1.Index(
+    'idx_splits_category',
+    'CREATE INDEX idx_splits_category ON transaction_splits (category_id, transaction_id)',
+  );
+  final i1.Index idxTransactionTagsTag = i1.Index(
+    'idx_transaction_tags_tag',
+    'CREATE INDEX idx_transaction_tags_tag ON transaction_tags (tag_id, transaction_id)',
+  );
+  final i1.Index idxPocketsCurrency = i1.Index(
+    'idx_pockets_currency',
+    'CREATE INDEX idx_pockets_currency ON account_pockets (currency_code, id)',
+  );
+  final i1.Index idxTransactionsRecurrence = i1.Index(
+    'idx_transactions_recurrence',
+    'CREATE UNIQUE INDEX idx_transactions_recurrence ON transactions (recurring_rule_id, recurrence_date)',
+  );
+  final i1.Index idxRecurringRulesVaultNext = i1.Index(
+    'idx_recurring_rules_vault_next',
+    'CREATE INDEX idx_recurring_rules_vault_next ON recurring_rules (vault_id, enabled, next_occurrence) WHERE deleted_at IS NULL',
+  );
+  late final Shape52 syncActivityEvents = Shape52(
+    source: i0.VersionedTable(
+      entityName: 'sync_activity_events',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(vault_id, entity_type, record_id, kind, local_revision, remote_revision)',
+      ],
+      columns: [
+        _column_9,
+        _column_166,
+        _column_168,
+        _column_199,
+        _column_169,
+        _column_185,
+        _column_200,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  final i1.Index idxSyncActivityTime = i1.Index(
+    'idx_sync_activity_time',
+    'CREATE INDEX idx_sync_activity_time ON sync_activity_events (vault_id, occurred_at)',
+  );
+}
+
+class Shape53 extends i0.VersionedTable {
+  Shape53({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get lotId =>
+      columnsByName['lot_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get principal =>
+      columnsByName['principal']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get currencyCode =>
+      columnsByName['currency_code']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get productName =>
+      columnsByName['product_name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get issuerName =>
+      columnsByName['issuer_name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get accrualStart =>
+      columnsByName['accrual_start']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get maturityOn =>
+      columnsByName['maturity_on']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get liquidityOn =>
+      columnsByName['liquidity_on']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get remunerationMode =>
+      columnsByName['remuneration_mode']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get indexCode =>
+      columnsByName['index_code']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get indexMultiplier =>
+      columnsByName['index_multiplier']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get annualRate =>
+      columnsByName['annual_rate']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get annualSpread =>
+      columnsByName['annual_spread']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get dayCountBasis =>
+      columnsByName['day_count_basis']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get calendarVersion =>
+      columnsByName['calendar_version']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get publicationLagMonths =>
+      columnsByName['publication_lag_months']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get anniversaryDay =>
+      columnsByName['anniversary_day']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get updateRule =>
+      columnsByName['update_rule']! as i1.GeneratedColumn<String>;
+}
+
+i1.GeneratedColumn<String> _column_201(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'lot_id',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'PRIMARY KEY',
+    );
+i1.GeneratedColumn<String> _column_202(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'principal',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_203(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'product_name',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_204(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'issuer_name',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_205(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'accrual_start',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_206(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'maturity_on',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_207(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'liquidity_on',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_208(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'remuneration_mode',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<int> _column_209(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'index_code',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_210(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'index_multiplier',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_211(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'annual_spread',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<int> _column_212(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'day_count_basis',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_213(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'calendar_version',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<int> _column_214(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'publication_lag_months',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 0',
+      defaultValue: const i1.CustomExpression('0'),
+    );
+i1.GeneratedColumn<int> _column_215(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'anniversary_day',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_216(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'update_rule',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+
+class Shape54 extends i0.VersionedTable {
+  Shape54({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get lotId =>
+      columnsByName['lot_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get valueDate =>
+      columnsByName['value_date']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get amountMinor =>
+      columnsByName['amount_minor']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get currencyCode =>
+      columnsByName['currency_code']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get notes =>
+      columnsByName['notes']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get recordedAt =>
+      columnsByName['recorded_at']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get removedAt =>
+      columnsByName['removed_at']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get disposalFingerprint =>
+      columnsByName['disposal_fingerprint']! as i1.GeneratedColumn<String>;
+}
+
+i1.GeneratedColumn<String> _column_217(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'value_date',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<int> _column_218(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'recorded_at',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<int> _column_219(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'removed_at',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_220(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'disposal_fingerprint',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+
+class Shape55 extends i0.VersionedTable {
+  Shape55({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get code =>
+      columnsByName['code']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get referenceStart =>
+      columnsByName['reference_start']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get referenceEnd =>
+      columnsByName['reference_end']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get value =>
+      columnsByName['value']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get unit =>
+      columnsByName['unit']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get source =>
+      columnsByName['source']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get fetchedAt =>
+      columnsByName['fetched_at']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<int> _column_221(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'code',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_222(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'reference_start',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_223(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'reference_end',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_224(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'unit',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+
+class Shape56 extends i0.VersionedTable {
+  Shape56({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get code =>
+      columnsByName['code']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get requestedFrom =>
+      columnsByName['requested_from']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get requestedThrough =>
+      columnsByName['requested_through']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get lastAttemptAt =>
+      columnsByName['last_attempt_at']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get lastSuccessAt =>
+      columnsByName['last_success_at']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get lastErrorCode =>
+      columnsByName['last_error_code']! as i1.GeneratedColumn<String>;
+}
+
+i1.GeneratedColumn<int> _column_225(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'code',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'PRIMARY KEY',
+    );
+i1.GeneratedColumn<String> _column_226(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'requested_from',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_227(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'requested_through',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<int> _column_228(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'last_attempt_at',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
+
+class Shape57 extends i0.VersionedTable {
+  Shape57({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get operationId =>
+      columnsByName['operation_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get accountId =>
+      columnsByName['account_id']! as i1.GeneratedColumn<String>;
+}
+
+i1.GeneratedColumn<String> _column_229(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'operation_id',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+
+class Shape58 extends i0.VersionedTable {
+  Shape58({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get eventId =>
+      columnsByName['event_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get vaultId =>
+      columnsByName['vault_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get serverVersion =>
+      columnsByName['server_version']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get entityType =>
+      columnsByName['entity_type']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get entityId =>
+      columnsByName['entity_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get entityRevision =>
+      columnsByName['entity_revision']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get parentAccountId =>
+      columnsByName['parent_account_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get parentPocketId =>
+      columnsByName['parent_pocket_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get authenticatedEnvelope =>
+      columnsByName['authenticated_envelope']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get reason =>
+      columnsByName['reason']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get replayState =>
+      columnsByName['replay_state']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get detectedAt =>
+      columnsByName['detected_at']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get replayedAt =>
+      columnsByName['replayed_at']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<String> _column_230(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'event_id',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'PRIMARY KEY',
+    );
+i1.GeneratedColumn<int> _column_231(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'server_version',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<int> _column_232(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'entity_revision',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_233(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'parent_account_id',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_234(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'parent_pocket_id',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<String> _column_235(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'authenticated_envelope',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_236(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'reason',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_237(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'replay_state',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL DEFAULT \'pending\'',
+      defaultValue: const i1.CustomExpression('\'pending\''),
+    );
+i1.GeneratedColumn<int> _column_238(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'replayed_at',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: '',
+    );
+
+class Shape59 extends i0.VersionedTable {
+  Shape59({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get vaultId =>
+      columnsByName['vault_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get accountId =>
+      columnsByName['account_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get blockingEventId =>
+      columnsByName['blocking_event_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get permittedRestoreOperationId =>
+      columnsByName['permitted_restore_operation_id']!
+          as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get acceptedRestoreRevision =>
+      columnsByName['accepted_restore_revision']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get createdAt =>
+      columnsByName['created_at']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<String> _column_239(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'blocking_event_id',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<String> _column_240(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'permitted_restore_operation_id',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: '',
+    );
+i1.GeneratedColumn<int> _column_241(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'accepted_restore_revision',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: '',
+    );
 i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
   required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
   required Future<void> Function(i1.Migrator m, Schema4 schema) from3To4,
   required Future<void> Function(i1.Migrator m, Schema5 schema) from4To5,
   required Future<void> Function(i1.Migrator m, Schema6 schema) from5To6,
+  required Future<void> Function(i1.Migrator m, Schema7 schema) from6To7,
 }) {
   return (currentVersion, database) async {
     switch (currentVersion) {
@@ -8405,6 +10195,11 @@ i0.MigrationStepWithVersion migrationSteps({
         final migrator = i1.Migrator(database, schema);
         await from5To6(migrator, schema);
         return 6;
+      case 6:
+        final schema = Schema7(database: database);
+        final migrator = i1.Migrator(database, schema);
+        await from6To7(migrator, schema);
+        return 7;
       default:
         throw ArgumentError.value('Unknown migration from $currentVersion');
     }
@@ -8417,6 +10212,7 @@ i1.OnUpgrade stepByStep({
   required Future<void> Function(i1.Migrator m, Schema4 schema) from3To4,
   required Future<void> Function(i1.Migrator m, Schema5 schema) from4To5,
   required Future<void> Function(i1.Migrator m, Schema6 schema) from5To6,
+  required Future<void> Function(i1.Migrator m, Schema7 schema) from6To7,
 }) => i0.VersionedSchema.stepByStepHelper(
   step: migrationSteps(
     from1To2: from1To2,
@@ -8424,5 +10220,6 @@ i1.OnUpgrade stepByStep({
     from3To4: from3To4,
     from4To5: from4To5,
     from5To6: from5To6,
+    from6To7: from6To7,
   ),
 );

@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:equis/application/services/local_finance_container_service.dart';
 import 'package:equis/domain/entities/account_profile.dart';
+import 'package:equis/domain/entities/account_removal_assessment.dart';
 import 'package:equis/domain/shared/currency.dart';
 import 'package:equis/domain/shared/local_date.dart';
 import 'package:equis/domain/shared/money.dart';
@@ -79,7 +80,7 @@ void main() {
   );
 
   test(
-    'account archive and reporting-currency changes preserve ledger history',
+    'account with nonzero balance cannot be archived and keeps ledger history',
     () async {
       final database = EquisDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -110,11 +111,14 @@ void main() {
         now: now,
       );
       account = await service.setNetWorthInclusion(account, false, now: now);
-      account = await service.archiveAccount(account, now: now);
+      await expectLater(
+        service.archiveAccount(account, now: now),
+        throwsA(isA<AccountRemovalBlocked>()),
+      );
 
       expect(vault.baseCurrency, CurrencyCode.usd);
       expect(account.account.includeInNetWorth, isFalse);
-      expect(account.account.archived, isTrue);
+      expect(account.account.archived, isFalse);
       expect(await LedgerBalanceReader(database).rebuildAll(), {
         account.pockets.single.id.value: 9999,
       });
@@ -213,11 +217,14 @@ void main() {
   );
 }
 
-LocalFinanceContainerService _service(EquisDatabase database) =>
-    LocalFinanceContainerService(
-      vaults: DriftVaultRepository(database),
-      currencies: DriftCurrencyRepository(database),
-      accounts: DriftAccountAggregateRepository(database),
-      ledger: DriftLedgerRepository(database),
-      unitOfWork: DriftLocalUnitOfWork(database),
-    );
+LocalFinanceContainerService _service(EquisDatabase database) {
+  final accounts = DriftAccountAggregateRepository(database);
+  return LocalFinanceContainerService(
+    vaults: DriftVaultRepository(database),
+    currencies: DriftCurrencyRepository(database),
+    accounts: accounts,
+    lifecycleAccounts: accounts,
+    ledger: DriftLedgerRepository(database),
+    unitOfWork: DriftLocalUnitOfWork(database),
+  );
+}

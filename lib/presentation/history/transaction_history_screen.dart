@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/providers/app_providers.dart';
 import '../../application/services/local_finance_session_service.dart';
+import '../../application/services/everyday_transaction_service.dart';
 import '../../domain/ledger/ledger_models.dart';
 import '../../domain/ledger/transaction_search.dart';
 import '../../domain/shared/currency.dart';
@@ -137,14 +138,17 @@ class _TransactionHistoryScreenState
                   TransactionAmountText(transaction: transaction),
                   TransactionActionMenu(
                     transaction: transaction,
+                    canEdit: everydayTransactionCanEdit(
+                      transaction,
+                      accounts: snapshot!.accounts,
+                      categories: snapshot.categories,
+                    ),
                     onSelected: (action) =>
                         _act(context, ref, transaction, action),
                   ),
                 ],
               ),
-              onTap: transactionIsEditable(transaction)
-                  ? () => _edit(context, ref, transaction)
-                  : null,
+              onTap: () => _details(context, ref, transaction),
             ),
           );
         },
@@ -158,6 +162,16 @@ class _TransactionHistoryScreenState
     LedgerTransaction transaction,
   ) async {
     await context.push('/transactions/${transaction.id.value}');
+    if (!context.mounted) return;
+    await ref.read(transactionHistoryControllerProvider.notifier).refresh();
+  }
+
+  Future<void> _details(
+    BuildContext context,
+    WidgetRef ref,
+    LedgerTransaction transaction,
+  ) async {
+    await context.push('/transactions/${transaction.id.value}/details');
     if (!context.mounted) return;
     await ref.read(transactionHistoryControllerProvider.notifier).refresh();
   }

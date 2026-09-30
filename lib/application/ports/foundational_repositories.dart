@@ -1,8 +1,10 @@
 import '../../domain/entities/account_profile.dart';
 import '../../domain/entities/account_aggregate.dart';
+import '../../domain/entities/account_removal_assessment.dart';
 import '../../domain/entities/category_node.dart';
 import '../../domain/entities/vault_profile.dart';
 import '../../domain/shared/currency.dart';
+import '../../domain/shared/utc_instant.dart';
 import '../../domain/shared/uuid_v7.dart';
 import '../../domain/taxonomy/tag.dart';
 
@@ -22,6 +24,28 @@ abstract interface class AccountAggregateRepository {
   Future<void> save(AccountAggregate account);
   Future<AccountAggregate?> findAggregate(EntityId id);
   Future<List<AccountAggregate>> listAggregatesForVault(EntityId vaultId);
+}
+
+abstract interface class AccountLifecycleRepository {
+  Future<AccountRemovalAssessment> assessRemoval({
+    required EntityId vaultId,
+    required EntityId accountId,
+    required UtcInstant now,
+  });
+
+  Future<AccountLifecycleResult> remove({
+    required EntityId vaultId,
+    required EntityId accountId,
+    required int expectedRevision,
+    required UtcInstant now,
+  });
+
+  Future<AccountAggregate> restore({
+    required EntityId vaultId,
+    required EntityId accountId,
+    required int expectedRevision,
+    required UtcInstant now,
+  });
 }
 
 abstract interface class CategoryRepository {

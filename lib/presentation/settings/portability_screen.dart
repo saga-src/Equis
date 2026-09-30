@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../infrastructure/portability/platform_file_publisher.dart';
 import '../../infrastructure/portability/equis_backup_service.dart';
+import '../../infrastructure/portability/vault_logical_snapshot_store.dart';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
@@ -402,6 +403,17 @@ class _PortabilityScreenState extends ConsumerState<PortabilityScreen> {
         final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l.legacyBackupUnsupportedMessage)),
+        );
+      }
+    } on VaultSnapshotUnresolvedSyncConflict {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 8),
+            content: Text(
+              AppLocalizations.of(context).portabilityPendingSyncMessage,
+            ),
+          ),
         );
       }
     } catch (_) {

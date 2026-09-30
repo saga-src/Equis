@@ -40,13 +40,17 @@ final class CreditCardController extends StateNotifier<CreditCardState> {
 
   final CreditCardService? _service;
   final Future<void> Function()? _onLedgerChanged;
+  int _stateGeneration = 0;
 
   Future<void> select(CreditCardContext card) async {
+    if (!mounted) return;
     state = CreditCardState(card: card);
     await reload();
   }
 
   Future<void> reload() async {
+    if (!mounted) return;
+    final generation = ++_stateGeneration;
     final service = _service;
     final card = state.card;
     if (service == null || card == null) return;
@@ -56,20 +60,22 @@ final class CreditCardController extends StateNotifier<CreditCardState> {
       loading: true,
     );
     try {
-      state = CreditCardState(
+      final overview = await service.overview(
         card: card,
-        overview: await service.overview(
-          card: card,
-          asOf: _today(),
-          now: UtcInstant.now(),
-        ),
+        asOf: _today(),
+        now: UtcInstant.now(),
       );
+      if (mounted && generation == _stateGeneration) {
+        state = CreditCardState(card: card, overview: overview);
+      }
     } catch (error) {
-      state = CreditCardState(
-        card: card,
-        overview: state.overview,
-        error: error,
-      );
+      if (mounted && generation == _stateGeneration) {
+        state = CreditCardState(
+          card: card,
+          overview: state.overview,
+          error: error,
+        );
+      }
     }
   }
 
@@ -187,7 +193,8 @@ final class CreditCardController extends StateNotifier<CreditCardState> {
     Future<Object?> Function() action, {
     bool ledgerChanged = true,
   }) async {
-    if (state.loading) return;
+    if (!mounted || state.loading) return;
+    final generation = ++_stateGeneration;
     state = CreditCardState(
       card: state.card,
       overview: state.overview,
@@ -196,13 +203,15 @@ final class CreditCardController extends StateNotifier<CreditCardState> {
     try {
       await action();
       if (ledgerChanged) await _onLedgerChanged?.call();
-      await reload();
+      if (mounted && generation == _stateGeneration) await reload();
     } catch (error) {
-      state = CreditCardState(
-        card: state.card,
-        overview: state.overview,
-        error: error,
-      );
+      if (mounted && generation == _stateGeneration) {
+        state = CreditCardState(
+          card: state.card,
+          overview: state.overview,
+          error: error,
+        );
+      }
     }
   }
 

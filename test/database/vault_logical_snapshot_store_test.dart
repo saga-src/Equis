@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:equis/infrastructure/persistence/database/equis_database.dart';
 import 'package:equis/infrastructure/portability/vault_logical_snapshot_store.dart';
@@ -12,6 +13,10 @@ void main() {
   const transaction = '018f47c2-9b72-7cc1-8b83-5d0fead0a004';
   const movement = '018f47c2-9b72-7cc1-8b83-5d0fead0a005';
   const attachment = '018f47c2-9b72-7cc1-8b83-5d0fead0a006';
+  const instrument = '018f47c2-9b72-7cc1-8b83-5d0fead0a007';
+  const event = '018f47c2-9b72-7cc1-8b83-5d0fead0a008';
+  const lot = '018f47c2-9b72-7cc1-8b83-5d0fead0a009';
+  const manualValue = '018f47c2-9b72-7cc1-8b83-5d0fead0a00a';
   late EquisDatabase source;
   late EquisDatabase target;
 
@@ -121,5 +126,146 @@ void main() {
       VaultLogicalSnapshotStore(target).restore(newer),
       throwsA(isA<VaultSnapshotIncompatibleVersion>()),
     );
+  });
+
+  test('round trips lot terms and manual values without sync metadata', () async {
+    const fingerprint =
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    await source.customStatement(
+      "INSERT INTO investment_instruments (id, vault_id, name, asset_class, currency_code, created_at, updated_at) VALUES (?, ?, 'CDB', 'fixed_income', 'BRL', 1, 1)",
+      [instrument, vault],
+    );
+    await source.customStatement(
+      "INSERT INTO investment_events (id, transaction_id, instrument_id, event_type) VALUES (?, ?, ?, 'buy')",
+      [event, transaction, instrument],
+    );
+    await source.customStatement(
+      "INSERT INTO investment_lots (id, acquisition_event_id, instrument_id, acquired_on, original_quantity, cost_basis_minor, cost_currency_code) VALUES (?, ?, ?, '2026-08-22', '1', 10000, 'BRL')",
+      [lot, event, instrument],
+    );
+    await source.customStatement(
+      "INSERT INTO fixed_income_contracts (lot_id, principal, currency_code, product_name, issuer_name, accrual_start, remuneration_mode, annual_rate, day_count_basis, update_rule) VALUES (?, '100', 'BRL', 'CDB', 'Issuer', '2026-08-22', 'fixedAnnual', '0.12', 365, 'annualCompound')",
+      [lot],
+    );
+    await source.customStatement(
+      "INSERT INTO fixed_income_manual_values (id, lot_id, value_date, amount_minor, currency_code, recorded_at, disposal_fingerprint) VALUES (?, ?, '2026-09-01', 10150, 'BRL', 42, ?)",
+      [manualValue, lot, fingerprint],
+    );
+
+    final snapshot = await VaultLogicalSnapshotStore(source).capture(vault);
+    expect(snapshot.tables['fixed_income_contracts'], hasLength(1));
+    expect(snapshot.tables['fixed_income_manual_values'], hasLength(1));
+    expect(
+      snapshot
+          .tables['fixed_income_manual_values']!
+          .single['disposal_fingerprint'],
+      fingerprint,
+    );
+    expect(snapshot.tables, isNot(contains('sync_quarantine')));
+    expect(snapshot.tables, isNot(contains('economic_series_cache')));
+    await VaultLogicalSnapshotStore(target).restore(snapshot);
+    final contract = await target
+        .customSelect(
+          'SELECT principal, annual_rate FROM fixed_income_contracts WHERE lot_id = ?',
+          variables: [Variable(lot)],
+        )
+        .getSingle();
+    expect(contract.read<String>('principal'), '100');
+    expect(contract.read<String>('annual_rate'), '0.12');
+    final manual = await target
+        .customSelect(
+          'SELECT amount_minor, disposal_fingerprint FROM fixed_income_manual_values WHERE id = ?',
+          variables: [Variable(manualValue)],
+        )
+        .getSingle();
+    expect(manual.read<int>('amount_minor'), 10150);
+    expect(manual.read<String>('disposal_fingerprint'), fingerprint);
+    expect(
+      await target.customSelect('PRAGMA foreign_key_check').get(),
+      isEmpty,
+    );
+  });
+
+  test('accepts missing private tables only in a v6 snapshot', () async {
+    final snapshot = await VaultLogicalSnapshotStore(source).capture(vault);
+    final json = Map<String, Object?>.from(snapshot.toJson())
+      ..['schema_version'] = 6;
+    final tables = Map<String, Object?>.from(json['tables']! as Map)
+      ..remove('fixed_income_contracts')
+      ..remove('fixed_income_manual_values');
+    json['tables'] = tables;
+    final legacy = VaultLogicalSnapshot.fromJson(json);
+    expect(legacy.tables['fixed_income_contracts'], isEmpty);
+    expect(legacy.tables['fixed_income_manual_values'], isEmpty);
+    await VaultLogicalSnapshotStore(target).restore(legacy);
+    expect(
+      await target.customSelect('SELECT * FROM fixed_income_contracts').get(),
+      isEmpty,
+    );
+
+    json['schema_version'] = 7;
+    expect(
+      () => VaultLogicalSnapshot.fromJson(json),
+      throwsA(isA<VaultSnapshotFormatException>()),
+    );
+    json['schema_version'] = 6;
+    tables.remove('investment_lots');
+    expect(
+      () => VaultLogicalSnapshot.fromJson(json),
+      throwsA(isA<VaultSnapshotFormatException>()),
+    );
+  });
+
+  test('blocks capture while a cloud envelope awaits replay', () async {
+    await source.customStatement(
+      "INSERT INTO sync_quarantine (event_id, vault_id, server_version, entity_type, entity_id, entity_revision, authenticated_envelope, reason, detected_at) VALUES ('other-event', 'other-vault', 1, 'transaction', 'other-transaction', 2, 'ciphertext', 'dependency', 1)",
+    );
+    await VaultLogicalSnapshotStore(source).capture(vault);
+    await source.customStatement(
+      "INSERT INTO sync_quarantine (event_id, vault_id, server_version, entity_type, entity_id, entity_revision, authenticated_envelope, reason, detected_at) VALUES ('event-1', ?, 1, 'transaction', ?, 2, 'ciphertext', 'dependency', 1)",
+      [vault, transaction],
+    );
+    await expectLater(
+      VaultLogicalSnapshotStore(source).capture(vault),
+      throwsA(isA<VaultSnapshotUnresolvedSyncConflict>()),
+    );
+    await source.customStatement(
+      "UPDATE sync_quarantine SET replay_state = 'replayed', replayed_at = 2 WHERE event_id = 'event-1'",
+    );
+    final snapshot = await VaultLogicalSnapshotStore(source).capture(vault);
+    expect(snapshot.tables, isNot(contains('sync_quarantine')));
+  });
+
+  test('blocks capture until pending writes and conflicts are resolved', () async {
+    await source.customStatement(
+      "INSERT INTO sync_outbox (operation_id, vault_id, entity_type, record_id, new_revision, operation, created_at) VALUES ('other', 'other-vault', 'transaction', ?, 2, 'upsert', 1)",
+      [transaction],
+    );
+    await VaultLogicalSnapshotStore(source).capture(vault);
+    await source.customStatement(
+      "INSERT INTO sync_outbox (operation_id, vault_id, entity_type, record_id, new_revision, operation, created_at) VALUES ('pending', ?, 'transaction', ?, 2, 'upsert', 1)",
+      [vault, transaction],
+    );
+    await expectLater(
+      VaultLogicalSnapshotStore(source).capture(vault),
+      throwsA(isA<VaultSnapshotUnresolvedSyncConflict>()),
+    );
+    await source.customStatement(
+      "DELETE FROM sync_outbox WHERE operation_id = 'pending'",
+    );
+    await source.customStatement(
+      "INSERT INTO sync_conflicts (id, vault_id, entity_type, record_id, base_revision, local_revision, remote_revision, local_snapshot, remote_snapshot, detected_at) VALUES ('review', ?, 'transaction', ?, 1, 2, 2, '{}', '{}', 1)",
+      [vault, transaction],
+    );
+    await expectLater(
+      VaultLogicalSnapshotStore(source).capture(vault),
+      throwsA(isA<VaultSnapshotUnresolvedSyncConflict>()),
+    );
+    await source.customStatement(
+      "UPDATE sync_conflicts SET resolved_at = 2 WHERE id = 'review'",
+    );
+    final snapshot = await VaultLogicalSnapshotStore(source).capture(vault);
+    expect(snapshot.tables, isNot(contains('sync_outbox')));
+    expect(snapshot.tables, isNot(contains('sync_conflicts')));
   });
 }

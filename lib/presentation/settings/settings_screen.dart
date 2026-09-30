@@ -57,6 +57,16 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           EquisGlassCard(
             child: ListTile(
+              key: const Key('account-management-settings'),
+              leading: const Icon(Icons.manage_accounts_outlined),
+              title: Text(l10n.accountManagementTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/accounts'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          EquisGlassCard(
+            child: ListTile(
               key: const Key('taxonomy-settings'),
               leading: const Icon(Icons.category_outlined),
               title: Text(l10n.manageCategoriesTagsAction),
@@ -152,6 +162,13 @@ class SettingsScreen extends ConsumerWidget {
                     : () => selectAppLocale(ref, const Locale('pt', 'BR')),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: Text(MaterialLocalizations.of(context).licensesPageTitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showLicensePage(context: context),
           ),
         ],
       ),

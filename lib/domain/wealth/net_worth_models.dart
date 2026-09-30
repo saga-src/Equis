@@ -26,12 +26,18 @@ final class NetWorthPoint {
     required this.liabilitiesMinor,
     required this.missingRates,
     required this.usesEstimatedRates,
+    this.hasIncompleteInvestments = false,
+    this.hasIncompleteAccounts = false,
   });
   final LocalDate date;
   final int assetsMinor;
   final int liabilitiesMinor;
   final Set<CurrencyCode> missingRates;
   final bool usesEstimatedRates;
+
+  /// The assets and net worth amounts are known subtotals when this is true.
+  final bool hasIncompleteInvestments;
+  final bool hasIncompleteAccounts;
   int get netWorthMinor => assetsMinor - liabilitiesMinor;
 }
 

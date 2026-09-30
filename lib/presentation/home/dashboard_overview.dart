@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../domain/ledger/transaction_search.dart';
 import '../../domain/ledger/ledger_models.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -26,11 +28,13 @@ class DashboardOverview extends ConsumerWidget {
   const DashboardOverview({
     required this.finance,
     this.reportOverride,
+    this.wealthStateOverride,
     super.key,
   });
 
   final LocalFinanceSnapshot finance;
   final DashboardSnapshot? reportOverride;
+  final WealthState? wealthStateOverride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,7 +42,10 @@ class DashboardOverview extends ConsumerWidget {
     final state = ref.watch(dashboardControllerProvider);
     final budgets = ref.watch(budgetControllerProvider);
     final goals = ref.watch(goalControllerProvider);
-    final wealth = ref.watch(wealthControllerProvider);
+    final WealthState wealth =
+        wealthStateOverride ??
+        ref.watch(wealthControllerProvider) ??
+        const WealthState();
     final investments = ref.watch(investmentControllerProvider);
     final report = reportOverride ?? state.snapshot;
     if (report == null) {
@@ -62,7 +69,7 @@ class DashboardOverview extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _AvailableMoney(report: report),
-        if (!report.isComplete || report.usesEstimatedRates) ...[
+        if (report.missingRates.isNotEmpty || report.usesEstimatedRates) ...[
           const SizedBox(height: 8),
           EquisGlassCard(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -70,7 +77,7 @@ class DashboardOverview extends ConsumerWidget {
               dense: true,
               leading: const Icon(Icons.info_outline),
               title: Text(
-                !report.isComplete
+                report.missingRates.isNotEmpty
                     ? l10n.reportingIncompleteMessage
                     : l10n.reportingEstimatedMessage,
               ),
@@ -96,6 +103,7 @@ class DashboardOverview extends ConsumerWidget {
         _ResponsivePair(
           first: _SpendingReport(report: report, finance: finance),
           second: _CashFlowReport(report: report),
+          matchHeight: false,
         ),
         const SizedBox(height: 16),
         _AccountBalances(report: report),
@@ -105,9 +113,14 @@ class DashboardOverview extends ConsumerWidget {
 }
 
 class _ResponsivePair extends StatelessWidget {
-  const _ResponsivePair({required this.first, required this.second});
+  const _ResponsivePair({
+    required this.first,
+    required this.second,
+    this.matchHeight = true,
+  });
   final Widget first;
   final Widget second;
+  final bool matchHeight;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -118,17 +131,18 @@ class _ResponsivePair extends StatelessWidget {
           children: [first, const SizedBox(height: 16), second],
         );
       }
-      return IntrinsicHeight(
-        child: Row(
-          key: const Key('dashboard-wide-pair'),
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: first),
-            const SizedBox(width: 16),
-            Expanded(child: second),
-          ],
-        ),
+      final row = Row(
+        key: const Key('dashboard-wide-pair'),
+        crossAxisAlignment: matchHeight
+            ? CrossAxisAlignment.stretch
+            : CrossAxisAlignment.start,
+        children: [
+          Expanded(child: first),
+          const SizedBox(width: 16),
+          Expanded(child: second),
+        ],
       );
+      return matchHeight ? IntrinsicHeight(child: row) : row;
     },
   );
 }
@@ -144,12 +158,29 @@ class _NetWorthSummary extends StatelessWidget {
     return EquisGlassCard(
       child: ListTile(
         leading: const Icon(Icons.account_balance_outlined),
-        title: Text(l10n.netWorthLabel),
+        title: Text(
+          report != null &&
+                  (report.current.hasIncompleteAccounts ||
+                      report.current.hasIncompleteInvestments)
+              ? l10n.netWorthKnownSubtotalLabel
+              : l10n.netWorthLabel,
+        ),
         subtitle: report == null
             ? Text(state.error == null ? '—' : l10n.wealthLoadFailedMessage)
-            : Text(
-                _money(context, report.currency, report.current.netWorthMinor),
-                style: EquisTypography.numeric,
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _money(
+                      context,
+                      report.currency,
+                      report.current.netWorthMinor,
+                    ),
+                    style: EquisTypography.numeric,
+                  ),
+                  if (report.current.hasIncompleteAccounts)
+                    Text(l10n.accountSyncIncompleteMessage),
+                ],
               ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.go('/wealth'),
@@ -169,12 +200,23 @@ class _InvestmentSummary extends StatelessWidget {
     return EquisGlassCard(
       child: ListTile(
         leading: const Icon(Icons.show_chart),
-        title: Text(l10n.portfolioValueLabel),
+        title: Text(
+          report?.isKnownSubtotal == true
+              ? l10n.fixedIncomeKnownSubtotalLabel
+              : l10n.portfolioValueLabel,
+        ),
         subtitle: report == null
             ? Text(state.error == null ? '—' : l10n.investmentLoadFailedMessage)
-            : Text(
-                _money(context, report.currency, report.marketValueMinor),
-                style: EquisTypography.numeric,
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _money(context, report.currency, report.marketValueMinor),
+                    style: EquisTypography.numeric,
+                  ),
+                  if (report.hasIncompleteAccountSync)
+                    Text(l10n.accountSyncIncompleteMessage),
+                ],
               ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.go('/investments'),
@@ -207,13 +249,23 @@ class _AvailableMoney extends StatelessWidget {
                 const Icon(Icons.account_balance_wallet_outlined, size: 32),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    _money(
-                      context,
-                      report.reportingCurrency,
-                      report.availableMoneyMinor,
-                    ),
-                    style: EquisTypography.numeric.copyWith(fontSize: 30),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _money(
+                          context,
+                          report.reportingCurrency,
+                          report.availableMoneyMinor,
+                        ),
+                        style: EquisTypography.numeric.copyWith(fontSize: 30),
+                      ),
+                      if (report.hasIncompleteAccounts)
+                        Text(
+                          l10n.accountSyncIncompleteMessage,
+                          key: const Key('available-money-incomplete'),
+                        ),
+                    ],
                   ),
                 ),
                 if (report.isComplete)
@@ -423,16 +475,133 @@ class _SpendingReport extends ConsumerStatefulWidget {
 
 class _SpendingReportState extends ConsumerState<_SpendingReport> {
   bool _tags = false;
+
+  String _tagName(BuildContext context, TagSpending value) {
+    if (value.tagId == null) return AppLocalizations.of(context).withoutTagsLabel;
+    return widget.finance.tags
+            .where((tag) => tag.id == value.tagId)
+            .map((tag) => tagLabel(context, tag))
+            .firstOrNull ??
+        value.tagId!.value;
+  }
+
+  void _openTagHistory(BuildContext context, TagSpending value) {
+    final vault = widget.finance.vault;
+    if (vault == null) return;
+    final report = widget.report;
+    context.go(
+      '/history',
+      extra: TransactionSearchFilter(
+        vaultId: vault.id,
+        tagId: value.tagId,
+        withoutTags: value.tagId == null,
+        fromDate: report.periodStart,
+        toDate: report.cashFlow.isEmpty
+            ? report.periodEnd
+            : report.cashFlow.last.date,
+        reportingExpensesOnly: true,
+      ),
+    );
+  }
+
+  Widget _tagListTile(BuildContext context, TagSpending value) {
+    final amount = _money(
+      context,
+      widget.report.reportingCurrency,
+      value.amountMinor,
+    );
+    return ListTile(
+      key: Key('tag-value-${value.tagId?.value ?? 'without-tags'}'),
+      contentPadding: EdgeInsets.zero,
+      title: Text(_tagName(context, value)),
+      subtitle: Text(amount, style: EquisTypography.numeric),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _openTagHistory(context, value),
+    );
+  }
+
+  Widget _tagBubble(
+    BuildContext context,
+    TagSpending value, {
+    required double cellWidth,
+    required double maxDiameter,
+    required int maximum,
+  }) {
+    final label = _tagName(context, value);
+    final amount = _money(
+      context,
+      widget.report.reportingCurrency,
+      value.amountMinor,
+    );
+    // Circle area is proportional to the tag's own amount, not a share of expenses.
+    final diameter = maxDiameter * math.sqrt(value.amountMinor / maximum);
+    final color = Theme.of(context).colorScheme.primary;
+    return Semantics(
+      button: true,
+      label: '$label, $amount',
+      onTap: () => _openTagHistory(context, value),
+      child: ExcludeSemantics(
+        child: InkWell(
+          onTap: () => _openTagHistory(context, value),
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            width: cellWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: maxDiameter,
+                  height: maxDiameter,
+                  child: Center(
+                    child: SizedBox(
+                      key: Key(
+                        'tag-bubble-${value.tagId?.value ?? 'without-tags'}',
+                      ),
+                      width: diameter,
+                      height: diameter,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: color.withValues(alpha: 0.28),
+                          border: Border.all(color: color),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  amount,
+                  style: EquisTypography.numeric,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final report = widget.report;
     final values = report.spendingByTag;
-    final maximum = values.fold<int>(
-      1,
-      (value, item) =>
-          item.amountMinor.abs() > value ? item.amountMinor.abs() : value,
-    );
+    final positives = values.where((value) => value.amountMinor > 0).toList()
+      ..sort((a, b) => b.amountMinor.compareTo(a.amountMinor));
+    final featured = positives.take(6).toList();
+    final otherValues = [
+      ...positives.skip(6),
+      ...values.where((value) => value.amountMinor == 0),
+    ];
+    final negatives = values.where((value) => value.amountMinor < 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -465,53 +634,54 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
                       padding: const EdgeInsets.all(24),
                       child: Text(l.noSpendingDataMessage),
                     ),
-                  for (final value in values)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        value.tagId == null
-                            ? l.withoutTagsLabel
-                            : widget.finance.tags
-                                      .where((tag) => tag.id == value.tagId)
-                                      .map((tag) => tagLabel(context, tag))
-                                      .firstOrNull ??
-                                  value.tagId!.value,
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: LinearProgressIndicator(
-                          value: value.amountMinor.abs() / maximum,
-                          minHeight: 10,
-                          color: value.amountMinor < 0
-                              ? Theme.of(context).colorScheme.tertiary
-                              : null,
-                        ),
-                      ),
-                      trailing: Text(
-                        _money(
-                          context,
-                          report.reportingCurrency,
-                          value.amountMinor,
-                        ),
-                      ),
-                      onTap: () {
-                        final vault = widget.finance.vault;
-                        if (vault == null) return;
-                        context.go(
-                          '/history',
-                          extra: TransactionSearchFilter(
-                            vaultId: vault.id,
-                            tagId: value.tagId,
-                            withoutTags: value.tagId == null,
-                            fromDate: report.periodStart,
-                            toDate: report.cashFlow.isEmpty
-                                ? report.periodEnd
-                                : report.cashFlow.last.date,
-                            reportingExpensesOnly: true,
-                          ),
+                  if (featured.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        final columns = width < 260 ? 1 : width < 480 ? 2 : 3;
+                        const spacing = 8.0;
+                        final cellWidth =
+                            (width - spacing * (columns - 1)) / columns;
+                        final maxDiameter = math.min(128.0, cellWidth - 12);
+                        return Wrap(
+                          key: const Key('tag-bubble-grid'),
+                          spacing: spacing,
+                          runSpacing: 16,
+                          children: [
+                            for (final value in featured)
+                              _tagBubble(
+                                context,
+                                value,
+                                cellWidth: cellWidth,
+                                maxDiameter: maxDiameter,
+                                maximum: featured.first.amountMinor,
+                              ),
+                          ],
                         );
                       },
                     ),
+                  ],
+                  if (otherValues.isNotEmpty)
+                    ExpansionTile(
+                      key: const Key('tag-other-values-expansion'),
+                      tilePadding: EdgeInsets.zero,
+                      childrenPadding: EdgeInsets.zero,
+                      title: Text(l.otherTagValuesTitle),
+                      children: [
+                        for (final value in otherValues)
+                          _tagListTile(context, value),
+                      ],
+                    ),
+                  if (negatives.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      l.negativeTagValuesTitle,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    for (final value in negatives)
+                      _tagListTile(context, value),
+                  ],
                 ],
               ),
             ),

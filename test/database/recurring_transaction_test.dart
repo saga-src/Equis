@@ -116,6 +116,44 @@ void main() {
   );
 
   test(
+    'archived account rejects stale recurring materialization and new rule',
+    () async {
+      final schedule = _monthlySchedule(fixture);
+      await service.create(schedule);
+      final occurrence = (await service.upcoming(
+        vaultId: fixture.vault,
+        from: LocalDate(2026, 1, 1),
+        through: LocalDate(2026, 1, 31),
+      )).single;
+      await database.customStatement(
+        "UPDATE accounts SET archived = 1, closed_on = '2026-01-01' "
+        'WHERE id = (SELECT account_id FROM account_pockets WHERE id = ?)',
+        [fixture.pocket.value],
+      );
+      await expectLater(
+        service.confirm(occurrence, now: fixture.now),
+        throwsStateError,
+      );
+      await expectLater(
+        service.create(_monthlySchedule(fixture)),
+        throwsStateError,
+      );
+      await service.end(
+        schedule,
+        lastDate: LocalDate(2026, 1, 31),
+        now: fixture.now,
+      );
+      expect(
+        (await database
+                .customSelect('SELECT COUNT(*) AS total FROM transactions')
+                .getSingle())
+            .read<int>('total'),
+        0,
+      );
+    },
+  );
+
+  test(
     'skip, reschedule, and modify one affect only their occurrence',
     () async {
       final schedule = _monthlySchedule(fixture);

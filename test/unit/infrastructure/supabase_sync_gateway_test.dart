@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:equis/application/ports/cloud_sync_gateway.dart';
 import 'package:equis/infrastructure/cloud/supabase_sync_gateway.dart';
 import 'package:equis/infrastructure/security/encrypted_payload_cipher.dart';
+import 'package:equis/infrastructure/security/secure_string_store.dart';
+import 'package:equis/infrastructure/security/vault_identity.dart';
+import 'package:equis/infrastructure/security/vault_key_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -13,6 +16,7 @@ void main() {
     'PGRST301': CloudSyncFailureCode.sessionExpired,
     'PGRST202': CloudSyncFailureCode.incompatibleServer,
     '42501': CloudSyncFailureCode.accessDenied,
+    'EVP02': CloudSyncFailureCode.clientObsolete,
   }.entries) {
     test('classifies ${entry.key} without leaking server details', () async {
       final gateway = _gateway(
@@ -87,6 +91,58 @@ void main() {
     expect(result.single.serverVersion, 7);
   });
 
+  test(
+    'format 2 push requires activation and uses the capability RPC',
+    () async {
+      final requests = <http.Request>[];
+      final client = SupabaseClient(
+        'https://example.supabase.co',
+        'publishable-key',
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          return http.Response(
+            request.url.path.endsWith('/activate_sync_aggregate_format_2')
+                ? '2'
+                : '[{"operation_id":"$operation","status":"accepted",'
+                      '"revision":2,"server_version":7}]',
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.dispose);
+      final keys = VaultKeyManager(store: _Secrets(), protocolVersion: 2);
+      await keys.installVaultIdentity(
+        VaultIdentity(vaultId: vault, masterKey: List<int>.filled(32, 4)),
+      );
+      final gateway = SupabaseSyncGateway(client, keys: keys);
+      final mutations = [
+        CloudSyncMutation(
+          operationId: operation,
+          expectedRevision: 1,
+          record: _encrypted(vault, record, 2),
+        ),
+      ];
+      await expectLater(
+        gateway.pushBatch(vaultId: vault, mutations: mutations),
+        throwsA(isA<CloudSyncFailure>()),
+      );
+      expect(requests, isEmpty);
+
+      await gateway.activateAggregateFormat2(vaultId: vault);
+      final result = await gateway.pushBatch(
+        vaultId: vault,
+        mutations: mutations,
+      );
+      expect(requests.map((request) => request.url.path), [
+        '/rest/v1/rpc/activate_sync_aggregate_format_2',
+        '/rest/v1/rpc/apply_sync_batch_format_2',
+      ]);
+      expect(result.single.status, CloudPushStatus.accepted);
+    },
+  );
+
   test('pull is ascending after the durable cursor and parses bytea', () async {
     late http.Request sent;
     final encrypted = _encrypted(vault, record, 4);
@@ -155,3 +211,13 @@ EncryptedSyncRecord _encrypted(String vault, String record, int revision) =>
 
 String _hex(Iterable<int> bytes) =>
     bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
+
+final class _Secrets implements SecureStringStore {
+  final values = <String, String>{};
+  @override
+  Future<String?> read(String key) async => values[key];
+  @override
+  Future<void> write(String key, String value) async => values[key] = value;
+  @override
+  Future<void> delete(String key) async => values.remove(key);
+}

@@ -286,6 +286,12 @@ abstract class AppLocalizations {
   /// **'Could not save the transaction'**
   String get transactionSaveFailedMessage;
 
+  /// No description provided for @transactionRevisionConflictMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction changed elsewhere. Your draft is still here; reload to review the current version.'**
+  String get transactionRevisionConflictMessage;
+
   /// No description provided for @editTransactionAction.
   ///
   /// In en, this message translates to:
@@ -357,6 +363,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transaction not found.'**
   String get transactionNotFoundMessage;
+
+  /// No description provided for @transactionDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction details'**
+  String get transactionDetailTitle;
+
+  /// No description provided for @transactionDetailLoadFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this transaction from the local vault.'**
+  String get transactionDetailLoadFailedMessage;
+
+  /// No description provided for @transactionDetailRetryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get transactionDetailRetryAction;
+
+  /// No description provided for @transactionDetailMovementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account movements'**
+  String get transactionDetailMovementsTitle;
+
+  /// No description provided for @transactionDetailSplitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories and splits'**
+  String get transactionDetailSplitsTitle;
+
+  /// No description provided for @transactionDetailTagsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get transactionDetailTagsTitle;
+
+  /// No description provided for @transactionDetailArchivedAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived account'**
+  String get transactionDetailArchivedAccountLabel;
+
+  /// No description provided for @transactionDetailArchivedPocketLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived pocket'**
+  String get transactionDetailArchivedPocketLabel;
+
+  /// No description provided for @transactionDetailDeletedAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted account'**
+  String get transactionDetailDeletedAccountLabel;
+
+  /// No description provided for @transactionDetailStatementLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Statement'**
+  String get transactionDetailStatementLabel;
+
+  /// No description provided for @transactionDetailFxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency conversion'**
+  String get transactionDetailFxTitle;
+
+  /// No description provided for @transactionDetailRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rate'**
+  String get transactionDetailRateLabel;
+
+  /// No description provided for @transactionDetailRateSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate source'**
+  String get transactionDetailRateSourceLabel;
+
+  /// No description provided for @transactionDetailProviderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get transactionDetailProviderLabel;
+
+  /// No description provided for @transactionDetailInvestmentEventsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Investment events'**
+  String get transactionDetailInvestmentEventsTitle;
+
+  /// No description provided for @transactionDetailEventTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get transactionDetailEventTypeLabel;
+
+  /// No description provided for @transactionDetailInstrumentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrument ID'**
+  String get transactionDetailInstrumentLabel;
+
+  /// No description provided for @transactionDetailQuantityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get transactionDetailQuantityLabel;
+
+  /// No description provided for @transactionDetailUnitPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit price'**
+  String get transactionDetailUnitPriceLabel;
+
+  /// No description provided for @transactionDetailGrossLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross amount'**
+  String get transactionDetailGrossLabel;
+
+  /// No description provided for @transactionDetailFeesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fees'**
+  String get transactionDetailFeesLabel;
+
+  /// No description provided for @transactionDetailTaxesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Taxes'**
+  String get transactionDetailTaxesLabel;
+
+  /// No description provided for @transactionDetailRecurrenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurrence'**
+  String get transactionDetailRecurrenceTitle;
+
+  /// No description provided for @transactionDetailRuleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule ID'**
+  String get transactionDetailRuleLabel;
+
+  /// No description provided for @transactionDetailReversalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversal'**
+  String get transactionDetailReversalTitle;
+
+  /// No description provided for @transactionDetailReversalOfLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversal of'**
+  String get transactionDetailReversalOfLabel;
 
   /// No description provided for @setupLocalVaultTitle.
   ///
@@ -3031,6 +3193,12 @@ abstract class AppLocalizations {
   /// **'The operation could not be completed. Check the file, password, and destination.'**
   String get portabilityErrorMessage;
 
+  /// No description provided for @portabilityPendingSyncMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation postponed: local changes, a sync conflict, or incoming data are still pending. Connect, finish syncing, and resolve any conflicts before trying again. No file was created.'**
+  String get portabilityPendingSyncMessage;
+
   /// No description provided for @receiptAttachmentsTitle.
   ///
   /// In en, this message translates to:
@@ -3138,6 +3306,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Each expense counts in full for every tag. Tag totals may overlap.'**
   String get tagOverlapMessage;
+
+  /// No description provided for @otherTagValuesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Other tag values'**
+  String get otherTagValuesTitle;
+
+  /// No description provided for @negativeTagValuesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Negative adjustments by tag'**
+  String get negativeTagValuesTitle;
 
   /// No description provided for @syncRunningLabel.
   ///
@@ -3379,6 +3559,24 @@ abstract class AppLocalizations {
   /// **'Update unavailable or verification failed. You can try again; your data is unchanged.'**
   String get updateFailed;
 
+  /// No description provided for @updateCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Update cancelled. Your data is unchanged; you can try again.'**
+  String get updateCancelled;
+
+  /// No description provided for @windowsUpdateManualInstallRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic updating is unavailable for this Windows installation. Download the official installer, close Equis, and run it with the same Windows account.'**
+  String get windowsUpdateManualInstallRequired;
+
+  /// No description provided for @windowsUpdateRegistrationIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'This Windows installation\'s registration does not match its files. Automatic updates are disabled. Close Equis and run the official installer with the same Windows account to repair it.'**
+  String get windowsUpdateRegistrationIssue;
+
   /// No description provided for @updateInstalling.
   ///
   /// In en, this message translates to:
@@ -3438,6 +3636,552 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Equis file replacement is running or was interrupted. Close this window. If the update does not finish, use the recovery helper as described in the release instructions. Your vaults have not been opened.'**
   String get updateRecoveryRequired;
+
+  /// No description provided for @fixedIncomeProductLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product name'**
+  String get fixedIncomeProductLabel;
+
+  /// No description provided for @fixedIncomeIssuerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Issuer (optional)'**
+  String get fixedIncomeIssuerLabel;
+
+  /// No description provided for @fixedIncomePrincipalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Principal invested'**
+  String get fixedIncomePrincipalLabel;
+
+  /// No description provided for @fixedIncomeAccrualStartLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Accrual start'**
+  String get fixedIncomeAccrualStartLabel;
+
+  /// No description provided for @fixedIncomeMaturityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Maturity date (optional)'**
+  String get fixedIncomeMaturityLabel;
+
+  /// No description provided for @fixedIncomeLiquidityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Liquidity date (optional)'**
+  String get fixedIncomeLiquidityLabel;
+
+  /// No description provided for @fixedIncomeFormulaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract formula'**
+  String get fixedIncomeFormulaLabel;
+
+  /// No description provided for @fixedIncomeFixedAnnualMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed annual rate'**
+  String get fixedIncomeFixedAnnualMode;
+
+  /// No description provided for @fixedIncomeDailyPercentMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Percentage of daily index'**
+  String get fixedIncomeDailyPercentMode;
+
+  /// No description provided for @fixedIncomeDailySpreadMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily index + annual spread'**
+  String get fixedIncomeDailySpreadMode;
+
+  /// No description provided for @fixedIncomeMonthlyMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly index + optional spread'**
+  String get fixedIncomeMonthlyMode;
+
+  /// No description provided for @fixedIncomeTrMode.
+  ///
+  /// In en, this message translates to:
+  /// **'TR validity periods'**
+  String get fixedIncomeTrMode;
+
+  /// No description provided for @fixedIncomeManualMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual balance only'**
+  String get fixedIncomeManualMode;
+
+  /// No description provided for @fixedIncomeIndexLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Index'**
+  String get fixedIncomeIndexLabel;
+
+  /// No description provided for @fixedIncomeAnnualRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual rate'**
+  String get fixedIncomeAnnualRateLabel;
+
+  /// No description provided for @fixedIncomeMultiplierLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Percentage of index (e.g. 118)'**
+  String get fixedIncomeMultiplierLabel;
+
+  /// No description provided for @fixedIncomeSpreadLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual spread in percentage points'**
+  String get fixedIncomeSpreadLabel;
+
+  /// No description provided for @fixedIncomeDayBasisLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Day count basis'**
+  String get fixedIncomeDayBasisLabel;
+
+  /// No description provided for @fixedIncomeAnniversaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly anniversary day (1–31)'**
+  String get fixedIncomeAnniversaryLabel;
+
+  /// No description provided for @fixedIncomeLagLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional publication lag (months)'**
+  String get fixedIncomeLagLabel;
+
+  /// No description provided for @fixedIncomeTrValidityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'TR compounds only after each published validity period is complete.'**
+  String get fixedIncomeTrValidityDescription;
+
+  /// No description provided for @fixedIncomePositiveAmountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive principal amount.'**
+  String get fixedIncomePositiveAmountMessage;
+
+  /// No description provided for @fixedIncomeInvalidDateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid date as YYYY-MM-DD.'**
+  String get fixedIncomeInvalidDateMessage;
+
+  /// No description provided for @fixedIncomeDateBeforeStartMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Date cannot be before accrual starts.'**
+  String get fixedIncomeDateBeforeStartMessage;
+
+  /// No description provided for @fixedIncomeInvalidPercentageMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid percentage (greater than -100%).'**
+  String get fixedIncomeInvalidPercentageMessage;
+
+  /// No description provided for @fixedIncomeAnniversaryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a day from 1 to 31.'**
+  String get fixedIncomeAnniversaryError;
+
+  /// No description provided for @fixedIncomeLagError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a lag from 0 to 120 months.'**
+  String get fixedIncomeLagError;
+
+  /// No description provided for @fixedIncomeInvalidCombinationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the contract formula and its required fields.'**
+  String get fixedIncomeInvalidCombinationMessage;
+
+  /// No description provided for @fixedIncomeKnownSubtotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Known investment subtotal'**
+  String get fixedIncomeKnownSubtotalLabel;
+
+  /// No description provided for @fixedIncomeEstimatedGrossLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated gross balance'**
+  String get fixedIncomeEstimatedGrossLabel;
+
+  /// No description provided for @fixedIncomeManualBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual balance'**
+  String get fixedIncomeManualBalanceLabel;
+
+  /// No description provided for @fixedIncomeMarketValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Market value'**
+  String get fixedIncomeMarketValueLabel;
+
+  /// No description provided for @fixedIncomeEditTermsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit contract terms'**
+  String get fixedIncomeEditTermsAction;
+
+  /// No description provided for @fixedIncomeSetManualAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add manual balance'**
+  String get fixedIncomeSetManualAction;
+
+  /// No description provided for @fixedIncomeEditManualAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit manual balance'**
+  String get fixedIncomeEditManualAction;
+
+  /// No description provided for @fixedIncomeNoManualToEditMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This lot has no active manual balance to edit or remove.'**
+  String get fixedIncomeNoManualToEditMessage;
+
+  /// No description provided for @fixedIncomeLotsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Applications and lots'**
+  String get fixedIncomeLotsLabel;
+
+  /// No description provided for @fixedIncomeContractSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract + BCB SGS'**
+  String get fixedIncomeContractSourceLabel;
+
+  /// No description provided for @fixedIncomeContractOnlySourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract'**
+  String get fixedIncomeContractOnlySourceLabel;
+
+  /// No description provided for @fixedIncomeDatedManualNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This manual balance is from an earlier date; review it before relying on it.'**
+  String get fixedIncomeDatedManualNotice;
+
+  /// No description provided for @fixedIncomeRemoveManualAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove manual balance'**
+  String get fixedIncomeRemoveManualAction;
+
+  /// No description provided for @fixedIncomeManualNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get fixedIncomeManualNoteLabel;
+
+  /// No description provided for @fixedIncomeValueDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance date'**
+  String get fixedIncomeValueDateLabel;
+
+  /// No description provided for @fixedIncomeSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get fixedIncomeSourceLabel;
+
+  /// No description provided for @fixedIncomeIncompleteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete valuation'**
+  String get fixedIncomeIncompleteLabel;
+
+  /// No description provided for @fixedIncomeManualRequiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a dated manual balance to value this lot.'**
+  String get fixedIncomeManualRequiredLabel;
+
+  /// No description provided for @fixedIncomeMaturedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Matured; action may be required'**
+  String get fixedIncomeMaturedLabel;
+
+  /// No description provided for @fixedIncomeNotStartedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Accrual has not started'**
+  String get fixedIncomeNotStartedLabel;
+
+  /// No description provided for @fixedIncomeMissingPeriodsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing index periods'**
+  String get fixedIncomeMissingPeriodsLabel;
+
+  /// No description provided for @fixedIncomeCachedDataNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses locally cached published index data; newer periods may be missing.'**
+  String get fixedIncomeCachedDataNotice;
+
+  /// No description provided for @fixedIncomeNoRedemptionQuoteNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported or estimated gross balance; not a redemption quote.'**
+  String get fixedIncomeNoRedemptionQuoteNotice;
+
+  /// No description provided for @fixedIncomeRevisionConflictMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This lot changed on another device. Reload it before saving.'**
+  String get fixedIncomeRevisionConflictMessage;
+
+  /// No description provided for @fixedIncomeNoBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'No balance available'**
+  String get fixedIncomeNoBalanceLabel;
+
+  /// No description provided for @netWorthKnownSubtotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Known net worth (partial)'**
+  String get netWorthKnownSubtotalLabel;
+
+  /// No description provided for @fixedIncomeBrlIndexOnlyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Brazilian index formulas require BRL.'**
+  String get fixedIncomeBrlIndexOnlyMessage;
+
+  /// No description provided for @accountManagementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage accounts and cards'**
+  String get accountManagementTitle;
+
+  /// No description provided for @activeAccountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Active accounts and cards'**
+  String get activeAccountsTitle;
+
+  /// No description provided for @archivedAccountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived accounts and cards'**
+  String get archivedAccountsTitle;
+
+  /// No description provided for @noActiveAccountsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No active accounts or cards.'**
+  String get noActiveAccountsMessage;
+
+  /// No description provided for @noArchivedAccountsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived accounts or cards.'**
+  String get noArchivedAccountsMessage;
+
+  /// No description provided for @reviewAccountRemovalAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Review removal'**
+  String get reviewAccountRemovalAction;
+
+  /// No description provided for @archiveAccountAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive account'**
+  String get archiveAccountAction;
+
+  /// No description provided for @deleteAccountAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccountAction;
+
+  /// No description provided for @restoreAccountAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore account'**
+  String get restoreAccountAction;
+
+  /// No description provided for @archiveAccountConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has history. Archiving removes it from active choices while preserving its records and pockets. Continue?'**
+  String get archiveAccountConfirmation;
+
+  /// No description provided for @deleteAccountConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has no linked records. Delete it from active choices?'**
+  String get deleteAccountConfirmation;
+
+  /// No description provided for @restoreAccountConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this account and its pockets to active choices?'**
+  String get restoreAccountConfirmation;
+
+  /// No description provided for @accountRemovalBlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve these items before removing this account.'**
+  String get accountRemovalBlockedMessage;
+
+  /// No description provided for @accountReferencesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked records'**
+  String get accountReferencesLabel;
+
+  /// No description provided for @accountChangedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This account changed. Review its current state and try again.'**
+  String get accountChangedMessage;
+
+  /// No description provided for @accountActionFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this account. Try again.'**
+  String get accountActionFailedMessage;
+
+  /// No description provided for @accountBlockerBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'A pocket has a nonzero balance.'**
+  String get accountBlockerBalance;
+
+  /// No description provided for @accountBlockerStatement.
+  ///
+  /// In en, this message translates to:
+  /// **'A card statement is open or unpaid.'**
+  String get accountBlockerStatement;
+
+  /// No description provided for @accountBlockerInstallment.
+  ///
+  /// In en, this message translates to:
+  /// **'A scheduled installment remains.'**
+  String get accountBlockerInstallment;
+
+  /// No description provided for @accountBlockerRecurrence.
+  ///
+  /// In en, this message translates to:
+  /// **'An active recurring payment uses this account.'**
+  String get accountBlockerRecurrence;
+
+  /// No description provided for @accountBlockerTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'A pending transaction uses this account.'**
+  String get accountBlockerTransaction;
+
+  /// No description provided for @accountBlockerGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'An active goal uses this account.'**
+  String get accountBlockerGoal;
+
+  /// No description provided for @accountBlockerBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'An enabled budget uses this account.'**
+  String get accountBlockerBudget;
+
+  /// No description provided for @accountSyncIncompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Known subtotal: some account data is waiting for a sync conflict to be resolved.'**
+  String get accountSyncIncompleteMessage;
+
+  /// No description provided for @accountRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts with sync conflicts'**
+  String get accountRecoveryTitle;
+
+  /// No description provided for @accountRecoveryExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'A concurrent change left this account pending. Review it and confirm restoration to keep its records.'**
+  String get accountRecoveryExplanation;
+
+  /// No description provided for @accountRecoveryPendingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoration requested. Waiting for synchronization.'**
+  String get accountRecoveryPendingMessage;
+
+  /// No description provided for @accountRecoveryConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Request restoration of this account on the next sync? Records and pockets will be preserved.'**
+  String get accountRecoveryConfirmation;
+
+  /// No description provided for @accountReferencesMovements.
+  ///
+  /// In en, this message translates to:
+  /// **'Movements'**
+  String get accountReferencesMovements;
+
+  /// No description provided for @accountReferencesStatements.
+  ///
+  /// In en, this message translates to:
+  /// **'Statements'**
+  String get accountReferencesStatements;
+
+  /// No description provided for @accountReferencesInstallmentPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Installment plans'**
+  String get accountReferencesInstallmentPlans;
+
+  /// No description provided for @accountReferencesRecurrenceTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurrences'**
+  String get accountReferencesRecurrenceTemplates;
+
+  /// No description provided for @accountReferencesTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions'**
+  String get accountReferencesTransactions;
+
+  /// No description provided for @accountReferencesGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals'**
+  String get accountReferencesGoals;
+
+  /// No description provided for @accountReferencesBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Budgets'**
+  String get accountReferencesBudgets;
+
+  /// No description provided for @accountReferencesAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get accountReferencesAttachments;
 }
 
 class _AppLocalizationsDelegate

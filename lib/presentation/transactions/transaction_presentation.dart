@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../application/services/everyday_transaction_service.dart';
 
 import '../../app/theme/equis_theme.dart';
 import '../../domain/ledger/ledger_models.dart';
@@ -37,16 +38,13 @@ Color transactionSemanticColor(
 }
 
 bool transactionIsEditable(LedgerTransaction transaction) =>
-    transaction.status != LedgerTransactionStatus.reconciled &&
-    transaction.status != LedgerTransactionStatus.cancelled &&
-    const {
-      LedgerTransactionType.expense,
-      LedgerTransactionType.income,
-      LedgerTransactionType.transfer,
-    }.contains(transaction.type);
+    everydayTransactionHasEditableShape(transaction);
 
-List<TransactionAction> transactionActions(LedgerTransaction transaction) => [
-  if (transactionIsEditable(transaction)) TransactionAction.edit,
+List<TransactionAction> transactionActions(
+  LedgerTransaction transaction, {
+  bool? canEdit,
+}) => [
+  if (canEdit ?? transactionIsEditable(transaction)) TransactionAction.edit,
   if (transaction.status == LedgerTransactionStatus.cleared)
     TransactionAction.reconcile,
   TransactionAction.delete,
@@ -105,11 +103,13 @@ final class TransactionActionMenu extends StatelessWidget {
   const TransactionActionMenu({
     required this.transaction,
     required this.onSelected,
+    this.canEdit,
     super.key,
   });
 
   final LedgerTransaction transaction;
   final ValueChanged<TransactionAction> onSelected;
+  final bool? canEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +118,7 @@ final class TransactionActionMenu extends StatelessWidget {
       key: ValueKey('transaction-actions-${transaction.id.value}'),
       onSelected: onSelected,
       itemBuilder: (context) => [
-        for (final action in transactionActions(transaction))
+        for (final action in transactionActions(transaction, canEdit: canEdit))
           PopupMenuItem(
             value: action,
             child: Text(switch (action) {

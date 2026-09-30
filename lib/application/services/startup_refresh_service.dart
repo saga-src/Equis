@@ -6,6 +6,8 @@ import '../ports/startup_refresh_gate.dart';
 import 'fx_rate_selector.dart';
 import 'local_finance_session_service.dart';
 import 'market_data_service.dart';
+import 'economic_series_service.dart';
+import 'investment_service.dart';
 
 final class StartupRefreshResult {
   const StartupRefreshResult({
@@ -26,6 +28,9 @@ final class StartupRefreshService {
     required this.marketData,
     required this.fxRates,
     required this.gate,
+    this.economicSeries,
+    this.investments,
+    this.isActive,
     this.minimumInterval = const Duration(hours: 3),
   });
 
@@ -33,12 +38,40 @@ final class StartupRefreshService {
   final MarketDataService marketData;
   final FxRateSelector fxRates;
   final StartupRefreshGate gate;
+  final EconomicSeriesService? economicSeries;
+  final InvestmentService? investments;
+  final bool Function()? isActive;
   final Duration minimumInterval;
 
   Future<StartupRefreshResult> refreshOnOpen(UtcInstant now) async {
+    if (isActive?.call() == false) {
+      return const StartupRefreshResult(attempted: false);
+    }
     final snapshot = await session.load();
     final vault = snapshot.vault;
     if (vault == null) {
+      return const StartupRefreshResult(attempted: false);
+    }
+    final dateTime = now.toDateTime();
+    final today = LocalDate(dateTime.year, dateTime.month, dateTime.day);
+    if (isActive?.call() == false) {
+      return const StartupRefreshResult(attempted: false);
+    }
+    try {
+      if (investments != null) {
+        await investments!.refreshEconomicSeries(
+          vaultId: vault.id,
+          asOf: today,
+          now: now,
+          isActive: isActive,
+        );
+      } else {
+        await economicSeries?.refreshOnOpen(now);
+      }
+    } on Exception {
+      // Public-series availability must not interrupt existing vault refresh.
+    }
+    if (isActive?.call() == false) {
       return const StartupRefreshResult(attempted: false);
     }
     final previous = await gate.lastAttempt(vault.id);
@@ -47,9 +80,6 @@ final class StartupRefreshService {
             minimumInterval.inMicroseconds) {
       return const StartupRefreshResult(attempted: false);
     }
-
-    final dateTime = now.toDateTime();
-    final today = LocalDate(dateTime.year, dateTime.month, dateTime.day);
     var marketFailed = false;
     var fxFailures = 0;
     try {

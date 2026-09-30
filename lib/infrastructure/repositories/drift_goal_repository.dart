@@ -34,11 +34,57 @@ final class DriftGoalRepository implements GoalRepository {
   Future<void> _save(GoalDefinition goal) => database.transaction(() async {
     final current = await database
         .customSelect(
-          'SELECT revision FROM goals WHERE id = ?',
+          'SELECT revision, vault_id, deleted_at FROM goals WHERE id = ?',
           variables: [Variable<String>(goal.id.value)],
           readsFrom: {database.goals},
         )
         .getSingleOrNull();
+    if (current != null &&
+        (current.read<String>('vault_id') != goal.vaultId.value ||
+            (current.readNullable<int>('deleted_at') != null &&
+                goal.deletedAt == null))) {
+      throw StateError('Goal identity or deletion state cannot be replaced.');
+    }
+    final existingLinks = await database
+        .customSelect(
+          'SELECT account_pocket_id FROM goal_accounts WHERE goal_id = ?',
+          variables: [Variable<String>(goal.id.value)],
+          readsFrom: {database.goalAccounts},
+        )
+        .get();
+    final existingPocketIds = {
+      for (final row in existingLinks)
+        row.read<String>('account_pocket_id'),
+    };
+    final persistedPocketIds = {
+      ...goal.accountPocketIds.map((id) => id.value),
+      if (goal.deletedAt != null) ...existingPocketIds,
+    };
+    final requiresActive =
+        goal.status == GoalStatus.active && goal.deletedAt == null;
+    for (final pocketId in persistedPocketIds) {
+      final pocket = await database
+          .customSelect(
+            'SELECT account.vault_id, account.archived AS account_archived, '
+            'account.deleted_at, pocket.archived AS pocket_archived '
+            'FROM account_pockets AS pocket '
+            'JOIN accounts AS account ON account.id = pocket.account_id '
+            'WHERE pocket.id = ?',
+            variables: [Variable<String>(pocketId)],
+            readsFrom: {database.accountPockets, database.accounts},
+          )
+          .getSingleOrNull();
+      final needsActive =
+          requiresActive || !existingPocketIds.contains(pocketId);
+      if (pocket == null ||
+          pocket.read<String>('vault_id') != goal.vaultId.value ||
+          (needsActive &&
+              (pocket.read<int>('account_archived') != 0 ||
+                  pocket.readNullable<int>('deleted_at') != null ||
+                  pocket.read<int>('pocket_archived') != 0))) {
+        throw StateError('Goal account pocket is inactive or outside the vault.');
+      }
+    }
     if (current == null) {
       if (goal.revision != 1) {
         throw GoalRevisionConflict(
@@ -119,10 +165,10 @@ final class DriftGoalRepository implements GoalRepository {
         [goal.id.value],
       );
     }
-    for (final pocketId in goal.accountPocketIds) {
+    for (final pocketId in persistedPocketIds) {
       await database.customStatement(
         'INSERT INTO goal_accounts (goal_id, account_pocket_id) VALUES (?, ?)',
-        [goal.id.value, pocketId.value],
+        [goal.id.value, pocketId],
       );
     }
   });

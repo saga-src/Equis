@@ -3,17 +3,39 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers/app_providers.dart';
 import '../../infrastructure/updates/app_update_service.dart';
 import '../../infrastructure/updates/update_installer.dart';
+import '../../infrastructure/updates/windows_update_identity.dart';
 import '../../l10n/app_localizations.dart';
 
 final appUpdateServiceProvider = Provider<AppUpdateService?>((ref) => null);
+final windowsUpdateRegistrationIssueProvider = Provider<bool>((ref) => false);
 
 class UpdateCard extends ConsumerWidget {
   const UpdateCard({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.watch(appUpdateServiceProvider);
-    if (service == null) return const SizedBox.shrink();
     final l = AppLocalizations.of(context);
+    const cancelledCodes = {'uac_cancelled', 'wizard_cancelled', 'cancelled'};
+    if (service == null) {
+      if (!ref.watch(windowsUpdateRegistrationIssueProvider)) {
+        return const SizedBox.shrink();
+      }
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l.updatesTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text(l.windowsUpdateRegistrationIssue),
+            ],
+          ),
+        ),
+      );
+    }
     return ListenableBuilder(
       listenable: service,
       builder: (context, _) => Card(
@@ -38,6 +60,10 @@ class UpdateCard extends ConsumerWidget {
                 UpdateStatus.installing => l.updateInstalling,
                 _ => l.updateCheckHint,
               }),
+              if (service.platform == 'windows-installed' &&
+                  !windowsInstalledUpdateEnabled &&
+                  service.status == UpdateStatus.ready)
+                Text(l.windowsUpdateManualInstallRequired),
               if (service.status == UpdateStatus.downloading)
                 LinearProgressIndicator(value: service.progress),
               SwitchListTile(
@@ -68,7 +94,9 @@ class UpdateCard extends ConsumerWidget {
                       onPressed: () => service.download(allowMobile: true),
                       child: Text(l.updateDownloadNow),
                     ),
-                  if (service.status == UpdateStatus.ready)
+                  if (service.status == UpdateStatus.ready &&
+                      (service.platform != 'windows-installed' ||
+                          windowsInstalledUpdateEnabled))
                     FilledButton(
                       onPressed: () async {
                         final confirmed = await showDialog<bool>(
@@ -91,29 +119,65 @@ class UpdateCard extends ConsumerWidget {
                         if (confirmed != true) return;
                         service.installing();
                         try {
-                          final helper = await UpdateInstaller.prepare(service);
                           final workspace = ref.read(vaultWorkspaceProvider);
-                          final result = await UpdateInstaller.install(
-                            service,
-                            helper,
-                            () async {
-                              if (workspace == null) {
-                                throw StateError('Workspace unavailable');
-                              }
-                              await workspace.closeForUpdate();
-                            },
-                          );
-                          service.installationFailed();
-                          if (result == 'permission' && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l.updatePermission)),
+                          Future<void> closeWorkspace() async {
+                            if (workspace == null) {
+                              throw const WindowsUpdateCloseRefused();
+                            }
+                            if (workspace.busy) {
+                              throw const WindowsUpdateCloseRefused();
+                            }
+                            await workspace.closeForUpdate();
+                          }
+
+                          final String result;
+                          if (service.platform == 'windows-installed') {
+                            final session =
+                                await UpdateInstaller.prepareInstalled(service);
+                            result = await UpdateInstaller.installInstalled(
+                              session,
+                              closeWorkspace,
+                            );
+                          } else {
+                            final helper = await UpdateInstaller.prepare(
+                              service,
+                            );
+                            result = await UpdateInstaller.install(
+                              service,
+                              helper,
+                              closeWorkspace,
                             );
                           }
-                        } catch (_) {
-                          service.installationFailed();
+                          service.installationFailed(result);
+                          if (context.mounted &&
+                              (result == 'permission' ||
+                                  cancelledCodes.contains(result))) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result == 'permission'
+                                      ? l.updatePermission
+                                      : l.updateCancelled,
+                                ),
+                              ),
+                            );
+                          }
+                        } catch (error) {
+                          service.installationFailed(
+                            error is WindowsInstalledUpdateException
+                                ? error.code
+                                : 'installation',
+                          );
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l.updateFailed)),
+                              SnackBar(
+                                content: Text(
+                                  error is WindowsInstalledUpdateException &&
+                                          cancelledCodes.contains(error.code)
+                                      ? l.updateCancelled
+                                      : l.updateFailed,
+                                ),
+                              ),
                             );
                           }
                         }

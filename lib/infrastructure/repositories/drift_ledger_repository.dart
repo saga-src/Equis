@@ -38,7 +38,7 @@ final class DriftLedgerRepository implements LedgerRepository {
     aggregate.validate();
     final revisionRows = await database
         .customSelect(
-          'SELECT revision FROM transactions WHERE id = ?',
+          'SELECT revision, vault_id FROM transactions WHERE id = ?',
           variables: [Variable<String>(aggregate.id.value)],
           readsFrom: {database.transactions},
         )
@@ -46,25 +46,58 @@ final class DriftLedgerRepository implements LedgerRepository {
     final actualRevision = revisionRows.isEmpty
         ? null
         : revisionRows.single.read<int>('revision');
+    final expectedRevision = aggregate.revision - 1;
+    if ((actualRevision == null && aggregate.revision != 1) ||
+        (actualRevision != null && actualRevision != expectedRevision)) {
+      throw LedgerRevisionConflict(
+        transactionId: aggregate.id,
+        expectedRevision: expectedRevision,
+        actualRevision: actualRevision,
+      );
+    }
+    if (revisionRows.isNotEmpty &&
+        revisionRows.single.read<String>('vault_id') !=
+            aggregate.vaultId.value) {
+      throw StateError('A transaction cannot change vaults.');
+    }
+    // Cancellation, deletion, dates and removed children also change balances.
+    // Check both the old and new pockets before rewriting any historical row.
+    final pocketIds = {
+      for (final movement in aggregate.movements) movement.pocket.id.value,
+      if (actualRevision != null)
+        for (final row
+            in await database
+                .customSelect(
+                  'SELECT account_pocket_id FROM account_movements WHERE transaction_id = ?',
+                  variables: [Variable<String>(aggregate.id.value)],
+                  readsFrom: {database.accountMovements},
+                )
+                .get())
+          row.read<String>('account_pocket_id'),
+    };
+    for (final pocketId in pocketIds) {
+      final active = await database
+          .customSelect(
+            'SELECT pocket.id FROM account_pockets AS pocket '
+            'JOIN accounts AS account ON account.id = pocket.account_id '
+            'WHERE pocket.id = ? AND account.vault_id = ? '
+            'AND account.archived = 0 AND account.deleted_at IS NULL '
+            'AND pocket.archived = 0',
+            variables: [
+              Variable<String>(pocketId),
+              Variable<String>(aggregate.vaultId.value),
+            ],
+            readsFrom: {database.accountPockets, database.accounts},
+          )
+          .getSingleOrNull();
+      if (active == null) {
+        throw StateError('Account pocket is inactive.');
+      }
+    }
 
     if (actualRevision == null) {
-      if (aggregate.revision != 1) {
-        throw LedgerRevisionConflict(
-          transactionId: aggregate.id,
-          expectedRevision: aggregate.revision - 1,
-          actualRevision: null,
-        );
-      }
       await _insertRoot(aggregate);
     } else {
-      final expected = aggregate.revision - 1;
-      if (actualRevision != expected) {
-        throw LedgerRevisionConflict(
-          transactionId: aggregate.id,
-          expectedRevision: expected,
-          actualRevision: actualRevision,
-        );
-      }
       final changed = await database.customUpdate(
         'UPDATE transactions SET transaction_type = ?, status = ?, title = ?, notes = ?, '
         'occurred_at = ?, financial_date = ?, timezone = ?, recurring_rule_id = ?, '
@@ -85,14 +118,14 @@ final class DriftLedgerRepository implements LedgerRepository {
           aggregate.updatedAt.epochMicroseconds,
           aggregate.deletedAt?.epochMicroseconds,
           aggregate.id.value,
-          expected,
+          expectedRevision,
         ]),
         updates: {database.transactions},
       );
       if (changed != 1) {
         throw LedgerRevisionConflict(
           transactionId: aggregate.id,
-          expectedRevision: expected,
+          expectedRevision: expectedRevision,
           actualRevision: actualRevision,
         );
       }
@@ -233,12 +266,22 @@ final class DriftLedgerRepository implements LedgerRepository {
   }
 
   @override
-  Future<LedgerTransaction?> find(
+  Future<LedgerTransaction?> find(EntityId id) =>
+      database.transaction(() => _find(id));
+
+  @override
+  Future<LedgerTransaction?> findActiveForVault(
     EntityId id,
-  ) => database.transaction(() async {
+    EntityId vaultId,
+  ) => database.transaction(() => _find(id, vaultId: vaultId));
+
+  Future<LedgerTransaction?> _find(EntityId id, {EntityId? vaultId}) async {
     final roots = await _rows(
-      'SELECT * FROM transactions WHERE id = ?',
-      [id.value],
+      vaultId == null
+          ? 'SELECT * FROM transactions WHERE id = ?'
+          : 'SELECT * FROM transactions '
+                'WHERE id = ? AND vault_id = ? AND deleted_at IS NULL',
+      vaultId == null ? [id.value] : [id.value, vaultId.value],
       readsFrom: {database.transactions},
     );
     if (roots.isEmpty) return null;
@@ -283,7 +326,7 @@ final class DriftLedgerRepository implements LedgerRepository {
       events,
       tagRows,
     );
-  });
+  }
 
   @override
   Future<List<LedgerTransaction>> listRecentForVault(

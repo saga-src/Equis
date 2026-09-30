@@ -164,7 +164,10 @@ final class DriftTransactionHistoryRepository
     final visible = roots.take(filter.pageSize).toList(growable: false);
     final items = <LedgerTransaction>[];
     for (final root in visible) {
-      final item = await ledger.find(EntityId.parse(root.read<String>('id')));
+      final item = await ledger.findActiveForVault(
+        EntityId.parse(root.read<String>('id')),
+        filter.vaultId,
+      );
       if (item != null) items.add(item);
     }
     final last = visible.isEmpty ? null : visible.last;

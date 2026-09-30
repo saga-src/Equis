@@ -1,0 +1,47 @@
+Banco Central do Brasil - SGS 11: Taxa de juros - Selic
+
+O Equis contém informações do conjunto de dados "Taxa de juros - Selic",
+publicado pelo Banco Central do Brasil/Departamento de Operações do Mercado
+Aberto (BCB/Demab), Sistema Gerenciador de Séries Temporais (SGS), código 11.
+
+Fonte e atribuição:
+Banco Central do Brasil, Sistema Gerenciador de Séries Temporais (SGS).
+https://dadosabertos.bcb.gov.br/pt_BR/dataset/11-taxa-de-juros---selic
+
+Licença da base de dados Selic:
+Open Data Commons Open Database License (ODbL) 1.0.
+O texto integral da licença está disponível em:
+https://opendatacommons.org/licenses/odbl/1-0/
+
+A tabela Selic distribuída pelo Equis também é disponibilizada sob a ODbL
+1.0, incluindo a obrigação de compartilhar bases de dados derivadas sob os
+termos dessa licença. Este aviso e os termos ODbL dizem respeito à base
+Selic; não alteram a licença do software Equis nem atribuem a mesma licença
+a outras séries econômicas.
+
+Transformações feitas pelo Equis:
+- Conversão das datas de DD/MM/AAAA para ISO 8601 (AAAA-MM-DD).
+- Conversão do separador decimal para ponto, preservando valores como texto.
+- Inclusão do código SGS, da unidade, da fonte e da data UTC de coleta.
+- Para a série diária Selic, início e fim de referência são a mesma data.
+- Preservação da unidade original: percentual ao dia. Não se trata de uma
+  taxa anual e este cache não modifica a fórmula contratual do investimento.
+
+Acesso à base em formato legível por máquina:
+A base Selic disponível no cache central pode ser obtida gratuitamente em
+JSON pelo endpoint /functions/v1/economic-series do projeto Supabase
+configurado no Equis, usando POST com um objeto como:
+{"operation":"read","code":11,"from":"2026-01-01","through":"2026-09-30"}
+
+Os campos from e through são inclusivos. Consulte intervalos consecutivos de
+até 366 dias para obter toda a base disponível; through não pode ser futuro.
+O catálogo BCB informa início da série em 1986-06-04. O conteúdo disponível
+no cache depende do progresso da coleta e cada resposta informa atualização,
+fonte e licença. Um intervalo sem observações não comprova ausência na fonte.
+
+A API aceita a credencial pública do projeto ou um token de usuário válido
+no cabeçalho Authorization: Bearer; não exige cofre, carteira ou dados pessoais
+na solicitação. Os limites operacionais de consulta não mudam os direitos
+concedidos pela ODbL. Os dados de origem também podem ser consultados na API
+oficial do BCB, com filtros de datas:
+https://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados?formato=json&dataInicial=01/01/2026&dataFinal=30/09/2026

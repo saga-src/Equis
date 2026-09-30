@@ -82,6 +82,71 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'unapplied account events make current and historical wealth partial',
+    () async {
+      final event = EntityId.generate().value;
+      await database.customStatement(
+        'INSERT INTO sync_quarantine '
+        '(event_id, vault_id, server_version, entity_type, entity_id, entity_revision, '
+        'authenticated_envelope, reason, detected_at) '
+        "VALUES (?, ?, 1, 'transaction', ?, 1, '{}', 'inactive_account', 1)",
+        [event, vaultId.value, EntityId.generate().value],
+      );
+      final partial = await service.report(
+        vaultId: vaultId,
+        currency: CurrencyCode.brl,
+        asOf: LocalDate(2026, 1, 15),
+        historyMonths: 2,
+      );
+      expect(partial.current.hasIncompleteAccounts, isTrue);
+      expect(
+        partial.history.map((point) => point.hasIncompleteAccounts),
+        everyElement(isTrue),
+      );
+      expect(
+        await repository.hasIncompleteAccounts(EntityId.generate()),
+        isFalse,
+      );
+      await database.customStatement(
+        "UPDATE sync_quarantine SET replay_state = 'replayed', replayed_at = 2 WHERE event_id = ?",
+        [event],
+      );
+      final replayed = await service.report(
+        vaultId: vaultId,
+        currency: CurrencyCode.brl,
+        asOf: LocalDate(2026, 1, 15),
+        historyMonths: 2,
+      );
+      expect(replayed.current.hasIncompleteAccounts, isFalse);
+      expect(replayed.current.netWorthMinor, partial.current.netWorthMinor);
+    },
+  );
+
+  test(
+    'closed account is historical and active liability stays visible',
+    () async {
+      await database.customStatement(
+        "UPDATE accounts SET archived = 1, closed_on = '2026-01-16' WHERE name = 'Cash'",
+      );
+      await database.customStatement(
+        "UPDATE account_pockets SET archived = 1 WHERE account_id = "
+        "(SELECT id FROM accounts WHERE name = 'Cash')",
+      );
+      final before = await repository.accountBalances(
+        vaultId,
+        LocalDate(2026, 1, 15),
+      );
+      final onClose = await repository.accountBalances(
+        vaultId,
+        LocalDate(2026, 1, 16),
+      );
+      expect(before.any((row) => row.accountName == 'Cash'), isTrue);
+      expect(onClose.any((row) => row.accountName == 'Cash'), isFalse);
+      expect(onClose.any((row) => row.accountName == 'Loan'), isTrue);
+    },
+  );
+
+  test(
     'net worth subtracts included liabilities and excludes opted-out accounts',
     () async {
       final report = await service.report(

@@ -4,6 +4,7 @@ final class AppConfig {
     required this.supabaseUrl,
     required this.supabaseAnonKey,
     this.localIntelligenceEnabled = true,
+    this.economicSeriesReadEnabled = false,
   });
 
   factory AppConfig.fromEnvironment() {
@@ -18,6 +19,10 @@ final class AppConfig {
         'EQUIS_LOCAL_INTELLIGENCE_ENABLED',
         defaultValue: true,
       ),
+      economicSeriesReadEnabled: bool.fromEnvironment(
+        'EQUIS_ECONOMIC_SERIES_READ_ENABLED',
+        defaultValue: true,
+      ),
     );
   }
 
@@ -25,6 +30,7 @@ final class AppConfig {
   final String supabaseUrl;
   final String supabaseAnonKey;
   final bool localIntelligenceEnabled;
+  final bool economicSeriesReadEnabled;
 
   bool get cloudConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

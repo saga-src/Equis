@@ -72,6 +72,8 @@ final class AccountProfile {
     bool? includeInNetWorth,
     bool? archived,
     LocalDate? closedOn,
+    bool clearClosedOn = false,
+    UtcInstant? deletedAt,
     required UtcInstant at,
   }) => AccountProfile(
     id: id,
@@ -83,11 +85,11 @@ final class AccountProfile {
     includeInNetWorth: includeInNetWorth ?? this.includeInNetWorth,
     archived: archived ?? this.archived,
     openedOn: openedOn,
-    closedOn: closedOn ?? this.closedOn,
+    closedOn: clearClosedOn ? null : closedOn ?? this.closedOn,
     sortOrder: sortOrder,
     revision: revision + 1,
     createdAt: createdAt,
     updatedAt: at,
-    deletedAt: deletedAt,
+    deletedAt: deletedAt ?? this.deletedAt,
   );
 }

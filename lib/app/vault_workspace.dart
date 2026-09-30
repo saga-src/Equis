@@ -11,6 +11,7 @@ import '../infrastructure/security/vault_identity.dart';
 import '../infrastructure/security/secure_string_store.dart';
 import '../application/services/sync_engine.dart';
 import 'providers/local_app_dependencies.dart';
+import '../infrastructure/updates/windows_update_identity.dart';
 
 final class LocalVaultEntry {
   LocalVaultEntry({
@@ -72,7 +73,10 @@ final class VaultWorkspace extends ChangeNotifier {
     SecureStringStore? storage,
     bool cloudEnabled = true,
   }) async {
-    final support = rootDirectory ?? await getApplicationSupportDirectory();
+    final support =
+        rootDirectory ??
+        await windowsUpdateSupportDirectoryRoot() ??
+        await getApplicationSupportDirectory();
     final workspace = VaultWorkspace._(
       rootDirectory ?? Directory('${support.path}/Equis'),
       storage: storage,

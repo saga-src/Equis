@@ -19864,6 +19864,1683 @@ class InvestmentLotsCompanion extends UpdateCompanion<InvestmentLot> {
   }
 }
 
+class FixedIncomeContracts extends Table
+    with TableInfo<FixedIncomeContracts, FixedIncomeContract> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  FixedIncomeContracts(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _lotIdMeta = const VerificationMeta('lotId');
+  late final GeneratedColumn<String> lotId = GeneratedColumn<String>(
+    'lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'PRIMARY KEY',
+  );
+  static const VerificationMeta _principalMeta = const VerificationMeta(
+    'principal',
+  );
+  late final GeneratedColumn<String> principal = GeneratedColumn<String>(
+    'principal',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _productNameMeta = const VerificationMeta(
+    'productName',
+  );
+  late final GeneratedColumn<String> productName = GeneratedColumn<String>(
+    'product_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _issuerNameMeta = const VerificationMeta(
+    'issuerName',
+  );
+  late final GeneratedColumn<String> issuerName = GeneratedColumn<String>(
+    'issuer_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _accrualStartMeta = const VerificationMeta(
+    'accrualStart',
+  );
+  late final GeneratedColumn<String> accrualStart = GeneratedColumn<String>(
+    'accrual_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _maturityOnMeta = const VerificationMeta(
+    'maturityOn',
+  );
+  late final GeneratedColumn<String> maturityOn = GeneratedColumn<String>(
+    'maturity_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _liquidityOnMeta = const VerificationMeta(
+    'liquidityOn',
+  );
+  late final GeneratedColumn<String> liquidityOn = GeneratedColumn<String>(
+    'liquidity_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _remunerationModeMeta = const VerificationMeta(
+    'remunerationMode',
+  );
+  late final GeneratedColumn<String> remunerationMode = GeneratedColumn<String>(
+    'remuneration_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _indexCodeMeta = const VerificationMeta(
+    'indexCode',
+  );
+  late final GeneratedColumn<int> indexCode = GeneratedColumn<int>(
+    'index_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _indexMultiplierMeta = const VerificationMeta(
+    'indexMultiplier',
+  );
+  late final GeneratedColumn<String> indexMultiplier = GeneratedColumn<String>(
+    'index_multiplier',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _annualRateMeta = const VerificationMeta(
+    'annualRate',
+  );
+  late final GeneratedColumn<String> annualRate = GeneratedColumn<String>(
+    'annual_rate',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _annualSpreadMeta = const VerificationMeta(
+    'annualSpread',
+  );
+  late final GeneratedColumn<String> annualSpread = GeneratedColumn<String>(
+    'annual_spread',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _dayCountBasisMeta = const VerificationMeta(
+    'dayCountBasis',
+  );
+  late final GeneratedColumn<int> dayCountBasis = GeneratedColumn<int>(
+    'day_count_basis',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _calendarVersionMeta = const VerificationMeta(
+    'calendarVersion',
+  );
+  late final GeneratedColumn<String> calendarVersion = GeneratedColumn<String>(
+    'calendar_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _publicationLagMonthsMeta =
+      const VerificationMeta('publicationLagMonths');
+  late final GeneratedColumn<int> publicationLagMonths = GeneratedColumn<int>(
+    'publication_lag_months',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _anniversaryDayMeta = const VerificationMeta(
+    'anniversaryDay',
+  );
+  late final GeneratedColumn<int> anniversaryDay = GeneratedColumn<int>(
+    'anniversary_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _updateRuleMeta = const VerificationMeta(
+    'updateRule',
+  );
+  late final GeneratedColumn<String> updateRule = GeneratedColumn<String>(
+    'update_rule',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    lotId,
+    principal,
+    currencyCode,
+    productName,
+    issuerName,
+    accrualStart,
+    maturityOn,
+    liquidityOn,
+    remunerationMode,
+    indexCode,
+    indexMultiplier,
+    annualRate,
+    annualSpread,
+    dayCountBasis,
+    calendarVersion,
+    publicationLagMonths,
+    anniversaryDay,
+    updateRule,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'fixed_income_contracts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FixedIncomeContract> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('lot_id')) {
+      context.handle(
+        _lotIdMeta,
+        lotId.isAcceptableOrUnknown(data['lot_id']!, _lotIdMeta),
+      );
+    }
+    if (data.containsKey('principal')) {
+      context.handle(
+        _principalMeta,
+        principal.isAcceptableOrUnknown(data['principal']!, _principalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_principalMeta);
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyCodeMeta);
+    }
+    if (data.containsKey('product_name')) {
+      context.handle(
+        _productNameMeta,
+        productName.isAcceptableOrUnknown(
+          data['product_name']!,
+          _productNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_productNameMeta);
+    }
+    if (data.containsKey('issuer_name')) {
+      context.handle(
+        _issuerNameMeta,
+        issuerName.isAcceptableOrUnknown(data['issuer_name']!, _issuerNameMeta),
+      );
+    }
+    if (data.containsKey('accrual_start')) {
+      context.handle(
+        _accrualStartMeta,
+        accrualStart.isAcceptableOrUnknown(
+          data['accrual_start']!,
+          _accrualStartMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_accrualStartMeta);
+    }
+    if (data.containsKey('maturity_on')) {
+      context.handle(
+        _maturityOnMeta,
+        maturityOn.isAcceptableOrUnknown(data['maturity_on']!, _maturityOnMeta),
+      );
+    }
+    if (data.containsKey('liquidity_on')) {
+      context.handle(
+        _liquidityOnMeta,
+        liquidityOn.isAcceptableOrUnknown(
+          data['liquidity_on']!,
+          _liquidityOnMeta,
+        ),
+      );
+    }
+    if (data.containsKey('remuneration_mode')) {
+      context.handle(
+        _remunerationModeMeta,
+        remunerationMode.isAcceptableOrUnknown(
+          data['remuneration_mode']!,
+          _remunerationModeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_remunerationModeMeta);
+    }
+    if (data.containsKey('index_code')) {
+      context.handle(
+        _indexCodeMeta,
+        indexCode.isAcceptableOrUnknown(data['index_code']!, _indexCodeMeta),
+      );
+    }
+    if (data.containsKey('index_multiplier')) {
+      context.handle(
+        _indexMultiplierMeta,
+        indexMultiplier.isAcceptableOrUnknown(
+          data['index_multiplier']!,
+          _indexMultiplierMeta,
+        ),
+      );
+    }
+    if (data.containsKey('annual_rate')) {
+      context.handle(
+        _annualRateMeta,
+        annualRate.isAcceptableOrUnknown(data['annual_rate']!, _annualRateMeta),
+      );
+    }
+    if (data.containsKey('annual_spread')) {
+      context.handle(
+        _annualSpreadMeta,
+        annualSpread.isAcceptableOrUnknown(
+          data['annual_spread']!,
+          _annualSpreadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('day_count_basis')) {
+      context.handle(
+        _dayCountBasisMeta,
+        dayCountBasis.isAcceptableOrUnknown(
+          data['day_count_basis']!,
+          _dayCountBasisMeta,
+        ),
+      );
+    }
+    if (data.containsKey('calendar_version')) {
+      context.handle(
+        _calendarVersionMeta,
+        calendarVersion.isAcceptableOrUnknown(
+          data['calendar_version']!,
+          _calendarVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('publication_lag_months')) {
+      context.handle(
+        _publicationLagMonthsMeta,
+        publicationLagMonths.isAcceptableOrUnknown(
+          data['publication_lag_months']!,
+          _publicationLagMonthsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('anniversary_day')) {
+      context.handle(
+        _anniversaryDayMeta,
+        anniversaryDay.isAcceptableOrUnknown(
+          data['anniversary_day']!,
+          _anniversaryDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('update_rule')) {
+      context.handle(
+        _updateRuleMeta,
+        updateRule.isAcceptableOrUnknown(data['update_rule']!, _updateRuleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updateRuleMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {lotId};
+  @override
+  FixedIncomeContract map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FixedIncomeContract(
+      lotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_id'],
+      ),
+      principal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}principal'],
+      )!,
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
+      productName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_name'],
+      )!,
+      issuerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}issuer_name'],
+      ),
+      accrualStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}accrual_start'],
+      )!,
+      maturityOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}maturity_on'],
+      ),
+      liquidityOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}liquidity_on'],
+      ),
+      remunerationMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remuneration_mode'],
+      )!,
+      indexCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}index_code'],
+      ),
+      indexMultiplier: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}index_multiplier'],
+      ),
+      annualRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}annual_rate'],
+      ),
+      annualSpread: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}annual_spread'],
+      ),
+      dayCountBasis: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}day_count_basis'],
+      ),
+      calendarVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}calendar_version'],
+      ),
+      publicationLagMonths: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}publication_lag_months'],
+      )!,
+      anniversaryDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}anniversary_day'],
+      ),
+      updateRule: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}update_rule'],
+      )!,
+    );
+  }
+
+  @override
+  FixedIncomeContracts createAlias(String alias) {
+    return FixedIncomeContracts(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'FOREIGN KEY(lot_id)REFERENCES investment_lots(id)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class FixedIncomeContract extends DataClass
+    implements Insertable<FixedIncomeContract> {
+  final String? lotId;
+  final String principal;
+  final String currencyCode;
+  final String productName;
+  final String? issuerName;
+  final String accrualStart;
+  final String? maturityOn;
+  final String? liquidityOn;
+  final String remunerationMode;
+  final int? indexCode;
+  final String? indexMultiplier;
+  final String? annualRate;
+  final String? annualSpread;
+  final int? dayCountBasis;
+  final String? calendarVersion;
+  final int publicationLagMonths;
+  final int? anniversaryDay;
+  final String updateRule;
+  const FixedIncomeContract({
+    this.lotId,
+    required this.principal,
+    required this.currencyCode,
+    required this.productName,
+    this.issuerName,
+    required this.accrualStart,
+    this.maturityOn,
+    this.liquidityOn,
+    required this.remunerationMode,
+    this.indexCode,
+    this.indexMultiplier,
+    this.annualRate,
+    this.annualSpread,
+    this.dayCountBasis,
+    this.calendarVersion,
+    required this.publicationLagMonths,
+    this.anniversaryDay,
+    required this.updateRule,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (!nullToAbsent || lotId != null) {
+      map['lot_id'] = Variable<String>(lotId);
+    }
+    map['principal'] = Variable<String>(principal);
+    map['currency_code'] = Variable<String>(currencyCode);
+    map['product_name'] = Variable<String>(productName);
+    if (!nullToAbsent || issuerName != null) {
+      map['issuer_name'] = Variable<String>(issuerName);
+    }
+    map['accrual_start'] = Variable<String>(accrualStart);
+    if (!nullToAbsent || maturityOn != null) {
+      map['maturity_on'] = Variable<String>(maturityOn);
+    }
+    if (!nullToAbsent || liquidityOn != null) {
+      map['liquidity_on'] = Variable<String>(liquidityOn);
+    }
+    map['remuneration_mode'] = Variable<String>(remunerationMode);
+    if (!nullToAbsent || indexCode != null) {
+      map['index_code'] = Variable<int>(indexCode);
+    }
+    if (!nullToAbsent || indexMultiplier != null) {
+      map['index_multiplier'] = Variable<String>(indexMultiplier);
+    }
+    if (!nullToAbsent || annualRate != null) {
+      map['annual_rate'] = Variable<String>(annualRate);
+    }
+    if (!nullToAbsent || annualSpread != null) {
+      map['annual_spread'] = Variable<String>(annualSpread);
+    }
+    if (!nullToAbsent || dayCountBasis != null) {
+      map['day_count_basis'] = Variable<int>(dayCountBasis);
+    }
+    if (!nullToAbsent || calendarVersion != null) {
+      map['calendar_version'] = Variable<String>(calendarVersion);
+    }
+    map['publication_lag_months'] = Variable<int>(publicationLagMonths);
+    if (!nullToAbsent || anniversaryDay != null) {
+      map['anniversary_day'] = Variable<int>(anniversaryDay);
+    }
+    map['update_rule'] = Variable<String>(updateRule);
+    return map;
+  }
+
+  FixedIncomeContractsCompanion toCompanion(bool nullToAbsent) {
+    return FixedIncomeContractsCompanion(
+      lotId: lotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotId),
+      principal: Value(principal),
+      currencyCode: Value(currencyCode),
+      productName: Value(productName),
+      issuerName: issuerName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(issuerName),
+      accrualStart: Value(accrualStart),
+      maturityOn: maturityOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maturityOn),
+      liquidityOn: liquidityOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(liquidityOn),
+      remunerationMode: Value(remunerationMode),
+      indexCode: indexCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(indexCode),
+      indexMultiplier: indexMultiplier == null && nullToAbsent
+          ? const Value.absent()
+          : Value(indexMultiplier),
+      annualRate: annualRate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(annualRate),
+      annualSpread: annualSpread == null && nullToAbsent
+          ? const Value.absent()
+          : Value(annualSpread),
+      dayCountBasis: dayCountBasis == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dayCountBasis),
+      calendarVersion: calendarVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(calendarVersion),
+      publicationLagMonths: Value(publicationLagMonths),
+      anniversaryDay: anniversaryDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(anniversaryDay),
+      updateRule: Value(updateRule),
+    );
+  }
+
+  factory FixedIncomeContract.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FixedIncomeContract(
+      lotId: serializer.fromJson<String?>(json['lot_id']),
+      principal: serializer.fromJson<String>(json['principal']),
+      currencyCode: serializer.fromJson<String>(json['currency_code']),
+      productName: serializer.fromJson<String>(json['product_name']),
+      issuerName: serializer.fromJson<String?>(json['issuer_name']),
+      accrualStart: serializer.fromJson<String>(json['accrual_start']),
+      maturityOn: serializer.fromJson<String?>(json['maturity_on']),
+      liquidityOn: serializer.fromJson<String?>(json['liquidity_on']),
+      remunerationMode: serializer.fromJson<String>(json['remuneration_mode']),
+      indexCode: serializer.fromJson<int?>(json['index_code']),
+      indexMultiplier: serializer.fromJson<String?>(json['index_multiplier']),
+      annualRate: serializer.fromJson<String?>(json['annual_rate']),
+      annualSpread: serializer.fromJson<String?>(json['annual_spread']),
+      dayCountBasis: serializer.fromJson<int?>(json['day_count_basis']),
+      calendarVersion: serializer.fromJson<String?>(json['calendar_version']),
+      publicationLagMonths: serializer.fromJson<int>(
+        json['publication_lag_months'],
+      ),
+      anniversaryDay: serializer.fromJson<int?>(json['anniversary_day']),
+      updateRule: serializer.fromJson<String>(json['update_rule']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'lot_id': serializer.toJson<String?>(lotId),
+      'principal': serializer.toJson<String>(principal),
+      'currency_code': serializer.toJson<String>(currencyCode),
+      'product_name': serializer.toJson<String>(productName),
+      'issuer_name': serializer.toJson<String?>(issuerName),
+      'accrual_start': serializer.toJson<String>(accrualStart),
+      'maturity_on': serializer.toJson<String?>(maturityOn),
+      'liquidity_on': serializer.toJson<String?>(liquidityOn),
+      'remuneration_mode': serializer.toJson<String>(remunerationMode),
+      'index_code': serializer.toJson<int?>(indexCode),
+      'index_multiplier': serializer.toJson<String?>(indexMultiplier),
+      'annual_rate': serializer.toJson<String?>(annualRate),
+      'annual_spread': serializer.toJson<String?>(annualSpread),
+      'day_count_basis': serializer.toJson<int?>(dayCountBasis),
+      'calendar_version': serializer.toJson<String?>(calendarVersion),
+      'publication_lag_months': serializer.toJson<int>(publicationLagMonths),
+      'anniversary_day': serializer.toJson<int?>(anniversaryDay),
+      'update_rule': serializer.toJson<String>(updateRule),
+    };
+  }
+
+  FixedIncomeContract copyWith({
+    Value<String?> lotId = const Value.absent(),
+    String? principal,
+    String? currencyCode,
+    String? productName,
+    Value<String?> issuerName = const Value.absent(),
+    String? accrualStart,
+    Value<String?> maturityOn = const Value.absent(),
+    Value<String?> liquidityOn = const Value.absent(),
+    String? remunerationMode,
+    Value<int?> indexCode = const Value.absent(),
+    Value<String?> indexMultiplier = const Value.absent(),
+    Value<String?> annualRate = const Value.absent(),
+    Value<String?> annualSpread = const Value.absent(),
+    Value<int?> dayCountBasis = const Value.absent(),
+    Value<String?> calendarVersion = const Value.absent(),
+    int? publicationLagMonths,
+    Value<int?> anniversaryDay = const Value.absent(),
+    String? updateRule,
+  }) => FixedIncomeContract(
+    lotId: lotId.present ? lotId.value : this.lotId,
+    principal: principal ?? this.principal,
+    currencyCode: currencyCode ?? this.currencyCode,
+    productName: productName ?? this.productName,
+    issuerName: issuerName.present ? issuerName.value : this.issuerName,
+    accrualStart: accrualStart ?? this.accrualStart,
+    maturityOn: maturityOn.present ? maturityOn.value : this.maturityOn,
+    liquidityOn: liquidityOn.present ? liquidityOn.value : this.liquidityOn,
+    remunerationMode: remunerationMode ?? this.remunerationMode,
+    indexCode: indexCode.present ? indexCode.value : this.indexCode,
+    indexMultiplier: indexMultiplier.present
+        ? indexMultiplier.value
+        : this.indexMultiplier,
+    annualRate: annualRate.present ? annualRate.value : this.annualRate,
+    annualSpread: annualSpread.present ? annualSpread.value : this.annualSpread,
+    dayCountBasis: dayCountBasis.present
+        ? dayCountBasis.value
+        : this.dayCountBasis,
+    calendarVersion: calendarVersion.present
+        ? calendarVersion.value
+        : this.calendarVersion,
+    publicationLagMonths: publicationLagMonths ?? this.publicationLagMonths,
+    anniversaryDay: anniversaryDay.present
+        ? anniversaryDay.value
+        : this.anniversaryDay,
+    updateRule: updateRule ?? this.updateRule,
+  );
+  FixedIncomeContract copyWithCompanion(FixedIncomeContractsCompanion data) {
+    return FixedIncomeContract(
+      lotId: data.lotId.present ? data.lotId.value : this.lotId,
+      principal: data.principal.present ? data.principal.value : this.principal,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
+      productName: data.productName.present
+          ? data.productName.value
+          : this.productName,
+      issuerName: data.issuerName.present
+          ? data.issuerName.value
+          : this.issuerName,
+      accrualStart: data.accrualStart.present
+          ? data.accrualStart.value
+          : this.accrualStart,
+      maturityOn: data.maturityOn.present
+          ? data.maturityOn.value
+          : this.maturityOn,
+      liquidityOn: data.liquidityOn.present
+          ? data.liquidityOn.value
+          : this.liquidityOn,
+      remunerationMode: data.remunerationMode.present
+          ? data.remunerationMode.value
+          : this.remunerationMode,
+      indexCode: data.indexCode.present ? data.indexCode.value : this.indexCode,
+      indexMultiplier: data.indexMultiplier.present
+          ? data.indexMultiplier.value
+          : this.indexMultiplier,
+      annualRate: data.annualRate.present
+          ? data.annualRate.value
+          : this.annualRate,
+      annualSpread: data.annualSpread.present
+          ? data.annualSpread.value
+          : this.annualSpread,
+      dayCountBasis: data.dayCountBasis.present
+          ? data.dayCountBasis.value
+          : this.dayCountBasis,
+      calendarVersion: data.calendarVersion.present
+          ? data.calendarVersion.value
+          : this.calendarVersion,
+      publicationLagMonths: data.publicationLagMonths.present
+          ? data.publicationLagMonths.value
+          : this.publicationLagMonths,
+      anniversaryDay: data.anniversaryDay.present
+          ? data.anniversaryDay.value
+          : this.anniversaryDay,
+      updateRule: data.updateRule.present
+          ? data.updateRule.value
+          : this.updateRule,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FixedIncomeContract(')
+          ..write('lotId: $lotId, ')
+          ..write('principal: $principal, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('productName: $productName, ')
+          ..write('issuerName: $issuerName, ')
+          ..write('accrualStart: $accrualStart, ')
+          ..write('maturityOn: $maturityOn, ')
+          ..write('liquidityOn: $liquidityOn, ')
+          ..write('remunerationMode: $remunerationMode, ')
+          ..write('indexCode: $indexCode, ')
+          ..write('indexMultiplier: $indexMultiplier, ')
+          ..write('annualRate: $annualRate, ')
+          ..write('annualSpread: $annualSpread, ')
+          ..write('dayCountBasis: $dayCountBasis, ')
+          ..write('calendarVersion: $calendarVersion, ')
+          ..write('publicationLagMonths: $publicationLagMonths, ')
+          ..write('anniversaryDay: $anniversaryDay, ')
+          ..write('updateRule: $updateRule')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    lotId,
+    principal,
+    currencyCode,
+    productName,
+    issuerName,
+    accrualStart,
+    maturityOn,
+    liquidityOn,
+    remunerationMode,
+    indexCode,
+    indexMultiplier,
+    annualRate,
+    annualSpread,
+    dayCountBasis,
+    calendarVersion,
+    publicationLagMonths,
+    anniversaryDay,
+    updateRule,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FixedIncomeContract &&
+          other.lotId == this.lotId &&
+          other.principal == this.principal &&
+          other.currencyCode == this.currencyCode &&
+          other.productName == this.productName &&
+          other.issuerName == this.issuerName &&
+          other.accrualStart == this.accrualStart &&
+          other.maturityOn == this.maturityOn &&
+          other.liquidityOn == this.liquidityOn &&
+          other.remunerationMode == this.remunerationMode &&
+          other.indexCode == this.indexCode &&
+          other.indexMultiplier == this.indexMultiplier &&
+          other.annualRate == this.annualRate &&
+          other.annualSpread == this.annualSpread &&
+          other.dayCountBasis == this.dayCountBasis &&
+          other.calendarVersion == this.calendarVersion &&
+          other.publicationLagMonths == this.publicationLagMonths &&
+          other.anniversaryDay == this.anniversaryDay &&
+          other.updateRule == this.updateRule);
+}
+
+class FixedIncomeContractsCompanion
+    extends UpdateCompanion<FixedIncomeContract> {
+  final Value<String?> lotId;
+  final Value<String> principal;
+  final Value<String> currencyCode;
+  final Value<String> productName;
+  final Value<String?> issuerName;
+  final Value<String> accrualStart;
+  final Value<String?> maturityOn;
+  final Value<String?> liquidityOn;
+  final Value<String> remunerationMode;
+  final Value<int?> indexCode;
+  final Value<String?> indexMultiplier;
+  final Value<String?> annualRate;
+  final Value<String?> annualSpread;
+  final Value<int?> dayCountBasis;
+  final Value<String?> calendarVersion;
+  final Value<int> publicationLagMonths;
+  final Value<int?> anniversaryDay;
+  final Value<String> updateRule;
+  final Value<int> rowid;
+  const FixedIncomeContractsCompanion({
+    this.lotId = const Value.absent(),
+    this.principal = const Value.absent(),
+    this.currencyCode = const Value.absent(),
+    this.productName = const Value.absent(),
+    this.issuerName = const Value.absent(),
+    this.accrualStart = const Value.absent(),
+    this.maturityOn = const Value.absent(),
+    this.liquidityOn = const Value.absent(),
+    this.remunerationMode = const Value.absent(),
+    this.indexCode = const Value.absent(),
+    this.indexMultiplier = const Value.absent(),
+    this.annualRate = const Value.absent(),
+    this.annualSpread = const Value.absent(),
+    this.dayCountBasis = const Value.absent(),
+    this.calendarVersion = const Value.absent(),
+    this.publicationLagMonths = const Value.absent(),
+    this.anniversaryDay = const Value.absent(),
+    this.updateRule = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FixedIncomeContractsCompanion.insert({
+    this.lotId = const Value.absent(),
+    required String principal,
+    required String currencyCode,
+    required String productName,
+    this.issuerName = const Value.absent(),
+    required String accrualStart,
+    this.maturityOn = const Value.absent(),
+    this.liquidityOn = const Value.absent(),
+    required String remunerationMode,
+    this.indexCode = const Value.absent(),
+    this.indexMultiplier = const Value.absent(),
+    this.annualRate = const Value.absent(),
+    this.annualSpread = const Value.absent(),
+    this.dayCountBasis = const Value.absent(),
+    this.calendarVersion = const Value.absent(),
+    this.publicationLagMonths = const Value.absent(),
+    this.anniversaryDay = const Value.absent(),
+    required String updateRule,
+    this.rowid = const Value.absent(),
+  }) : principal = Value(principal),
+       currencyCode = Value(currencyCode),
+       productName = Value(productName),
+       accrualStart = Value(accrualStart),
+       remunerationMode = Value(remunerationMode),
+       updateRule = Value(updateRule);
+  static Insertable<FixedIncomeContract> custom({
+    Expression<String>? lotId,
+    Expression<String>? principal,
+    Expression<String>? currencyCode,
+    Expression<String>? productName,
+    Expression<String>? issuerName,
+    Expression<String>? accrualStart,
+    Expression<String>? maturityOn,
+    Expression<String>? liquidityOn,
+    Expression<String>? remunerationMode,
+    Expression<int>? indexCode,
+    Expression<String>? indexMultiplier,
+    Expression<String>? annualRate,
+    Expression<String>? annualSpread,
+    Expression<int>? dayCountBasis,
+    Expression<String>? calendarVersion,
+    Expression<int>? publicationLagMonths,
+    Expression<int>? anniversaryDay,
+    Expression<String>? updateRule,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (lotId != null) 'lot_id': lotId,
+      if (principal != null) 'principal': principal,
+      if (currencyCode != null) 'currency_code': currencyCode,
+      if (productName != null) 'product_name': productName,
+      if (issuerName != null) 'issuer_name': issuerName,
+      if (accrualStart != null) 'accrual_start': accrualStart,
+      if (maturityOn != null) 'maturity_on': maturityOn,
+      if (liquidityOn != null) 'liquidity_on': liquidityOn,
+      if (remunerationMode != null) 'remuneration_mode': remunerationMode,
+      if (indexCode != null) 'index_code': indexCode,
+      if (indexMultiplier != null) 'index_multiplier': indexMultiplier,
+      if (annualRate != null) 'annual_rate': annualRate,
+      if (annualSpread != null) 'annual_spread': annualSpread,
+      if (dayCountBasis != null) 'day_count_basis': dayCountBasis,
+      if (calendarVersion != null) 'calendar_version': calendarVersion,
+      if (publicationLagMonths != null)
+        'publication_lag_months': publicationLagMonths,
+      if (anniversaryDay != null) 'anniversary_day': anniversaryDay,
+      if (updateRule != null) 'update_rule': updateRule,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FixedIncomeContractsCompanion copyWith({
+    Value<String?>? lotId,
+    Value<String>? principal,
+    Value<String>? currencyCode,
+    Value<String>? productName,
+    Value<String?>? issuerName,
+    Value<String>? accrualStart,
+    Value<String?>? maturityOn,
+    Value<String?>? liquidityOn,
+    Value<String>? remunerationMode,
+    Value<int?>? indexCode,
+    Value<String?>? indexMultiplier,
+    Value<String?>? annualRate,
+    Value<String?>? annualSpread,
+    Value<int?>? dayCountBasis,
+    Value<String?>? calendarVersion,
+    Value<int>? publicationLagMonths,
+    Value<int?>? anniversaryDay,
+    Value<String>? updateRule,
+    Value<int>? rowid,
+  }) {
+    return FixedIncomeContractsCompanion(
+      lotId: lotId ?? this.lotId,
+      principal: principal ?? this.principal,
+      currencyCode: currencyCode ?? this.currencyCode,
+      productName: productName ?? this.productName,
+      issuerName: issuerName ?? this.issuerName,
+      accrualStart: accrualStart ?? this.accrualStart,
+      maturityOn: maturityOn ?? this.maturityOn,
+      liquidityOn: liquidityOn ?? this.liquidityOn,
+      remunerationMode: remunerationMode ?? this.remunerationMode,
+      indexCode: indexCode ?? this.indexCode,
+      indexMultiplier: indexMultiplier ?? this.indexMultiplier,
+      annualRate: annualRate ?? this.annualRate,
+      annualSpread: annualSpread ?? this.annualSpread,
+      dayCountBasis: dayCountBasis ?? this.dayCountBasis,
+      calendarVersion: calendarVersion ?? this.calendarVersion,
+      publicationLagMonths: publicationLagMonths ?? this.publicationLagMonths,
+      anniversaryDay: anniversaryDay ?? this.anniversaryDay,
+      updateRule: updateRule ?? this.updateRule,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (lotId.present) {
+      map['lot_id'] = Variable<String>(lotId.value);
+    }
+    if (principal.present) {
+      map['principal'] = Variable<String>(principal.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
+    }
+    if (productName.present) {
+      map['product_name'] = Variable<String>(productName.value);
+    }
+    if (issuerName.present) {
+      map['issuer_name'] = Variable<String>(issuerName.value);
+    }
+    if (accrualStart.present) {
+      map['accrual_start'] = Variable<String>(accrualStart.value);
+    }
+    if (maturityOn.present) {
+      map['maturity_on'] = Variable<String>(maturityOn.value);
+    }
+    if (liquidityOn.present) {
+      map['liquidity_on'] = Variable<String>(liquidityOn.value);
+    }
+    if (remunerationMode.present) {
+      map['remuneration_mode'] = Variable<String>(remunerationMode.value);
+    }
+    if (indexCode.present) {
+      map['index_code'] = Variable<int>(indexCode.value);
+    }
+    if (indexMultiplier.present) {
+      map['index_multiplier'] = Variable<String>(indexMultiplier.value);
+    }
+    if (annualRate.present) {
+      map['annual_rate'] = Variable<String>(annualRate.value);
+    }
+    if (annualSpread.present) {
+      map['annual_spread'] = Variable<String>(annualSpread.value);
+    }
+    if (dayCountBasis.present) {
+      map['day_count_basis'] = Variable<int>(dayCountBasis.value);
+    }
+    if (calendarVersion.present) {
+      map['calendar_version'] = Variable<String>(calendarVersion.value);
+    }
+    if (publicationLagMonths.present) {
+      map['publication_lag_months'] = Variable<int>(publicationLagMonths.value);
+    }
+    if (anniversaryDay.present) {
+      map['anniversary_day'] = Variable<int>(anniversaryDay.value);
+    }
+    if (updateRule.present) {
+      map['update_rule'] = Variable<String>(updateRule.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FixedIncomeContractsCompanion(')
+          ..write('lotId: $lotId, ')
+          ..write('principal: $principal, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('productName: $productName, ')
+          ..write('issuerName: $issuerName, ')
+          ..write('accrualStart: $accrualStart, ')
+          ..write('maturityOn: $maturityOn, ')
+          ..write('liquidityOn: $liquidityOn, ')
+          ..write('remunerationMode: $remunerationMode, ')
+          ..write('indexCode: $indexCode, ')
+          ..write('indexMultiplier: $indexMultiplier, ')
+          ..write('annualRate: $annualRate, ')
+          ..write('annualSpread: $annualSpread, ')
+          ..write('dayCountBasis: $dayCountBasis, ')
+          ..write('calendarVersion: $calendarVersion, ')
+          ..write('publicationLagMonths: $publicationLagMonths, ')
+          ..write('anniversaryDay: $anniversaryDay, ')
+          ..write('updateRule: $updateRule, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class FixedIncomeManualValues extends Table
+    with TableInfo<FixedIncomeManualValues, FixedIncomeManualValue> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  FixedIncomeManualValues(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'PRIMARY KEY',
+  );
+  static const VerificationMeta _lotIdMeta = const VerificationMeta('lotId');
+  late final GeneratedColumn<String> lotId = GeneratedColumn<String>(
+    'lot_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _valueDateMeta = const VerificationMeta(
+    'valueDate',
+  );
+  late final GeneratedColumn<String> valueDate = GeneratedColumn<String>(
+    'value_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _amountMinorMeta = const VerificationMeta(
+    'amountMinor',
+  );
+  late final GeneratedColumn<int> amountMinor = GeneratedColumn<int>(
+    'amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _recordedAtMeta = const VerificationMeta(
+    'recordedAt',
+  );
+  late final GeneratedColumn<int> recordedAt = GeneratedColumn<int>(
+    'recorded_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _removedAtMeta = const VerificationMeta(
+    'removedAt',
+  );
+  late final GeneratedColumn<int> removedAt = GeneratedColumn<int>(
+    'removed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _disposalFingerprintMeta =
+      const VerificationMeta('disposalFingerprint');
+  late final GeneratedColumn<String> disposalFingerprint =
+      GeneratedColumn<String>(
+        'disposal_fingerprint',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        $customConstraints: '',
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    lotId,
+    valueDate,
+    amountMinor,
+    currencyCode,
+    notes,
+    recordedAt,
+    removedAt,
+    disposalFingerprint,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'fixed_income_manual_values';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FixedIncomeManualValue> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('lot_id')) {
+      context.handle(
+        _lotIdMeta,
+        lotId.isAcceptableOrUnknown(data['lot_id']!, _lotIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lotIdMeta);
+    }
+    if (data.containsKey('value_date')) {
+      context.handle(
+        _valueDateMeta,
+        valueDate.isAcceptableOrUnknown(data['value_date']!, _valueDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueDateMeta);
+    }
+    if (data.containsKey('amount_minor')) {
+      context.handle(
+        _amountMinorMeta,
+        amountMinor.isAcceptableOrUnknown(
+          data['amount_minor']!,
+          _amountMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMinorMeta);
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyCodeMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('recorded_at')) {
+      context.handle(
+        _recordedAtMeta,
+        recordedAt.isAcceptableOrUnknown(data['recorded_at']!, _recordedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_recordedAtMeta);
+    }
+    if (data.containsKey('removed_at')) {
+      context.handle(
+        _removedAtMeta,
+        removedAt.isAcceptableOrUnknown(data['removed_at']!, _removedAtMeta),
+      );
+    }
+    if (data.containsKey('disposal_fingerprint')) {
+      context.handle(
+        _disposalFingerprintMeta,
+        disposalFingerprint.isAcceptableOrUnknown(
+          data['disposal_fingerprint']!,
+          _disposalFingerprintMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FixedIncomeManualValue map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FixedIncomeManualValue(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      ),
+      lotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_id'],
+      )!,
+      valueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value_date'],
+      )!,
+      amountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_minor'],
+      )!,
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      recordedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recorded_at'],
+      )!,
+      removedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}removed_at'],
+      ),
+      disposalFingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}disposal_fingerprint'],
+      ),
+    );
+  }
+
+  @override
+  FixedIncomeManualValues createAlias(String alias) {
+    return FixedIncomeManualValues(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'FOREIGN KEY(lot_id)REFERENCES investment_lots(id)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class FixedIncomeManualValue extends DataClass
+    implements Insertable<FixedIncomeManualValue> {
+  final String? id;
+  final String lotId;
+  final String valueDate;
+  final int amountMinor;
+  final String currencyCode;
+  final String? notes;
+  final int recordedAt;
+  final int? removedAt;
+  final String? disposalFingerprint;
+  const FixedIncomeManualValue({
+    this.id,
+    required this.lotId,
+    required this.valueDate,
+    required this.amountMinor,
+    required this.currencyCode,
+    this.notes,
+    required this.recordedAt,
+    this.removedAt,
+    this.disposalFingerprint,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (!nullToAbsent || id != null) {
+      map['id'] = Variable<String>(id);
+    }
+    map['lot_id'] = Variable<String>(lotId);
+    map['value_date'] = Variable<String>(valueDate);
+    map['amount_minor'] = Variable<int>(amountMinor);
+    map['currency_code'] = Variable<String>(currencyCode);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['recorded_at'] = Variable<int>(recordedAt);
+    if (!nullToAbsent || removedAt != null) {
+      map['removed_at'] = Variable<int>(removedAt);
+    }
+    if (!nullToAbsent || disposalFingerprint != null) {
+      map['disposal_fingerprint'] = Variable<String>(disposalFingerprint);
+    }
+    return map;
+  }
+
+  FixedIncomeManualValuesCompanion toCompanion(bool nullToAbsent) {
+    return FixedIncomeManualValuesCompanion(
+      id: id == null && nullToAbsent ? const Value.absent() : Value(id),
+      lotId: Value(lotId),
+      valueDate: Value(valueDate),
+      amountMinor: Value(amountMinor),
+      currencyCode: Value(currencyCode),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      recordedAt: Value(recordedAt),
+      removedAt: removedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(removedAt),
+      disposalFingerprint: disposalFingerprint == null && nullToAbsent
+          ? const Value.absent()
+          : Value(disposalFingerprint),
+    );
+  }
+
+  factory FixedIncomeManualValue.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FixedIncomeManualValue(
+      id: serializer.fromJson<String?>(json['id']),
+      lotId: serializer.fromJson<String>(json['lot_id']),
+      valueDate: serializer.fromJson<String>(json['value_date']),
+      amountMinor: serializer.fromJson<int>(json['amount_minor']),
+      currencyCode: serializer.fromJson<String>(json['currency_code']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      recordedAt: serializer.fromJson<int>(json['recorded_at']),
+      removedAt: serializer.fromJson<int?>(json['removed_at']),
+      disposalFingerprint: serializer.fromJson<String?>(
+        json['disposal_fingerprint'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String?>(id),
+      'lot_id': serializer.toJson<String>(lotId),
+      'value_date': serializer.toJson<String>(valueDate),
+      'amount_minor': serializer.toJson<int>(amountMinor),
+      'currency_code': serializer.toJson<String>(currencyCode),
+      'notes': serializer.toJson<String?>(notes),
+      'recorded_at': serializer.toJson<int>(recordedAt),
+      'removed_at': serializer.toJson<int?>(removedAt),
+      'disposal_fingerprint': serializer.toJson<String?>(disposalFingerprint),
+    };
+  }
+
+  FixedIncomeManualValue copyWith({
+    Value<String?> id = const Value.absent(),
+    String? lotId,
+    String? valueDate,
+    int? amountMinor,
+    String? currencyCode,
+    Value<String?> notes = const Value.absent(),
+    int? recordedAt,
+    Value<int?> removedAt = const Value.absent(),
+    Value<String?> disposalFingerprint = const Value.absent(),
+  }) => FixedIncomeManualValue(
+    id: id.present ? id.value : this.id,
+    lotId: lotId ?? this.lotId,
+    valueDate: valueDate ?? this.valueDate,
+    amountMinor: amountMinor ?? this.amountMinor,
+    currencyCode: currencyCode ?? this.currencyCode,
+    notes: notes.present ? notes.value : this.notes,
+    recordedAt: recordedAt ?? this.recordedAt,
+    removedAt: removedAt.present ? removedAt.value : this.removedAt,
+    disposalFingerprint: disposalFingerprint.present
+        ? disposalFingerprint.value
+        : this.disposalFingerprint,
+  );
+  FixedIncomeManualValue copyWithCompanion(
+    FixedIncomeManualValuesCompanion data,
+  ) {
+    return FixedIncomeManualValue(
+      id: data.id.present ? data.id.value : this.id,
+      lotId: data.lotId.present ? data.lotId.value : this.lotId,
+      valueDate: data.valueDate.present ? data.valueDate.value : this.valueDate,
+      amountMinor: data.amountMinor.present
+          ? data.amountMinor.value
+          : this.amountMinor,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      recordedAt: data.recordedAt.present
+          ? data.recordedAt.value
+          : this.recordedAt,
+      removedAt: data.removedAt.present ? data.removedAt.value : this.removedAt,
+      disposalFingerprint: data.disposalFingerprint.present
+          ? data.disposalFingerprint.value
+          : this.disposalFingerprint,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FixedIncomeManualValue(')
+          ..write('id: $id, ')
+          ..write('lotId: $lotId, ')
+          ..write('valueDate: $valueDate, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('notes: $notes, ')
+          ..write('recordedAt: $recordedAt, ')
+          ..write('removedAt: $removedAt, ')
+          ..write('disposalFingerprint: $disposalFingerprint')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    lotId,
+    valueDate,
+    amountMinor,
+    currencyCode,
+    notes,
+    recordedAt,
+    removedAt,
+    disposalFingerprint,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FixedIncomeManualValue &&
+          other.id == this.id &&
+          other.lotId == this.lotId &&
+          other.valueDate == this.valueDate &&
+          other.amountMinor == this.amountMinor &&
+          other.currencyCode == this.currencyCode &&
+          other.notes == this.notes &&
+          other.recordedAt == this.recordedAt &&
+          other.removedAt == this.removedAt &&
+          other.disposalFingerprint == this.disposalFingerprint);
+}
+
+class FixedIncomeManualValuesCompanion
+    extends UpdateCompanion<FixedIncomeManualValue> {
+  final Value<String?> id;
+  final Value<String> lotId;
+  final Value<String> valueDate;
+  final Value<int> amountMinor;
+  final Value<String> currencyCode;
+  final Value<String?> notes;
+  final Value<int> recordedAt;
+  final Value<int?> removedAt;
+  final Value<String?> disposalFingerprint;
+  final Value<int> rowid;
+  const FixedIncomeManualValuesCompanion({
+    this.id = const Value.absent(),
+    this.lotId = const Value.absent(),
+    this.valueDate = const Value.absent(),
+    this.amountMinor = const Value.absent(),
+    this.currencyCode = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.recordedAt = const Value.absent(),
+    this.removedAt = const Value.absent(),
+    this.disposalFingerprint = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FixedIncomeManualValuesCompanion.insert({
+    this.id = const Value.absent(),
+    required String lotId,
+    required String valueDate,
+    required int amountMinor,
+    required String currencyCode,
+    this.notes = const Value.absent(),
+    required int recordedAt,
+    this.removedAt = const Value.absent(),
+    this.disposalFingerprint = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : lotId = Value(lotId),
+       valueDate = Value(valueDate),
+       amountMinor = Value(amountMinor),
+       currencyCode = Value(currencyCode),
+       recordedAt = Value(recordedAt);
+  static Insertable<FixedIncomeManualValue> custom({
+    Expression<String>? id,
+    Expression<String>? lotId,
+    Expression<String>? valueDate,
+    Expression<int>? amountMinor,
+    Expression<String>? currencyCode,
+    Expression<String>? notes,
+    Expression<int>? recordedAt,
+    Expression<int>? removedAt,
+    Expression<String>? disposalFingerprint,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (lotId != null) 'lot_id': lotId,
+      if (valueDate != null) 'value_date': valueDate,
+      if (amountMinor != null) 'amount_minor': amountMinor,
+      if (currencyCode != null) 'currency_code': currencyCode,
+      if (notes != null) 'notes': notes,
+      if (recordedAt != null) 'recorded_at': recordedAt,
+      if (removedAt != null) 'removed_at': removedAt,
+      if (disposalFingerprint != null)
+        'disposal_fingerprint': disposalFingerprint,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FixedIncomeManualValuesCompanion copyWith({
+    Value<String?>? id,
+    Value<String>? lotId,
+    Value<String>? valueDate,
+    Value<int>? amountMinor,
+    Value<String>? currencyCode,
+    Value<String?>? notes,
+    Value<int>? recordedAt,
+    Value<int?>? removedAt,
+    Value<String?>? disposalFingerprint,
+    Value<int>? rowid,
+  }) {
+    return FixedIncomeManualValuesCompanion(
+      id: id ?? this.id,
+      lotId: lotId ?? this.lotId,
+      valueDate: valueDate ?? this.valueDate,
+      amountMinor: amountMinor ?? this.amountMinor,
+      currencyCode: currencyCode ?? this.currencyCode,
+      notes: notes ?? this.notes,
+      recordedAt: recordedAt ?? this.recordedAt,
+      removedAt: removedAt ?? this.removedAt,
+      disposalFingerprint: disposalFingerprint ?? this.disposalFingerprint,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (lotId.present) {
+      map['lot_id'] = Variable<String>(lotId.value);
+    }
+    if (valueDate.present) {
+      map['value_date'] = Variable<String>(valueDate.value);
+    }
+    if (amountMinor.present) {
+      map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (recordedAt.present) {
+      map['recorded_at'] = Variable<int>(recordedAt.value);
+    }
+    if (removedAt.present) {
+      map['removed_at'] = Variable<int>(removedAt.value);
+    }
+    if (disposalFingerprint.present) {
+      map['disposal_fingerprint'] = Variable<String>(disposalFingerprint.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FixedIncomeManualValuesCompanion(')
+          ..write('id: $id, ')
+          ..write('lotId: $lotId, ')
+          ..write('valueDate: $valueDate, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('notes: $notes, ')
+          ..write('recordedAt: $recordedAt, ')
+          ..write('removedAt: $removedAt, ')
+          ..write('disposalFingerprint: $disposalFingerprint, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class InvestmentLotDisposals extends Table
     with TableInfo<InvestmentLotDisposals, InvestmentLotDisposal> {
   @override
@@ -21792,6 +23469,935 @@ class MarketPriceCacheCompanion extends UpdateCompanion<MarketPriceCacheData> {
           ..write('provider: $provider, ')
           ..write('fetchedAt: $fetchedAt, ')
           ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class EconomicSeriesCache extends Table
+    with TableInfo<EconomicSeriesCache, EconomicSeriesCacheData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  EconomicSeriesCache(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  late final GeneratedColumn<int> code = GeneratedColumn<int>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _referenceStartMeta = const VerificationMeta(
+    'referenceStart',
+  );
+  late final GeneratedColumn<String> referenceStart = GeneratedColumn<String>(
+    'reference_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _referenceEndMeta = const VerificationMeta(
+    'referenceEnd',
+  );
+  late final GeneratedColumn<String> referenceEnd = GeneratedColumn<String>(
+    'reference_end',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  late final GeneratedColumn<int> fetchedAt = GeneratedColumn<int>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    code,
+    referenceStart,
+    referenceEnd,
+    value,
+    unit,
+    source,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'economic_series_cache';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EconomicSeriesCacheData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('reference_start')) {
+      context.handle(
+        _referenceStartMeta,
+        referenceStart.isAcceptableOrUnknown(
+          data['reference_start']!,
+          _referenceStartMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_referenceStartMeta);
+    }
+    if (data.containsKey('reference_end')) {
+      context.handle(
+        _referenceEndMeta,
+        referenceEnd.isAcceptableOrUnknown(
+          data['reference_end']!,
+          _referenceEndMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_referenceEndMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_unitMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {code, referenceStart};
+  @override
+  EconomicSeriesCacheData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EconomicSeriesCacheData(
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}code'],
+      )!,
+      referenceStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference_start'],
+      )!,
+      referenceEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference_end'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  EconomicSeriesCache createAlias(String alias) {
+    return EconomicSeriesCache(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(code, reference_start)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class EconomicSeriesCacheData extends DataClass
+    implements Insertable<EconomicSeriesCacheData> {
+  final int code;
+  final String referenceStart;
+  final String referenceEnd;
+  final String value;
+  final String unit;
+  final String source;
+  final int fetchedAt;
+  const EconomicSeriesCacheData({
+    required this.code,
+    required this.referenceStart,
+    required this.referenceEnd,
+    required this.value,
+    required this.unit,
+    required this.source,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['code'] = Variable<int>(code);
+    map['reference_start'] = Variable<String>(referenceStart);
+    map['reference_end'] = Variable<String>(referenceEnd);
+    map['value'] = Variable<String>(value);
+    map['unit'] = Variable<String>(unit);
+    map['source'] = Variable<String>(source);
+    map['fetched_at'] = Variable<int>(fetchedAt);
+    return map;
+  }
+
+  EconomicSeriesCacheCompanion toCompanion(bool nullToAbsent) {
+    return EconomicSeriesCacheCompanion(
+      code: Value(code),
+      referenceStart: Value(referenceStart),
+      referenceEnd: Value(referenceEnd),
+      value: Value(value),
+      unit: Value(unit),
+      source: Value(source),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory EconomicSeriesCacheData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EconomicSeriesCacheData(
+      code: serializer.fromJson<int>(json['code']),
+      referenceStart: serializer.fromJson<String>(json['reference_start']),
+      referenceEnd: serializer.fromJson<String>(json['reference_end']),
+      value: serializer.fromJson<String>(json['value']),
+      unit: serializer.fromJson<String>(json['unit']),
+      source: serializer.fromJson<String>(json['source']),
+      fetchedAt: serializer.fromJson<int>(json['fetched_at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'code': serializer.toJson<int>(code),
+      'reference_start': serializer.toJson<String>(referenceStart),
+      'reference_end': serializer.toJson<String>(referenceEnd),
+      'value': serializer.toJson<String>(value),
+      'unit': serializer.toJson<String>(unit),
+      'source': serializer.toJson<String>(source),
+      'fetched_at': serializer.toJson<int>(fetchedAt),
+    };
+  }
+
+  EconomicSeriesCacheData copyWith({
+    int? code,
+    String? referenceStart,
+    String? referenceEnd,
+    String? value,
+    String? unit,
+    String? source,
+    int? fetchedAt,
+  }) => EconomicSeriesCacheData(
+    code: code ?? this.code,
+    referenceStart: referenceStart ?? this.referenceStart,
+    referenceEnd: referenceEnd ?? this.referenceEnd,
+    value: value ?? this.value,
+    unit: unit ?? this.unit,
+    source: source ?? this.source,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  EconomicSeriesCacheData copyWithCompanion(EconomicSeriesCacheCompanion data) {
+    return EconomicSeriesCacheData(
+      code: data.code.present ? data.code.value : this.code,
+      referenceStart: data.referenceStart.present
+          ? data.referenceStart.value
+          : this.referenceStart,
+      referenceEnd: data.referenceEnd.present
+          ? data.referenceEnd.value
+          : this.referenceEnd,
+      value: data.value.present ? data.value.value : this.value,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      source: data.source.present ? data.source.value : this.source,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EconomicSeriesCacheData(')
+          ..write('code: $code, ')
+          ..write('referenceStart: $referenceStart, ')
+          ..write('referenceEnd: $referenceEnd, ')
+          ..write('value: $value, ')
+          ..write('unit: $unit, ')
+          ..write('source: $source, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    code,
+    referenceStart,
+    referenceEnd,
+    value,
+    unit,
+    source,
+    fetchedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EconomicSeriesCacheData &&
+          other.code == this.code &&
+          other.referenceStart == this.referenceStart &&
+          other.referenceEnd == this.referenceEnd &&
+          other.value == this.value &&
+          other.unit == this.unit &&
+          other.source == this.source &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class EconomicSeriesCacheCompanion
+    extends UpdateCompanion<EconomicSeriesCacheData> {
+  final Value<int> code;
+  final Value<String> referenceStart;
+  final Value<String> referenceEnd;
+  final Value<String> value;
+  final Value<String> unit;
+  final Value<String> source;
+  final Value<int> fetchedAt;
+  final Value<int> rowid;
+  const EconomicSeriesCacheCompanion({
+    this.code = const Value.absent(),
+    this.referenceStart = const Value.absent(),
+    this.referenceEnd = const Value.absent(),
+    this.value = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.source = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EconomicSeriesCacheCompanion.insert({
+    required int code,
+    required String referenceStart,
+    required String referenceEnd,
+    required String value,
+    required String unit,
+    required String source,
+    required int fetchedAt,
+    this.rowid = const Value.absent(),
+  }) : code = Value(code),
+       referenceStart = Value(referenceStart),
+       referenceEnd = Value(referenceEnd),
+       value = Value(value),
+       unit = Value(unit),
+       source = Value(source),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<EconomicSeriesCacheData> custom({
+    Expression<int>? code,
+    Expression<String>? referenceStart,
+    Expression<String>? referenceEnd,
+    Expression<String>? value,
+    Expression<String>? unit,
+    Expression<String>? source,
+    Expression<int>? fetchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (code != null) 'code': code,
+      if (referenceStart != null) 'reference_start': referenceStart,
+      if (referenceEnd != null) 'reference_end': referenceEnd,
+      if (value != null) 'value': value,
+      if (unit != null) 'unit': unit,
+      if (source != null) 'source': source,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EconomicSeriesCacheCompanion copyWith({
+    Value<int>? code,
+    Value<String>? referenceStart,
+    Value<String>? referenceEnd,
+    Value<String>? value,
+    Value<String>? unit,
+    Value<String>? source,
+    Value<int>? fetchedAt,
+    Value<int>? rowid,
+  }) {
+    return EconomicSeriesCacheCompanion(
+      code: code ?? this.code,
+      referenceStart: referenceStart ?? this.referenceStart,
+      referenceEnd: referenceEnd ?? this.referenceEnd,
+      value: value ?? this.value,
+      unit: unit ?? this.unit,
+      source: source ?? this.source,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (code.present) {
+      map['code'] = Variable<int>(code.value);
+    }
+    if (referenceStart.present) {
+      map['reference_start'] = Variable<String>(referenceStart.value);
+    }
+    if (referenceEnd.present) {
+      map['reference_end'] = Variable<String>(referenceEnd.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<int>(fetchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EconomicSeriesCacheCompanion(')
+          ..write('code: $code, ')
+          ..write('referenceStart: $referenceStart, ')
+          ..write('referenceEnd: $referenceEnd, ')
+          ..write('value: $value, ')
+          ..write('unit: $unit, ')
+          ..write('source: $source, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class EconomicSeriesRefreshState extends Table
+    with TableInfo<EconomicSeriesRefreshState, EconomicSeriesRefreshStateData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  EconomicSeriesRefreshState(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  late final GeneratedColumn<int> code = GeneratedColumn<int>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'PRIMARY KEY',
+  );
+  static const VerificationMeta _requestedFromMeta = const VerificationMeta(
+    'requestedFrom',
+  );
+  late final GeneratedColumn<String> requestedFrom = GeneratedColumn<String>(
+    'requested_from',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _requestedThroughMeta = const VerificationMeta(
+    'requestedThrough',
+  );
+  late final GeneratedColumn<String> requestedThrough = GeneratedColumn<String>(
+    'requested_through',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _lastAttemptAtMeta = const VerificationMeta(
+    'lastAttemptAt',
+  );
+  late final GeneratedColumn<int> lastAttemptAt = GeneratedColumn<int>(
+    'last_attempt_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _lastSuccessAtMeta = const VerificationMeta(
+    'lastSuccessAt',
+  );
+  late final GeneratedColumn<int> lastSuccessAt = GeneratedColumn<int>(
+    'last_success_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _lastErrorCodeMeta = const VerificationMeta(
+    'lastErrorCode',
+  );
+  late final GeneratedColumn<String> lastErrorCode = GeneratedColumn<String>(
+    'last_error_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    code,
+    requestedFrom,
+    requestedThrough,
+    lastAttemptAt,
+    lastSuccessAt,
+    lastErrorCode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'economic_series_refresh_state';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EconomicSeriesRefreshStateData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    }
+    if (data.containsKey('requested_from')) {
+      context.handle(
+        _requestedFromMeta,
+        requestedFrom.isAcceptableOrUnknown(
+          data['requested_from']!,
+          _requestedFromMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestedFromMeta);
+    }
+    if (data.containsKey('requested_through')) {
+      context.handle(
+        _requestedThroughMeta,
+        requestedThrough.isAcceptableOrUnknown(
+          data['requested_through']!,
+          _requestedThroughMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestedThroughMeta);
+    }
+    if (data.containsKey('last_attempt_at')) {
+      context.handle(
+        _lastAttemptAtMeta,
+        lastAttemptAt.isAcceptableOrUnknown(
+          data['last_attempt_at']!,
+          _lastAttemptAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastAttemptAtMeta);
+    }
+    if (data.containsKey('last_success_at')) {
+      context.handle(
+        _lastSuccessAtMeta,
+        lastSuccessAt.isAcceptableOrUnknown(
+          data['last_success_at']!,
+          _lastSuccessAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_error_code')) {
+      context.handle(
+        _lastErrorCodeMeta,
+        lastErrorCode.isAcceptableOrUnknown(
+          data['last_error_code']!,
+          _lastErrorCodeMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {code};
+  @override
+  EconomicSeriesRefreshStateData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EconomicSeriesRefreshStateData(
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}code'],
+      )!,
+      requestedFrom: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}requested_from'],
+      )!,
+      requestedThrough: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}requested_through'],
+      )!,
+      lastAttemptAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_attempt_at'],
+      )!,
+      lastSuccessAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_success_at'],
+      ),
+      lastErrorCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error_code'],
+      ),
+    );
+  }
+
+  @override
+  EconomicSeriesRefreshState createAlias(String alias) {
+    return EconomicSeriesRefreshState(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class EconomicSeriesRefreshStateData extends DataClass
+    implements Insertable<EconomicSeriesRefreshStateData> {
+  final int code;
+  final String requestedFrom;
+  final String requestedThrough;
+  final int lastAttemptAt;
+  final int? lastSuccessAt;
+  final String? lastErrorCode;
+  const EconomicSeriesRefreshStateData({
+    required this.code,
+    required this.requestedFrom,
+    required this.requestedThrough,
+    required this.lastAttemptAt,
+    this.lastSuccessAt,
+    this.lastErrorCode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['code'] = Variable<int>(code);
+    map['requested_from'] = Variable<String>(requestedFrom);
+    map['requested_through'] = Variable<String>(requestedThrough);
+    map['last_attempt_at'] = Variable<int>(lastAttemptAt);
+    if (!nullToAbsent || lastSuccessAt != null) {
+      map['last_success_at'] = Variable<int>(lastSuccessAt);
+    }
+    if (!nullToAbsent || lastErrorCode != null) {
+      map['last_error_code'] = Variable<String>(lastErrorCode);
+    }
+    return map;
+  }
+
+  EconomicSeriesRefreshStateCompanion toCompanion(bool nullToAbsent) {
+    return EconomicSeriesRefreshStateCompanion(
+      code: Value(code),
+      requestedFrom: Value(requestedFrom),
+      requestedThrough: Value(requestedThrough),
+      lastAttemptAt: Value(lastAttemptAt),
+      lastSuccessAt: lastSuccessAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSuccessAt),
+      lastErrorCode: lastErrorCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastErrorCode),
+    );
+  }
+
+  factory EconomicSeriesRefreshStateData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EconomicSeriesRefreshStateData(
+      code: serializer.fromJson<int>(json['code']),
+      requestedFrom: serializer.fromJson<String>(json['requested_from']),
+      requestedThrough: serializer.fromJson<String>(json['requested_through']),
+      lastAttemptAt: serializer.fromJson<int>(json['last_attempt_at']),
+      lastSuccessAt: serializer.fromJson<int?>(json['last_success_at']),
+      lastErrorCode: serializer.fromJson<String?>(json['last_error_code']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'code': serializer.toJson<int>(code),
+      'requested_from': serializer.toJson<String>(requestedFrom),
+      'requested_through': serializer.toJson<String>(requestedThrough),
+      'last_attempt_at': serializer.toJson<int>(lastAttemptAt),
+      'last_success_at': serializer.toJson<int?>(lastSuccessAt),
+      'last_error_code': serializer.toJson<String?>(lastErrorCode),
+    };
+  }
+
+  EconomicSeriesRefreshStateData copyWith({
+    int? code,
+    String? requestedFrom,
+    String? requestedThrough,
+    int? lastAttemptAt,
+    Value<int?> lastSuccessAt = const Value.absent(),
+    Value<String?> lastErrorCode = const Value.absent(),
+  }) => EconomicSeriesRefreshStateData(
+    code: code ?? this.code,
+    requestedFrom: requestedFrom ?? this.requestedFrom,
+    requestedThrough: requestedThrough ?? this.requestedThrough,
+    lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
+    lastSuccessAt: lastSuccessAt.present
+        ? lastSuccessAt.value
+        : this.lastSuccessAt,
+    lastErrorCode: lastErrorCode.present
+        ? lastErrorCode.value
+        : this.lastErrorCode,
+  );
+  EconomicSeriesRefreshStateData copyWithCompanion(
+    EconomicSeriesRefreshStateCompanion data,
+  ) {
+    return EconomicSeriesRefreshStateData(
+      code: data.code.present ? data.code.value : this.code,
+      requestedFrom: data.requestedFrom.present
+          ? data.requestedFrom.value
+          : this.requestedFrom,
+      requestedThrough: data.requestedThrough.present
+          ? data.requestedThrough.value
+          : this.requestedThrough,
+      lastAttemptAt: data.lastAttemptAt.present
+          ? data.lastAttemptAt.value
+          : this.lastAttemptAt,
+      lastSuccessAt: data.lastSuccessAt.present
+          ? data.lastSuccessAt.value
+          : this.lastSuccessAt,
+      lastErrorCode: data.lastErrorCode.present
+          ? data.lastErrorCode.value
+          : this.lastErrorCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EconomicSeriesRefreshStateData(')
+          ..write('code: $code, ')
+          ..write('requestedFrom: $requestedFrom, ')
+          ..write('requestedThrough: $requestedThrough, ')
+          ..write('lastAttemptAt: $lastAttemptAt, ')
+          ..write('lastSuccessAt: $lastSuccessAt, ')
+          ..write('lastErrorCode: $lastErrorCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    code,
+    requestedFrom,
+    requestedThrough,
+    lastAttemptAt,
+    lastSuccessAt,
+    lastErrorCode,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EconomicSeriesRefreshStateData &&
+          other.code == this.code &&
+          other.requestedFrom == this.requestedFrom &&
+          other.requestedThrough == this.requestedThrough &&
+          other.lastAttemptAt == this.lastAttemptAt &&
+          other.lastSuccessAt == this.lastSuccessAt &&
+          other.lastErrorCode == this.lastErrorCode);
+}
+
+class EconomicSeriesRefreshStateCompanion
+    extends UpdateCompanion<EconomicSeriesRefreshStateData> {
+  final Value<int> code;
+  final Value<String> requestedFrom;
+  final Value<String> requestedThrough;
+  final Value<int> lastAttemptAt;
+  final Value<int?> lastSuccessAt;
+  final Value<String?> lastErrorCode;
+  const EconomicSeriesRefreshStateCompanion({
+    this.code = const Value.absent(),
+    this.requestedFrom = const Value.absent(),
+    this.requestedThrough = const Value.absent(),
+    this.lastAttemptAt = const Value.absent(),
+    this.lastSuccessAt = const Value.absent(),
+    this.lastErrorCode = const Value.absent(),
+  });
+  EconomicSeriesRefreshStateCompanion.insert({
+    this.code = const Value.absent(),
+    required String requestedFrom,
+    required String requestedThrough,
+    required int lastAttemptAt,
+    this.lastSuccessAt = const Value.absent(),
+    this.lastErrorCode = const Value.absent(),
+  }) : requestedFrom = Value(requestedFrom),
+       requestedThrough = Value(requestedThrough),
+       lastAttemptAt = Value(lastAttemptAt);
+  static Insertable<EconomicSeriesRefreshStateData> custom({
+    Expression<int>? code,
+    Expression<String>? requestedFrom,
+    Expression<String>? requestedThrough,
+    Expression<int>? lastAttemptAt,
+    Expression<int>? lastSuccessAt,
+    Expression<String>? lastErrorCode,
+  }) {
+    return RawValuesInsertable({
+      if (code != null) 'code': code,
+      if (requestedFrom != null) 'requested_from': requestedFrom,
+      if (requestedThrough != null) 'requested_through': requestedThrough,
+      if (lastAttemptAt != null) 'last_attempt_at': lastAttemptAt,
+      if (lastSuccessAt != null) 'last_success_at': lastSuccessAt,
+      if (lastErrorCode != null) 'last_error_code': lastErrorCode,
+    });
+  }
+
+  EconomicSeriesRefreshStateCompanion copyWith({
+    Value<int>? code,
+    Value<String>? requestedFrom,
+    Value<String>? requestedThrough,
+    Value<int>? lastAttemptAt,
+    Value<int?>? lastSuccessAt,
+    Value<String?>? lastErrorCode,
+  }) {
+    return EconomicSeriesRefreshStateCompanion(
+      code: code ?? this.code,
+      requestedFrom: requestedFrom ?? this.requestedFrom,
+      requestedThrough: requestedThrough ?? this.requestedThrough,
+      lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
+      lastSuccessAt: lastSuccessAt ?? this.lastSuccessAt,
+      lastErrorCode: lastErrorCode ?? this.lastErrorCode,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (code.present) {
+      map['code'] = Variable<int>(code.value);
+    }
+    if (requestedFrom.present) {
+      map['requested_from'] = Variable<String>(requestedFrom.value);
+    }
+    if (requestedThrough.present) {
+      map['requested_through'] = Variable<String>(requestedThrough.value);
+    }
+    if (lastAttemptAt.present) {
+      map['last_attempt_at'] = Variable<int>(lastAttemptAt.value);
+    }
+    if (lastSuccessAt.present) {
+      map['last_success_at'] = Variable<int>(lastSuccessAt.value);
+    }
+    if (lastErrorCode.present) {
+      map['last_error_code'] = Variable<String>(lastErrorCode.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EconomicSeriesRefreshStateCompanion(')
+          ..write('code: $code, ')
+          ..write('requestedFrom: $requestedFrom, ')
+          ..write('requestedThrough: $requestedThrough, ')
+          ..write('lastAttemptAt: $lastAttemptAt, ')
+          ..write('lastSuccessAt: $lastSuccessAt, ')
+          ..write('lastErrorCode: $lastErrorCode')
           ..write(')'))
         .toString();
   }
@@ -24667,6 +27273,242 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
   }
 }
 
+class SyncOutboxDependencies extends Table
+    with TableInfo<SyncOutboxDependencies, SyncOutboxDependency> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  SyncOutboxDependencies(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [operationId, accountId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_outbox_dependencies';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncOutboxDependency> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {operationId, accountId};
+  @override
+  SyncOutboxDependency map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncOutboxDependency(
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+    );
+  }
+
+  @override
+  SyncOutboxDependencies createAlias(String alias) {
+    return SyncOutboxDependencies(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(operation_id, account_id)',
+    'FOREIGN KEY(operation_id)REFERENCES sync_outbox(operation_id)ON DELETE CASCADE',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class SyncOutboxDependency extends DataClass
+    implements Insertable<SyncOutboxDependency> {
+  final String operationId;
+  final String accountId;
+  const SyncOutboxDependency({
+    required this.operationId,
+    required this.accountId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['operation_id'] = Variable<String>(operationId);
+    map['account_id'] = Variable<String>(accountId);
+    return map;
+  }
+
+  SyncOutboxDependenciesCompanion toCompanion(bool nullToAbsent) {
+    return SyncOutboxDependenciesCompanion(
+      operationId: Value(operationId),
+      accountId: Value(accountId),
+    );
+  }
+
+  factory SyncOutboxDependency.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncOutboxDependency(
+      operationId: serializer.fromJson<String>(json['operation_id']),
+      accountId: serializer.fromJson<String>(json['account_id']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'operation_id': serializer.toJson<String>(operationId),
+      'account_id': serializer.toJson<String>(accountId),
+    };
+  }
+
+  SyncOutboxDependency copyWith({String? operationId, String? accountId}) =>
+      SyncOutboxDependency(
+        operationId: operationId ?? this.operationId,
+        accountId: accountId ?? this.accountId,
+      );
+  SyncOutboxDependency copyWithCompanion(SyncOutboxDependenciesCompanion data) {
+    return SyncOutboxDependency(
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncOutboxDependency(')
+          ..write('operationId: $operationId, ')
+          ..write('accountId: $accountId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(operationId, accountId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncOutboxDependency &&
+          other.operationId == this.operationId &&
+          other.accountId == this.accountId);
+}
+
+class SyncOutboxDependenciesCompanion
+    extends UpdateCompanion<SyncOutboxDependency> {
+  final Value<String> operationId;
+  final Value<String> accountId;
+  final Value<int> rowid;
+  const SyncOutboxDependenciesCompanion({
+    this.operationId = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncOutboxDependenciesCompanion.insert({
+    required String operationId,
+    required String accountId,
+    this.rowid = const Value.absent(),
+  }) : operationId = Value(operationId),
+       accountId = Value(accountId);
+  static Insertable<SyncOutboxDependency> custom({
+    Expression<String>? operationId,
+    Expression<String>? accountId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (operationId != null) 'operation_id': operationId,
+      if (accountId != null) 'account_id': accountId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncOutboxDependenciesCompanion copyWith({
+    Value<String>? operationId,
+    Value<String>? accountId,
+    Value<int>? rowid,
+  }) {
+    return SyncOutboxDependenciesCompanion(
+      operationId: operationId ?? this.operationId,
+      accountId: accountId ?? this.accountId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncOutboxDependenciesCompanion(')
+          ..write('operationId: $operationId, ')
+          ..write('accountId: $accountId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class SyncCursors extends Table with TableInfo<SyncCursors, SyncCursor> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -25855,6 +28697,1298 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
           ..write('detectedAt: $detectedAt, ')
           ..write('resolvedAt: $resolvedAt, ')
           ..write('resolution: $resolution, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class SyncQuarantine extends Table
+    with TableInfo<SyncQuarantine, SyncQuarantineData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  SyncQuarantine(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _eventIdMeta = const VerificationMeta(
+    'eventId',
+  );
+  late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
+    'event_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'PRIMARY KEY',
+  );
+  static const VerificationMeta _vaultIdMeta = const VerificationMeta(
+    'vaultId',
+  );
+  late final GeneratedColumn<String> vaultId = GeneratedColumn<String>(
+    'vault_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _serverVersionMeta = const VerificationMeta(
+    'serverVersion',
+  );
+  late final GeneratedColumn<int> serverVersion = GeneratedColumn<int>(
+    'server_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _entityRevisionMeta = const VerificationMeta(
+    'entityRevision',
+  );
+  late final GeneratedColumn<int> entityRevision = GeneratedColumn<int>(
+    'entity_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _parentAccountIdMeta = const VerificationMeta(
+    'parentAccountId',
+  );
+  late final GeneratedColumn<String> parentAccountId = GeneratedColumn<String>(
+    'parent_account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _parentPocketIdMeta = const VerificationMeta(
+    'parentPocketId',
+  );
+  late final GeneratedColumn<String> parentPocketId = GeneratedColumn<String>(
+    'parent_pocket_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _authenticatedEnvelopeMeta =
+      const VerificationMeta('authenticatedEnvelope');
+  late final GeneratedColumn<String> authenticatedEnvelope =
+      GeneratedColumn<String>(
+        'authenticated_envelope',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        $customConstraints: 'NOT NULL',
+      );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _replayStateMeta = const VerificationMeta(
+    'replayState',
+  );
+  late final GeneratedColumn<String> replayState = GeneratedColumn<String>(
+    'replay_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'pending\'',
+    defaultValue: const CustomExpression('\'pending\''),
+  );
+  static const VerificationMeta _detectedAtMeta = const VerificationMeta(
+    'detectedAt',
+  );
+  late final GeneratedColumn<int> detectedAt = GeneratedColumn<int>(
+    'detected_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _replayedAtMeta = const VerificationMeta(
+    'replayedAt',
+  );
+  late final GeneratedColumn<int> replayedAt = GeneratedColumn<int>(
+    'replayed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    eventId,
+    vaultId,
+    serverVersion,
+    entityType,
+    entityId,
+    entityRevision,
+    parentAccountId,
+    parentPocketId,
+    authenticatedEnvelope,
+    reason,
+    replayState,
+    detectedAt,
+    replayedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_quarantine';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncQuarantineData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('event_id')) {
+      context.handle(
+        _eventIdMeta,
+        eventId.isAcceptableOrUnknown(data['event_id']!, _eventIdMeta),
+      );
+    }
+    if (data.containsKey('vault_id')) {
+      context.handle(
+        _vaultIdMeta,
+        vaultId.isAcceptableOrUnknown(data['vault_id']!, _vaultIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_vaultIdMeta);
+    }
+    if (data.containsKey('server_version')) {
+      context.handle(
+        _serverVersionMeta,
+        serverVersion.isAcceptableOrUnknown(
+          data['server_version']!,
+          _serverVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_serverVersionMeta);
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('entity_revision')) {
+      context.handle(
+        _entityRevisionMeta,
+        entityRevision.isAcceptableOrUnknown(
+          data['entity_revision']!,
+          _entityRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_entityRevisionMeta);
+    }
+    if (data.containsKey('parent_account_id')) {
+      context.handle(
+        _parentAccountIdMeta,
+        parentAccountId.isAcceptableOrUnknown(
+          data['parent_account_id']!,
+          _parentAccountIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('parent_pocket_id')) {
+      context.handle(
+        _parentPocketIdMeta,
+        parentPocketId.isAcceptableOrUnknown(
+          data['parent_pocket_id']!,
+          _parentPocketIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('authenticated_envelope')) {
+      context.handle(
+        _authenticatedEnvelopeMeta,
+        authenticatedEnvelope.isAcceptableOrUnknown(
+          data['authenticated_envelope']!,
+          _authenticatedEnvelopeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_authenticatedEnvelopeMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('replay_state')) {
+      context.handle(
+        _replayStateMeta,
+        replayState.isAcceptableOrUnknown(
+          data['replay_state']!,
+          _replayStateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('detected_at')) {
+      context.handle(
+        _detectedAtMeta,
+        detectedAt.isAcceptableOrUnknown(data['detected_at']!, _detectedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_detectedAtMeta);
+    }
+    if (data.containsKey('replayed_at')) {
+      context.handle(
+        _replayedAtMeta,
+        replayedAt.isAcceptableOrUnknown(data['replayed_at']!, _replayedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {eventId};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {vaultId, serverVersion, entityType, entityId},
+  ];
+  @override
+  SyncQuarantineData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncQuarantineData(
+      eventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_id'],
+      ),
+      vaultId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vault_id'],
+      )!,
+      serverVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_version'],
+      )!,
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      entityRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}entity_revision'],
+      )!,
+      parentAccountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_account_id'],
+      ),
+      parentPocketId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_pocket_id'],
+      ),
+      authenticatedEnvelope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}authenticated_envelope'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      replayState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}replay_state'],
+      )!,
+      detectedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}detected_at'],
+      )!,
+      replayedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}replayed_at'],
+      ),
+    );
+  }
+
+  @override
+  SyncQuarantine createAlias(String alias) {
+    return SyncQuarantine(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'UNIQUE(vault_id, server_version, entity_type, entity_id)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class SyncQuarantineData extends DataClass
+    implements Insertable<SyncQuarantineData> {
+  final String? eventId;
+  final String vaultId;
+  final int serverVersion;
+  final String entityType;
+  final String entityId;
+  final int entityRevision;
+  final String? parentAccountId;
+  final String? parentPocketId;
+  final String authenticatedEnvelope;
+  final String reason;
+  final String replayState;
+  final int detectedAt;
+  final int? replayedAt;
+  const SyncQuarantineData({
+    this.eventId,
+    required this.vaultId,
+    required this.serverVersion,
+    required this.entityType,
+    required this.entityId,
+    required this.entityRevision,
+    this.parentAccountId,
+    this.parentPocketId,
+    required this.authenticatedEnvelope,
+    required this.reason,
+    required this.replayState,
+    required this.detectedAt,
+    this.replayedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (!nullToAbsent || eventId != null) {
+      map['event_id'] = Variable<String>(eventId);
+    }
+    map['vault_id'] = Variable<String>(vaultId);
+    map['server_version'] = Variable<int>(serverVersion);
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<String>(entityId);
+    map['entity_revision'] = Variable<int>(entityRevision);
+    if (!nullToAbsent || parentAccountId != null) {
+      map['parent_account_id'] = Variable<String>(parentAccountId);
+    }
+    if (!nullToAbsent || parentPocketId != null) {
+      map['parent_pocket_id'] = Variable<String>(parentPocketId);
+    }
+    map['authenticated_envelope'] = Variable<String>(authenticatedEnvelope);
+    map['reason'] = Variable<String>(reason);
+    map['replay_state'] = Variable<String>(replayState);
+    map['detected_at'] = Variable<int>(detectedAt);
+    if (!nullToAbsent || replayedAt != null) {
+      map['replayed_at'] = Variable<int>(replayedAt);
+    }
+    return map;
+  }
+
+  SyncQuarantineCompanion toCompanion(bool nullToAbsent) {
+    return SyncQuarantineCompanion(
+      eventId: eventId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(eventId),
+      vaultId: Value(vaultId),
+      serverVersion: Value(serverVersion),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      entityRevision: Value(entityRevision),
+      parentAccountId: parentAccountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentAccountId),
+      parentPocketId: parentPocketId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentPocketId),
+      authenticatedEnvelope: Value(authenticatedEnvelope),
+      reason: Value(reason),
+      replayState: Value(replayState),
+      detectedAt: Value(detectedAt),
+      replayedAt: replayedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(replayedAt),
+    );
+  }
+
+  factory SyncQuarantineData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncQuarantineData(
+      eventId: serializer.fromJson<String?>(json['event_id']),
+      vaultId: serializer.fromJson<String>(json['vault_id']),
+      serverVersion: serializer.fromJson<int>(json['server_version']),
+      entityType: serializer.fromJson<String>(json['entity_type']),
+      entityId: serializer.fromJson<String>(json['entity_id']),
+      entityRevision: serializer.fromJson<int>(json['entity_revision']),
+      parentAccountId: serializer.fromJson<String?>(json['parent_account_id']),
+      parentPocketId: serializer.fromJson<String?>(json['parent_pocket_id']),
+      authenticatedEnvelope: serializer.fromJson<String>(
+        json['authenticated_envelope'],
+      ),
+      reason: serializer.fromJson<String>(json['reason']),
+      replayState: serializer.fromJson<String>(json['replay_state']),
+      detectedAt: serializer.fromJson<int>(json['detected_at']),
+      replayedAt: serializer.fromJson<int?>(json['replayed_at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'event_id': serializer.toJson<String?>(eventId),
+      'vault_id': serializer.toJson<String>(vaultId),
+      'server_version': serializer.toJson<int>(serverVersion),
+      'entity_type': serializer.toJson<String>(entityType),
+      'entity_id': serializer.toJson<String>(entityId),
+      'entity_revision': serializer.toJson<int>(entityRevision),
+      'parent_account_id': serializer.toJson<String?>(parentAccountId),
+      'parent_pocket_id': serializer.toJson<String?>(parentPocketId),
+      'authenticated_envelope': serializer.toJson<String>(
+        authenticatedEnvelope,
+      ),
+      'reason': serializer.toJson<String>(reason),
+      'replay_state': serializer.toJson<String>(replayState),
+      'detected_at': serializer.toJson<int>(detectedAt),
+      'replayed_at': serializer.toJson<int?>(replayedAt),
+    };
+  }
+
+  SyncQuarantineData copyWith({
+    Value<String?> eventId = const Value.absent(),
+    String? vaultId,
+    int? serverVersion,
+    String? entityType,
+    String? entityId,
+    int? entityRevision,
+    Value<String?> parentAccountId = const Value.absent(),
+    Value<String?> parentPocketId = const Value.absent(),
+    String? authenticatedEnvelope,
+    String? reason,
+    String? replayState,
+    int? detectedAt,
+    Value<int?> replayedAt = const Value.absent(),
+  }) => SyncQuarantineData(
+    eventId: eventId.present ? eventId.value : this.eventId,
+    vaultId: vaultId ?? this.vaultId,
+    serverVersion: serverVersion ?? this.serverVersion,
+    entityType: entityType ?? this.entityType,
+    entityId: entityId ?? this.entityId,
+    entityRevision: entityRevision ?? this.entityRevision,
+    parentAccountId: parentAccountId.present
+        ? parentAccountId.value
+        : this.parentAccountId,
+    parentPocketId: parentPocketId.present
+        ? parentPocketId.value
+        : this.parentPocketId,
+    authenticatedEnvelope: authenticatedEnvelope ?? this.authenticatedEnvelope,
+    reason: reason ?? this.reason,
+    replayState: replayState ?? this.replayState,
+    detectedAt: detectedAt ?? this.detectedAt,
+    replayedAt: replayedAt.present ? replayedAt.value : this.replayedAt,
+  );
+  SyncQuarantineData copyWithCompanion(SyncQuarantineCompanion data) {
+    return SyncQuarantineData(
+      eventId: data.eventId.present ? data.eventId.value : this.eventId,
+      vaultId: data.vaultId.present ? data.vaultId.value : this.vaultId,
+      serverVersion: data.serverVersion.present
+          ? data.serverVersion.value
+          : this.serverVersion,
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      entityRevision: data.entityRevision.present
+          ? data.entityRevision.value
+          : this.entityRevision,
+      parentAccountId: data.parentAccountId.present
+          ? data.parentAccountId.value
+          : this.parentAccountId,
+      parentPocketId: data.parentPocketId.present
+          ? data.parentPocketId.value
+          : this.parentPocketId,
+      authenticatedEnvelope: data.authenticatedEnvelope.present
+          ? data.authenticatedEnvelope.value
+          : this.authenticatedEnvelope,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      replayState: data.replayState.present
+          ? data.replayState.value
+          : this.replayState,
+      detectedAt: data.detectedAt.present
+          ? data.detectedAt.value
+          : this.detectedAt,
+      replayedAt: data.replayedAt.present
+          ? data.replayedAt.value
+          : this.replayedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncQuarantineData(')
+          ..write('eventId: $eventId, ')
+          ..write('vaultId: $vaultId, ')
+          ..write('serverVersion: $serverVersion, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('entityRevision: $entityRevision, ')
+          ..write('parentAccountId: $parentAccountId, ')
+          ..write('parentPocketId: $parentPocketId, ')
+          ..write('authenticatedEnvelope: $authenticatedEnvelope, ')
+          ..write('reason: $reason, ')
+          ..write('replayState: $replayState, ')
+          ..write('detectedAt: $detectedAt, ')
+          ..write('replayedAt: $replayedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    eventId,
+    vaultId,
+    serverVersion,
+    entityType,
+    entityId,
+    entityRevision,
+    parentAccountId,
+    parentPocketId,
+    authenticatedEnvelope,
+    reason,
+    replayState,
+    detectedAt,
+    replayedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncQuarantineData &&
+          other.eventId == this.eventId &&
+          other.vaultId == this.vaultId &&
+          other.serverVersion == this.serverVersion &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.entityRevision == this.entityRevision &&
+          other.parentAccountId == this.parentAccountId &&
+          other.parentPocketId == this.parentPocketId &&
+          other.authenticatedEnvelope == this.authenticatedEnvelope &&
+          other.reason == this.reason &&
+          other.replayState == this.replayState &&
+          other.detectedAt == this.detectedAt &&
+          other.replayedAt == this.replayedAt);
+}
+
+class SyncQuarantineCompanion extends UpdateCompanion<SyncQuarantineData> {
+  final Value<String?> eventId;
+  final Value<String> vaultId;
+  final Value<int> serverVersion;
+  final Value<String> entityType;
+  final Value<String> entityId;
+  final Value<int> entityRevision;
+  final Value<String?> parentAccountId;
+  final Value<String?> parentPocketId;
+  final Value<String> authenticatedEnvelope;
+  final Value<String> reason;
+  final Value<String> replayState;
+  final Value<int> detectedAt;
+  final Value<int?> replayedAt;
+  final Value<int> rowid;
+  const SyncQuarantineCompanion({
+    this.eventId = const Value.absent(),
+    this.vaultId = const Value.absent(),
+    this.serverVersion = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.entityRevision = const Value.absent(),
+    this.parentAccountId = const Value.absent(),
+    this.parentPocketId = const Value.absent(),
+    this.authenticatedEnvelope = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.replayState = const Value.absent(),
+    this.detectedAt = const Value.absent(),
+    this.replayedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncQuarantineCompanion.insert({
+    this.eventId = const Value.absent(),
+    required String vaultId,
+    required int serverVersion,
+    required String entityType,
+    required String entityId,
+    required int entityRevision,
+    this.parentAccountId = const Value.absent(),
+    this.parentPocketId = const Value.absent(),
+    required String authenticatedEnvelope,
+    required String reason,
+    this.replayState = const Value.absent(),
+    required int detectedAt,
+    this.replayedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : vaultId = Value(vaultId),
+       serverVersion = Value(serverVersion),
+       entityType = Value(entityType),
+       entityId = Value(entityId),
+       entityRevision = Value(entityRevision),
+       authenticatedEnvelope = Value(authenticatedEnvelope),
+       reason = Value(reason),
+       detectedAt = Value(detectedAt);
+  static Insertable<SyncQuarantineData> custom({
+    Expression<String>? eventId,
+    Expression<String>? vaultId,
+    Expression<int>? serverVersion,
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<int>? entityRevision,
+    Expression<String>? parentAccountId,
+    Expression<String>? parentPocketId,
+    Expression<String>? authenticatedEnvelope,
+    Expression<String>? reason,
+    Expression<String>? replayState,
+    Expression<int>? detectedAt,
+    Expression<int>? replayedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (eventId != null) 'event_id': eventId,
+      if (vaultId != null) 'vault_id': vaultId,
+      if (serverVersion != null) 'server_version': serverVersion,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (entityRevision != null) 'entity_revision': entityRevision,
+      if (parentAccountId != null) 'parent_account_id': parentAccountId,
+      if (parentPocketId != null) 'parent_pocket_id': parentPocketId,
+      if (authenticatedEnvelope != null)
+        'authenticated_envelope': authenticatedEnvelope,
+      if (reason != null) 'reason': reason,
+      if (replayState != null) 'replay_state': replayState,
+      if (detectedAt != null) 'detected_at': detectedAt,
+      if (replayedAt != null) 'replayed_at': replayedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncQuarantineCompanion copyWith({
+    Value<String?>? eventId,
+    Value<String>? vaultId,
+    Value<int>? serverVersion,
+    Value<String>? entityType,
+    Value<String>? entityId,
+    Value<int>? entityRevision,
+    Value<String?>? parentAccountId,
+    Value<String?>? parentPocketId,
+    Value<String>? authenticatedEnvelope,
+    Value<String>? reason,
+    Value<String>? replayState,
+    Value<int>? detectedAt,
+    Value<int?>? replayedAt,
+    Value<int>? rowid,
+  }) {
+    return SyncQuarantineCompanion(
+      eventId: eventId ?? this.eventId,
+      vaultId: vaultId ?? this.vaultId,
+      serverVersion: serverVersion ?? this.serverVersion,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      entityRevision: entityRevision ?? this.entityRevision,
+      parentAccountId: parentAccountId ?? this.parentAccountId,
+      parentPocketId: parentPocketId ?? this.parentPocketId,
+      authenticatedEnvelope:
+          authenticatedEnvelope ?? this.authenticatedEnvelope,
+      reason: reason ?? this.reason,
+      replayState: replayState ?? this.replayState,
+      detectedAt: detectedAt ?? this.detectedAt,
+      replayedAt: replayedAt ?? this.replayedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (eventId.present) {
+      map['event_id'] = Variable<String>(eventId.value);
+    }
+    if (vaultId.present) {
+      map['vault_id'] = Variable<String>(vaultId.value);
+    }
+    if (serverVersion.present) {
+      map['server_version'] = Variable<int>(serverVersion.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (entityRevision.present) {
+      map['entity_revision'] = Variable<int>(entityRevision.value);
+    }
+    if (parentAccountId.present) {
+      map['parent_account_id'] = Variable<String>(parentAccountId.value);
+    }
+    if (parentPocketId.present) {
+      map['parent_pocket_id'] = Variable<String>(parentPocketId.value);
+    }
+    if (authenticatedEnvelope.present) {
+      map['authenticated_envelope'] = Variable<String>(
+        authenticatedEnvelope.value,
+      );
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (replayState.present) {
+      map['replay_state'] = Variable<String>(replayState.value);
+    }
+    if (detectedAt.present) {
+      map['detected_at'] = Variable<int>(detectedAt.value);
+    }
+    if (replayedAt.present) {
+      map['replayed_at'] = Variable<int>(replayedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncQuarantineCompanion(')
+          ..write('eventId: $eventId, ')
+          ..write('vaultId: $vaultId, ')
+          ..write('serverVersion: $serverVersion, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('entityRevision: $entityRevision, ')
+          ..write('parentAccountId: $parentAccountId, ')
+          ..write('parentPocketId: $parentPocketId, ')
+          ..write('authenticatedEnvelope: $authenticatedEnvelope, ')
+          ..write('reason: $reason, ')
+          ..write('replayState: $replayState, ')
+          ..write('detectedAt: $detectedAt, ')
+          ..write('replayedAt: $replayedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class SyncDependencyPause extends Table
+    with TableInfo<SyncDependencyPause, SyncDependencyPauseData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  SyncDependencyPause(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _vaultIdMeta = const VerificationMeta(
+    'vaultId',
+  );
+  late final GeneratedColumn<String> vaultId = GeneratedColumn<String>(
+    'vault_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _blockingEventIdMeta = const VerificationMeta(
+    'blockingEventId',
+  );
+  late final GeneratedColumn<String> blockingEventId = GeneratedColumn<String>(
+    'blocking_event_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _permittedRestoreOperationIdMeta =
+      const VerificationMeta('permittedRestoreOperationId');
+  late final GeneratedColumn<String> permittedRestoreOperationId =
+      GeneratedColumn<String>(
+        'permitted_restore_operation_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        $customConstraints: '',
+      );
+  static const VerificationMeta _acceptedRestoreRevisionMeta =
+      const VerificationMeta('acceptedRestoreRevision');
+  late final GeneratedColumn<int> acceptedRestoreRevision =
+      GeneratedColumn<int>(
+        'accepted_restore_revision',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        $customConstraints: '',
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    vaultId,
+    accountId,
+    blockingEventId,
+    permittedRestoreOperationId,
+    acceptedRestoreRevision,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_dependency_pause';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncDependencyPauseData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('vault_id')) {
+      context.handle(
+        _vaultIdMeta,
+        vaultId.isAcceptableOrUnknown(data['vault_id']!, _vaultIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_vaultIdMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('blocking_event_id')) {
+      context.handle(
+        _blockingEventIdMeta,
+        blockingEventId.isAcceptableOrUnknown(
+          data['blocking_event_id']!,
+          _blockingEventIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_blockingEventIdMeta);
+    }
+    if (data.containsKey('permitted_restore_operation_id')) {
+      context.handle(
+        _permittedRestoreOperationIdMeta,
+        permittedRestoreOperationId.isAcceptableOrUnknown(
+          data['permitted_restore_operation_id']!,
+          _permittedRestoreOperationIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('accepted_restore_revision')) {
+      context.handle(
+        _acceptedRestoreRevisionMeta,
+        acceptedRestoreRevision.isAcceptableOrUnknown(
+          data['accepted_restore_revision']!,
+          _acceptedRestoreRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {vaultId, accountId};
+  @override
+  SyncDependencyPauseData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncDependencyPauseData(
+      vaultId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vault_id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      blockingEventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}blocking_event_id'],
+      )!,
+      permittedRestoreOperationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}permitted_restore_operation_id'],
+      ),
+      acceptedRestoreRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}accepted_restore_revision'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  SyncDependencyPause createAlias(String alias) {
+    return SyncDependencyPause(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(vault_id, account_id)',
+    'FOREIGN KEY(blocking_event_id)REFERENCES sync_quarantine(event_id)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class SyncDependencyPauseData extends DataClass
+    implements Insertable<SyncDependencyPauseData> {
+  final String vaultId;
+  final String accountId;
+  final String blockingEventId;
+  final String? permittedRestoreOperationId;
+  final int? acceptedRestoreRevision;
+  final int createdAt;
+  const SyncDependencyPauseData({
+    required this.vaultId,
+    required this.accountId,
+    required this.blockingEventId,
+    this.permittedRestoreOperationId,
+    this.acceptedRestoreRevision,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['vault_id'] = Variable<String>(vaultId);
+    map['account_id'] = Variable<String>(accountId);
+    map['blocking_event_id'] = Variable<String>(blockingEventId);
+    if (!nullToAbsent || permittedRestoreOperationId != null) {
+      map['permitted_restore_operation_id'] = Variable<String>(
+        permittedRestoreOperationId,
+      );
+    }
+    if (!nullToAbsent || acceptedRestoreRevision != null) {
+      map['accepted_restore_revision'] = Variable<int>(acceptedRestoreRevision);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  SyncDependencyPauseCompanion toCompanion(bool nullToAbsent) {
+    return SyncDependencyPauseCompanion(
+      vaultId: Value(vaultId),
+      accountId: Value(accountId),
+      blockingEventId: Value(blockingEventId),
+      permittedRestoreOperationId:
+          permittedRestoreOperationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(permittedRestoreOperationId),
+      acceptedRestoreRevision: acceptedRestoreRevision == null && nullToAbsent
+          ? const Value.absent()
+          : Value(acceptedRestoreRevision),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SyncDependencyPauseData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncDependencyPauseData(
+      vaultId: serializer.fromJson<String>(json['vault_id']),
+      accountId: serializer.fromJson<String>(json['account_id']),
+      blockingEventId: serializer.fromJson<String>(json['blocking_event_id']),
+      permittedRestoreOperationId: serializer.fromJson<String?>(
+        json['permitted_restore_operation_id'],
+      ),
+      acceptedRestoreRevision: serializer.fromJson<int?>(
+        json['accepted_restore_revision'],
+      ),
+      createdAt: serializer.fromJson<int>(json['created_at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'vault_id': serializer.toJson<String>(vaultId),
+      'account_id': serializer.toJson<String>(accountId),
+      'blocking_event_id': serializer.toJson<String>(blockingEventId),
+      'permitted_restore_operation_id': serializer.toJson<String?>(
+        permittedRestoreOperationId,
+      ),
+      'accepted_restore_revision': serializer.toJson<int?>(
+        acceptedRestoreRevision,
+      ),
+      'created_at': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  SyncDependencyPauseData copyWith({
+    String? vaultId,
+    String? accountId,
+    String? blockingEventId,
+    Value<String?> permittedRestoreOperationId = const Value.absent(),
+    Value<int?> acceptedRestoreRevision = const Value.absent(),
+    int? createdAt,
+  }) => SyncDependencyPauseData(
+    vaultId: vaultId ?? this.vaultId,
+    accountId: accountId ?? this.accountId,
+    blockingEventId: blockingEventId ?? this.blockingEventId,
+    permittedRestoreOperationId: permittedRestoreOperationId.present
+        ? permittedRestoreOperationId.value
+        : this.permittedRestoreOperationId,
+    acceptedRestoreRevision: acceptedRestoreRevision.present
+        ? acceptedRestoreRevision.value
+        : this.acceptedRestoreRevision,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  SyncDependencyPauseData copyWithCompanion(SyncDependencyPauseCompanion data) {
+    return SyncDependencyPauseData(
+      vaultId: data.vaultId.present ? data.vaultId.value : this.vaultId,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      blockingEventId: data.blockingEventId.present
+          ? data.blockingEventId.value
+          : this.blockingEventId,
+      permittedRestoreOperationId: data.permittedRestoreOperationId.present
+          ? data.permittedRestoreOperationId.value
+          : this.permittedRestoreOperationId,
+      acceptedRestoreRevision: data.acceptedRestoreRevision.present
+          ? data.acceptedRestoreRevision.value
+          : this.acceptedRestoreRevision,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncDependencyPauseData(')
+          ..write('vaultId: $vaultId, ')
+          ..write('accountId: $accountId, ')
+          ..write('blockingEventId: $blockingEventId, ')
+          ..write('permittedRestoreOperationId: $permittedRestoreOperationId, ')
+          ..write('acceptedRestoreRevision: $acceptedRestoreRevision, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    vaultId,
+    accountId,
+    blockingEventId,
+    permittedRestoreOperationId,
+    acceptedRestoreRevision,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncDependencyPauseData &&
+          other.vaultId == this.vaultId &&
+          other.accountId == this.accountId &&
+          other.blockingEventId == this.blockingEventId &&
+          other.permittedRestoreOperationId ==
+              this.permittedRestoreOperationId &&
+          other.acceptedRestoreRevision == this.acceptedRestoreRevision &&
+          other.createdAt == this.createdAt);
+}
+
+class SyncDependencyPauseCompanion
+    extends UpdateCompanion<SyncDependencyPauseData> {
+  final Value<String> vaultId;
+  final Value<String> accountId;
+  final Value<String> blockingEventId;
+  final Value<String?> permittedRestoreOperationId;
+  final Value<int?> acceptedRestoreRevision;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const SyncDependencyPauseCompanion({
+    this.vaultId = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.blockingEventId = const Value.absent(),
+    this.permittedRestoreOperationId = const Value.absent(),
+    this.acceptedRestoreRevision = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncDependencyPauseCompanion.insert({
+    required String vaultId,
+    required String accountId,
+    required String blockingEventId,
+    this.permittedRestoreOperationId = const Value.absent(),
+    this.acceptedRestoreRevision = const Value.absent(),
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : vaultId = Value(vaultId),
+       accountId = Value(accountId),
+       blockingEventId = Value(blockingEventId),
+       createdAt = Value(createdAt);
+  static Insertable<SyncDependencyPauseData> custom({
+    Expression<String>? vaultId,
+    Expression<String>? accountId,
+    Expression<String>? blockingEventId,
+    Expression<String>? permittedRestoreOperationId,
+    Expression<int>? acceptedRestoreRevision,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (vaultId != null) 'vault_id': vaultId,
+      if (accountId != null) 'account_id': accountId,
+      if (blockingEventId != null) 'blocking_event_id': blockingEventId,
+      if (permittedRestoreOperationId != null)
+        'permitted_restore_operation_id': permittedRestoreOperationId,
+      if (acceptedRestoreRevision != null)
+        'accepted_restore_revision': acceptedRestoreRevision,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncDependencyPauseCompanion copyWith({
+    Value<String>? vaultId,
+    Value<String>? accountId,
+    Value<String>? blockingEventId,
+    Value<String?>? permittedRestoreOperationId,
+    Value<int?>? acceptedRestoreRevision,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return SyncDependencyPauseCompanion(
+      vaultId: vaultId ?? this.vaultId,
+      accountId: accountId ?? this.accountId,
+      blockingEventId: blockingEventId ?? this.blockingEventId,
+      permittedRestoreOperationId:
+          permittedRestoreOperationId ?? this.permittedRestoreOperationId,
+      acceptedRestoreRevision:
+          acceptedRestoreRevision ?? this.acceptedRestoreRevision,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (vaultId.present) {
+      map['vault_id'] = Variable<String>(vaultId.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (blockingEventId.present) {
+      map['blocking_event_id'] = Variable<String>(blockingEventId.value);
+    }
+    if (permittedRestoreOperationId.present) {
+      map['permitted_restore_operation_id'] = Variable<String>(
+        permittedRestoreOperationId.value,
+      );
+    }
+    if (acceptedRestoreRevision.present) {
+      map['accepted_restore_revision'] = Variable<int>(
+        acceptedRestoreRevision.value,
+      );
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncDependencyPauseCompanion(')
+          ..write('vaultId: $vaultId, ')
+          ..write('accountId: $accountId, ')
+          ..write('blockingEventId: $blockingEventId, ')
+          ..write('permittedRestoreOperationId: $permittedRestoreOperationId, ')
+          ..write('acceptedRestoreRevision: $acceptedRestoreRevision, ')
+          ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -27138,18 +31272,34 @@ abstract class _$EquisDatabase extends GeneratedDatabase {
       InvestmentInstruments(this);
   late final InvestmentEvents investmentEvents = InvestmentEvents(this);
   late final InvestmentLots investmentLots = InvestmentLots(this);
+  late final FixedIncomeContracts fixedIncomeContracts = FixedIncomeContracts(
+    this,
+  );
+  late final FixedIncomeManualValues fixedIncomeManualValues =
+      FixedIncomeManualValues(this);
   late final InvestmentLotDisposals investmentLotDisposals =
       InvestmentLotDisposals(this);
   late final FxRateCache fxRateCache = FxRateCache(this);
   late final ManualFxRates manualFxRates = ManualFxRates(this);
   late final MarketPriceCache marketPriceCache = MarketPriceCache(this);
+  late final EconomicSeriesCache economicSeriesCache = EconomicSeriesCache(
+    this,
+  );
+  late final EconomicSeriesRefreshState economicSeriesRefreshState =
+      EconomicSeriesRefreshState(this);
   late final ManualMarketPrices manualMarketPrices = ManualMarketPrices(this);
   late final Attachments attachments = Attachments(this);
   late final AttachmentLinks attachmentLinks = AttachmentLinks(this);
   late final SyncEntityState syncEntityState = SyncEntityState(this);
   late final SyncOutbox syncOutbox = SyncOutbox(this);
+  late final SyncOutboxDependencies syncOutboxDependencies =
+      SyncOutboxDependencies(this);
   late final SyncCursors syncCursors = SyncCursors(this);
   late final SyncConflicts syncConflicts = SyncConflicts(this);
+  late final SyncQuarantine syncQuarantine = SyncQuarantine(this);
+  late final SyncDependencyPause syncDependencyPause = SyncDependencyPause(
+    this,
+  );
   late final DevicePreferences devicePreferences = DevicePreferences(this);
   late final VaultPreferences vaultPreferences = VaultPreferences(this);
   late final Index idxTransactionsVaultDate = Index(
@@ -27262,17 +31412,24 @@ abstract class _$EquisDatabase extends GeneratedDatabase {
     investmentInstruments,
     investmentEvents,
     investmentLots,
+    fixedIncomeContracts,
+    fixedIncomeManualValues,
     investmentLotDisposals,
     fxRateCache,
     manualFxRates,
     marketPriceCache,
+    economicSeriesCache,
+    economicSeriesRefreshState,
     manualMarketPrices,
     attachments,
     attachmentLinks,
     syncEntityState,
     syncOutbox,
+    syncOutboxDependencies,
     syncCursors,
     syncConflicts,
+    syncQuarantine,
+    syncDependencyPause,
     devicePreferences,
     vaultPreferences,
     idxTransactionsVaultDate,
@@ -27404,6 +31561,15 @@ abstract class _$EquisDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('investment_events', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'sync_outbox',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('sync_outbox_dependencies', kind: UpdateKind.delete),
+      ],
     ),
   ]);
 }
@@ -37186,6 +41352,790 @@ typedef $InvestmentLotsProcessedTableManager =
       InvestmentLot,
       PrefetchHooks Function()
     >;
+typedef $FixedIncomeContractsCreateCompanionBuilder =
+    FixedIncomeContractsCompanion Function({
+      Value<String?> lotId,
+      required String principal,
+      required String currencyCode,
+      required String productName,
+      Value<String?> issuerName,
+      required String accrualStart,
+      Value<String?> maturityOn,
+      Value<String?> liquidityOn,
+      required String remunerationMode,
+      Value<int?> indexCode,
+      Value<String?> indexMultiplier,
+      Value<String?> annualRate,
+      Value<String?> annualSpread,
+      Value<int?> dayCountBasis,
+      Value<String?> calendarVersion,
+      Value<int> publicationLagMonths,
+      Value<int?> anniversaryDay,
+      required String updateRule,
+      Value<int> rowid,
+    });
+typedef $FixedIncomeContractsUpdateCompanionBuilder =
+    FixedIncomeContractsCompanion Function({
+      Value<String?> lotId,
+      Value<String> principal,
+      Value<String> currencyCode,
+      Value<String> productName,
+      Value<String?> issuerName,
+      Value<String> accrualStart,
+      Value<String?> maturityOn,
+      Value<String?> liquidityOn,
+      Value<String> remunerationMode,
+      Value<int?> indexCode,
+      Value<String?> indexMultiplier,
+      Value<String?> annualRate,
+      Value<String?> annualSpread,
+      Value<int?> dayCountBasis,
+      Value<String?> calendarVersion,
+      Value<int> publicationLagMonths,
+      Value<int?> anniversaryDay,
+      Value<String> updateRule,
+      Value<int> rowid,
+    });
+
+class $FixedIncomeContractsFilterComposer
+    extends Composer<_$EquisDatabase, FixedIncomeContracts> {
+  $FixedIncomeContractsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get lotId => $composableBuilder(
+    column: $table.lotId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get principal => $composableBuilder(
+    column: $table.principal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get issuerName => $composableBuilder(
+    column: $table.issuerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accrualStart => $composableBuilder(
+    column: $table.accrualStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get maturityOn => $composableBuilder(
+    column: $table.maturityOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get liquidityOn => $composableBuilder(
+    column: $table.liquidityOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remunerationMode => $composableBuilder(
+    column: $table.remunerationMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get indexCode => $composableBuilder(
+    column: $table.indexCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get indexMultiplier => $composableBuilder(
+    column: $table.indexMultiplier,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get annualRate => $composableBuilder(
+    column: $table.annualRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get annualSpread => $composableBuilder(
+    column: $table.annualSpread,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dayCountBasis => $composableBuilder(
+    column: $table.dayCountBasis,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get calendarVersion => $composableBuilder(
+    column: $table.calendarVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get publicationLagMonths => $composableBuilder(
+    column: $table.publicationLagMonths,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get anniversaryDay => $composableBuilder(
+    column: $table.anniversaryDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updateRule => $composableBuilder(
+    column: $table.updateRule,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $FixedIncomeContractsOrderingComposer
+    extends Composer<_$EquisDatabase, FixedIncomeContracts> {
+  $FixedIncomeContractsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get lotId => $composableBuilder(
+    column: $table.lotId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get principal => $composableBuilder(
+    column: $table.principal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get issuerName => $composableBuilder(
+    column: $table.issuerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accrualStart => $composableBuilder(
+    column: $table.accrualStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get maturityOn => $composableBuilder(
+    column: $table.maturityOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get liquidityOn => $composableBuilder(
+    column: $table.liquidityOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remunerationMode => $composableBuilder(
+    column: $table.remunerationMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get indexCode => $composableBuilder(
+    column: $table.indexCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get indexMultiplier => $composableBuilder(
+    column: $table.indexMultiplier,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get annualRate => $composableBuilder(
+    column: $table.annualRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get annualSpread => $composableBuilder(
+    column: $table.annualSpread,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dayCountBasis => $composableBuilder(
+    column: $table.dayCountBasis,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get calendarVersion => $composableBuilder(
+    column: $table.calendarVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get publicationLagMonths => $composableBuilder(
+    column: $table.publicationLagMonths,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get anniversaryDay => $composableBuilder(
+    column: $table.anniversaryDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updateRule => $composableBuilder(
+    column: $table.updateRule,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $FixedIncomeContractsAnnotationComposer
+    extends Composer<_$EquisDatabase, FixedIncomeContracts> {
+  $FixedIncomeContractsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get lotId =>
+      $composableBuilder(column: $table.lotId, builder: (column) => column);
+
+  GeneratedColumn<String> get principal =>
+      $composableBuilder(column: $table.principal, builder: (column) => column);
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get issuerName => $composableBuilder(
+    column: $table.issuerName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get accrualStart => $composableBuilder(
+    column: $table.accrualStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get maturityOn => $composableBuilder(
+    column: $table.maturityOn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get liquidityOn => $composableBuilder(
+    column: $table.liquidityOn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get remunerationMode => $composableBuilder(
+    column: $table.remunerationMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get indexCode =>
+      $composableBuilder(column: $table.indexCode, builder: (column) => column);
+
+  GeneratedColumn<String> get indexMultiplier => $composableBuilder(
+    column: $table.indexMultiplier,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get annualRate => $composableBuilder(
+    column: $table.annualRate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get annualSpread => $composableBuilder(
+    column: $table.annualSpread,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dayCountBasis => $composableBuilder(
+    column: $table.dayCountBasis,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get calendarVersion => $composableBuilder(
+    column: $table.calendarVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get publicationLagMonths => $composableBuilder(
+    column: $table.publicationLagMonths,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get anniversaryDay => $composableBuilder(
+    column: $table.anniversaryDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updateRule => $composableBuilder(
+    column: $table.updateRule,
+    builder: (column) => column,
+  );
+}
+
+class $FixedIncomeContractsTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          FixedIncomeContracts,
+          FixedIncomeContract,
+          $FixedIncomeContractsFilterComposer,
+          $FixedIncomeContractsOrderingComposer,
+          $FixedIncomeContractsAnnotationComposer,
+          $FixedIncomeContractsCreateCompanionBuilder,
+          $FixedIncomeContractsUpdateCompanionBuilder,
+          (
+            FixedIncomeContract,
+            BaseReferences<
+              _$EquisDatabase,
+              FixedIncomeContracts,
+              FixedIncomeContract
+            >,
+          ),
+          FixedIncomeContract,
+          PrefetchHooks Function()
+        > {
+  $FixedIncomeContractsTableManager(
+    _$EquisDatabase db,
+    FixedIncomeContracts table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $FixedIncomeContractsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $FixedIncomeContractsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $FixedIncomeContractsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String?> lotId = const Value.absent(),
+                Value<String> principal = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
+                Value<String> productName = const Value.absent(),
+                Value<String?> issuerName = const Value.absent(),
+                Value<String> accrualStart = const Value.absent(),
+                Value<String?> maturityOn = const Value.absent(),
+                Value<String?> liquidityOn = const Value.absent(),
+                Value<String> remunerationMode = const Value.absent(),
+                Value<int?> indexCode = const Value.absent(),
+                Value<String?> indexMultiplier = const Value.absent(),
+                Value<String?> annualRate = const Value.absent(),
+                Value<String?> annualSpread = const Value.absent(),
+                Value<int?> dayCountBasis = const Value.absent(),
+                Value<String?> calendarVersion = const Value.absent(),
+                Value<int> publicationLagMonths = const Value.absent(),
+                Value<int?> anniversaryDay = const Value.absent(),
+                Value<String> updateRule = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FixedIncomeContractsCompanion(
+                lotId: lotId,
+                principal: principal,
+                currencyCode: currencyCode,
+                productName: productName,
+                issuerName: issuerName,
+                accrualStart: accrualStart,
+                maturityOn: maturityOn,
+                liquidityOn: liquidityOn,
+                remunerationMode: remunerationMode,
+                indexCode: indexCode,
+                indexMultiplier: indexMultiplier,
+                annualRate: annualRate,
+                annualSpread: annualSpread,
+                dayCountBasis: dayCountBasis,
+                calendarVersion: calendarVersion,
+                publicationLagMonths: publicationLagMonths,
+                anniversaryDay: anniversaryDay,
+                updateRule: updateRule,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String?> lotId = const Value.absent(),
+                required String principal,
+                required String currencyCode,
+                required String productName,
+                Value<String?> issuerName = const Value.absent(),
+                required String accrualStart,
+                Value<String?> maturityOn = const Value.absent(),
+                Value<String?> liquidityOn = const Value.absent(),
+                required String remunerationMode,
+                Value<int?> indexCode = const Value.absent(),
+                Value<String?> indexMultiplier = const Value.absent(),
+                Value<String?> annualRate = const Value.absent(),
+                Value<String?> annualSpread = const Value.absent(),
+                Value<int?> dayCountBasis = const Value.absent(),
+                Value<String?> calendarVersion = const Value.absent(),
+                Value<int> publicationLagMonths = const Value.absent(),
+                Value<int?> anniversaryDay = const Value.absent(),
+                required String updateRule,
+                Value<int> rowid = const Value.absent(),
+              }) => FixedIncomeContractsCompanion.insert(
+                lotId: lotId,
+                principal: principal,
+                currencyCode: currencyCode,
+                productName: productName,
+                issuerName: issuerName,
+                accrualStart: accrualStart,
+                maturityOn: maturityOn,
+                liquidityOn: liquidityOn,
+                remunerationMode: remunerationMode,
+                indexCode: indexCode,
+                indexMultiplier: indexMultiplier,
+                annualRate: annualRate,
+                annualSpread: annualSpread,
+                dayCountBasis: dayCountBasis,
+                calendarVersion: calendarVersion,
+                publicationLagMonths: publicationLagMonths,
+                anniversaryDay: anniversaryDay,
+                updateRule: updateRule,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $FixedIncomeContractsProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      FixedIncomeContracts,
+      FixedIncomeContract,
+      $FixedIncomeContractsFilterComposer,
+      $FixedIncomeContractsOrderingComposer,
+      $FixedIncomeContractsAnnotationComposer,
+      $FixedIncomeContractsCreateCompanionBuilder,
+      $FixedIncomeContractsUpdateCompanionBuilder,
+      (
+        FixedIncomeContract,
+        BaseReferences<
+          _$EquisDatabase,
+          FixedIncomeContracts,
+          FixedIncomeContract
+        >,
+      ),
+      FixedIncomeContract,
+      PrefetchHooks Function()
+    >;
+typedef $FixedIncomeManualValuesCreateCompanionBuilder =
+    FixedIncomeManualValuesCompanion Function({
+      Value<String?> id,
+      required String lotId,
+      required String valueDate,
+      required int amountMinor,
+      required String currencyCode,
+      Value<String?> notes,
+      required int recordedAt,
+      Value<int?> removedAt,
+      Value<String?> disposalFingerprint,
+      Value<int> rowid,
+    });
+typedef $FixedIncomeManualValuesUpdateCompanionBuilder =
+    FixedIncomeManualValuesCompanion Function({
+      Value<String?> id,
+      Value<String> lotId,
+      Value<String> valueDate,
+      Value<int> amountMinor,
+      Value<String> currencyCode,
+      Value<String?> notes,
+      Value<int> recordedAt,
+      Value<int?> removedAt,
+      Value<String?> disposalFingerprint,
+      Value<int> rowid,
+    });
+
+class $FixedIncomeManualValuesFilterComposer
+    extends Composer<_$EquisDatabase, FixedIncomeManualValues> {
+  $FixedIncomeManualValuesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lotId => $composableBuilder(
+    column: $table.lotId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get valueDate => $composableBuilder(
+    column: $table.valueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get removedAt => $composableBuilder(
+    column: $table.removedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get disposalFingerprint => $composableBuilder(
+    column: $table.disposalFingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $FixedIncomeManualValuesOrderingComposer
+    extends Composer<_$EquisDatabase, FixedIncomeManualValues> {
+  $FixedIncomeManualValuesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lotId => $composableBuilder(
+    column: $table.lotId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get valueDate => $composableBuilder(
+    column: $table.valueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get removedAt => $composableBuilder(
+    column: $table.removedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get disposalFingerprint => $composableBuilder(
+    column: $table.disposalFingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $FixedIncomeManualValuesAnnotationComposer
+    extends Composer<_$EquisDatabase, FixedIncomeManualValues> {
+  $FixedIncomeManualValuesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get lotId =>
+      $composableBuilder(column: $table.lotId, builder: (column) => column);
+
+  GeneratedColumn<String> get valueDate =>
+      $composableBuilder(column: $table.valueDate, builder: (column) => column);
+
+  GeneratedColumn<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<int> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get removedAt =>
+      $composableBuilder(column: $table.removedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get disposalFingerprint => $composableBuilder(
+    column: $table.disposalFingerprint,
+    builder: (column) => column,
+  );
+}
+
+class $FixedIncomeManualValuesTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          FixedIncomeManualValues,
+          FixedIncomeManualValue,
+          $FixedIncomeManualValuesFilterComposer,
+          $FixedIncomeManualValuesOrderingComposer,
+          $FixedIncomeManualValuesAnnotationComposer,
+          $FixedIncomeManualValuesCreateCompanionBuilder,
+          $FixedIncomeManualValuesUpdateCompanionBuilder,
+          (
+            FixedIncomeManualValue,
+            BaseReferences<
+              _$EquisDatabase,
+              FixedIncomeManualValues,
+              FixedIncomeManualValue
+            >,
+          ),
+          FixedIncomeManualValue,
+          PrefetchHooks Function()
+        > {
+  $FixedIncomeManualValuesTableManager(
+    _$EquisDatabase db,
+    FixedIncomeManualValues table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $FixedIncomeManualValuesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $FixedIncomeManualValuesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $FixedIncomeManualValuesAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String?> id = const Value.absent(),
+                Value<String> lotId = const Value.absent(),
+                Value<String> valueDate = const Value.absent(),
+                Value<int> amountMinor = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> recordedAt = const Value.absent(),
+                Value<int?> removedAt = const Value.absent(),
+                Value<String?> disposalFingerprint = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FixedIncomeManualValuesCompanion(
+                id: id,
+                lotId: lotId,
+                valueDate: valueDate,
+                amountMinor: amountMinor,
+                currencyCode: currencyCode,
+                notes: notes,
+                recordedAt: recordedAt,
+                removedAt: removedAt,
+                disposalFingerprint: disposalFingerprint,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String?> id = const Value.absent(),
+                required String lotId,
+                required String valueDate,
+                required int amountMinor,
+                required String currencyCode,
+                Value<String?> notes = const Value.absent(),
+                required int recordedAt,
+                Value<int?> removedAt = const Value.absent(),
+                Value<String?> disposalFingerprint = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FixedIncomeManualValuesCompanion.insert(
+                id: id,
+                lotId: lotId,
+                valueDate: valueDate,
+                amountMinor: amountMinor,
+                currencyCode: currencyCode,
+                notes: notes,
+                recordedAt: recordedAt,
+                removedAt: removedAt,
+                disposalFingerprint: disposalFingerprint,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $FixedIncomeManualValuesProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      FixedIncomeManualValues,
+      FixedIncomeManualValue,
+      $FixedIncomeManualValuesFilterComposer,
+      $FixedIncomeManualValuesOrderingComposer,
+      $FixedIncomeManualValuesAnnotationComposer,
+      $FixedIncomeManualValuesCreateCompanionBuilder,
+      $FixedIncomeManualValuesUpdateCompanionBuilder,
+      (
+        FixedIncomeManualValue,
+        BaseReferences<
+          _$EquisDatabase,
+          FixedIncomeManualValues,
+          FixedIncomeManualValue
+        >,
+      ),
+      FixedIncomeManualValue,
+      PrefetchHooks Function()
+    >;
 typedef $InvestmentLotDisposalsCreateCompanionBuilder =
     InvestmentLotDisposalsCompanion Function({
       Value<String?> id,
@@ -38168,6 +43118,497 @@ typedef $MarketPriceCacheProcessedTableManager =
         BaseReferences<_$EquisDatabase, MarketPriceCache, MarketPriceCacheData>,
       ),
       MarketPriceCacheData,
+      PrefetchHooks Function()
+    >;
+typedef $EconomicSeriesCacheCreateCompanionBuilder =
+    EconomicSeriesCacheCompanion Function({
+      required int code,
+      required String referenceStart,
+      required String referenceEnd,
+      required String value,
+      required String unit,
+      required String source,
+      required int fetchedAt,
+      Value<int> rowid,
+    });
+typedef $EconomicSeriesCacheUpdateCompanionBuilder =
+    EconomicSeriesCacheCompanion Function({
+      Value<int> code,
+      Value<String> referenceStart,
+      Value<String> referenceEnd,
+      Value<String> value,
+      Value<String> unit,
+      Value<String> source,
+      Value<int> fetchedAt,
+      Value<int> rowid,
+    });
+
+class $EconomicSeriesCacheFilterComposer
+    extends Composer<_$EquisDatabase, EconomicSeriesCache> {
+  $EconomicSeriesCacheFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referenceStart => $composableBuilder(
+    column: $table.referenceStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referenceEnd => $composableBuilder(
+    column: $table.referenceEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $EconomicSeriesCacheOrderingComposer
+    extends Composer<_$EquisDatabase, EconomicSeriesCache> {
+  $EconomicSeriesCacheOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referenceStart => $composableBuilder(
+    column: $table.referenceStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referenceEnd => $composableBuilder(
+    column: $table.referenceEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $EconomicSeriesCacheAnnotationComposer
+    extends Composer<_$EquisDatabase, EconomicSeriesCache> {
+  $EconomicSeriesCacheAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get referenceStart => $composableBuilder(
+    column: $table.referenceStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get referenceEnd => $composableBuilder(
+    column: $table.referenceEnd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<int> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $EconomicSeriesCacheTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          EconomicSeriesCache,
+          EconomicSeriesCacheData,
+          $EconomicSeriesCacheFilterComposer,
+          $EconomicSeriesCacheOrderingComposer,
+          $EconomicSeriesCacheAnnotationComposer,
+          $EconomicSeriesCacheCreateCompanionBuilder,
+          $EconomicSeriesCacheUpdateCompanionBuilder,
+          (
+            EconomicSeriesCacheData,
+            BaseReferences<
+              _$EquisDatabase,
+              EconomicSeriesCache,
+              EconomicSeriesCacheData
+            >,
+          ),
+          EconomicSeriesCacheData,
+          PrefetchHooks Function()
+        > {
+  $EconomicSeriesCacheTableManager(
+    _$EquisDatabase db,
+    EconomicSeriesCache table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $EconomicSeriesCacheFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $EconomicSeriesCacheOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $EconomicSeriesCacheAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> code = const Value.absent(),
+                Value<String> referenceStart = const Value.absent(),
+                Value<String> referenceEnd = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<String> unit = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<int> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EconomicSeriesCacheCompanion(
+                code: code,
+                referenceStart: referenceStart,
+                referenceEnd: referenceEnd,
+                value: value,
+                unit: unit,
+                source: source,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int code,
+                required String referenceStart,
+                required String referenceEnd,
+                required String value,
+                required String unit,
+                required String source,
+                required int fetchedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => EconomicSeriesCacheCompanion.insert(
+                code: code,
+                referenceStart: referenceStart,
+                referenceEnd: referenceEnd,
+                value: value,
+                unit: unit,
+                source: source,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $EconomicSeriesCacheProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      EconomicSeriesCache,
+      EconomicSeriesCacheData,
+      $EconomicSeriesCacheFilterComposer,
+      $EconomicSeriesCacheOrderingComposer,
+      $EconomicSeriesCacheAnnotationComposer,
+      $EconomicSeriesCacheCreateCompanionBuilder,
+      $EconomicSeriesCacheUpdateCompanionBuilder,
+      (
+        EconomicSeriesCacheData,
+        BaseReferences<
+          _$EquisDatabase,
+          EconomicSeriesCache,
+          EconomicSeriesCacheData
+        >,
+      ),
+      EconomicSeriesCacheData,
+      PrefetchHooks Function()
+    >;
+typedef $EconomicSeriesRefreshStateCreateCompanionBuilder =
+    EconomicSeriesRefreshStateCompanion Function({
+      Value<int> code,
+      required String requestedFrom,
+      required String requestedThrough,
+      required int lastAttemptAt,
+      Value<int?> lastSuccessAt,
+      Value<String?> lastErrorCode,
+    });
+typedef $EconomicSeriesRefreshStateUpdateCompanionBuilder =
+    EconomicSeriesRefreshStateCompanion Function({
+      Value<int> code,
+      Value<String> requestedFrom,
+      Value<String> requestedThrough,
+      Value<int> lastAttemptAt,
+      Value<int?> lastSuccessAt,
+      Value<String?> lastErrorCode,
+    });
+
+class $EconomicSeriesRefreshStateFilterComposer
+    extends Composer<_$EquisDatabase, EconomicSeriesRefreshState> {
+  $EconomicSeriesRefreshStateFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestedFrom => $composableBuilder(
+    column: $table.requestedFrom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestedThrough => $composableBuilder(
+    column: $table.requestedThrough,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAttemptAt => $composableBuilder(
+    column: $table.lastAttemptAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastSuccessAt => $composableBuilder(
+    column: $table.lastSuccessAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastErrorCode => $composableBuilder(
+    column: $table.lastErrorCode,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $EconomicSeriesRefreshStateOrderingComposer
+    extends Composer<_$EquisDatabase, EconomicSeriesRefreshState> {
+  $EconomicSeriesRefreshStateOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestedFrom => $composableBuilder(
+    column: $table.requestedFrom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestedThrough => $composableBuilder(
+    column: $table.requestedThrough,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAttemptAt => $composableBuilder(
+    column: $table.lastAttemptAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastSuccessAt => $composableBuilder(
+    column: $table.lastSuccessAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastErrorCode => $composableBuilder(
+    column: $table.lastErrorCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $EconomicSeriesRefreshStateAnnotationComposer
+    extends Composer<_$EquisDatabase, EconomicSeriesRefreshState> {
+  $EconomicSeriesRefreshStateAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get requestedFrom => $composableBuilder(
+    column: $table.requestedFrom,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get requestedThrough => $composableBuilder(
+    column: $table.requestedThrough,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAttemptAt => $composableBuilder(
+    column: $table.lastAttemptAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastSuccessAt => $composableBuilder(
+    column: $table.lastSuccessAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastErrorCode => $composableBuilder(
+    column: $table.lastErrorCode,
+    builder: (column) => column,
+  );
+}
+
+class $EconomicSeriesRefreshStateTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          EconomicSeriesRefreshState,
+          EconomicSeriesRefreshStateData,
+          $EconomicSeriesRefreshStateFilterComposer,
+          $EconomicSeriesRefreshStateOrderingComposer,
+          $EconomicSeriesRefreshStateAnnotationComposer,
+          $EconomicSeriesRefreshStateCreateCompanionBuilder,
+          $EconomicSeriesRefreshStateUpdateCompanionBuilder,
+          (
+            EconomicSeriesRefreshStateData,
+            BaseReferences<
+              _$EquisDatabase,
+              EconomicSeriesRefreshState,
+              EconomicSeriesRefreshStateData
+            >,
+          ),
+          EconomicSeriesRefreshStateData,
+          PrefetchHooks Function()
+        > {
+  $EconomicSeriesRefreshStateTableManager(
+    _$EquisDatabase db,
+    EconomicSeriesRefreshState table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $EconomicSeriesRefreshStateFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $EconomicSeriesRefreshStateOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $EconomicSeriesRefreshStateAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> code = const Value.absent(),
+                Value<String> requestedFrom = const Value.absent(),
+                Value<String> requestedThrough = const Value.absent(),
+                Value<int> lastAttemptAt = const Value.absent(),
+                Value<int?> lastSuccessAt = const Value.absent(),
+                Value<String?> lastErrorCode = const Value.absent(),
+              }) => EconomicSeriesRefreshStateCompanion(
+                code: code,
+                requestedFrom: requestedFrom,
+                requestedThrough: requestedThrough,
+                lastAttemptAt: lastAttemptAt,
+                lastSuccessAt: lastSuccessAt,
+                lastErrorCode: lastErrorCode,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> code = const Value.absent(),
+                required String requestedFrom,
+                required String requestedThrough,
+                required int lastAttemptAt,
+                Value<int?> lastSuccessAt = const Value.absent(),
+                Value<String?> lastErrorCode = const Value.absent(),
+              }) => EconomicSeriesRefreshStateCompanion.insert(
+                code: code,
+                requestedFrom: requestedFrom,
+                requestedThrough: requestedThrough,
+                lastAttemptAt: lastAttemptAt,
+                lastSuccessAt: lastSuccessAt,
+                lastErrorCode: lastErrorCode,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $EconomicSeriesRefreshStateProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      EconomicSeriesRefreshState,
+      EconomicSeriesRefreshStateData,
+      $EconomicSeriesRefreshStateFilterComposer,
+      $EconomicSeriesRefreshStateOrderingComposer,
+      $EconomicSeriesRefreshStateAnnotationComposer,
+      $EconomicSeriesRefreshStateCreateCompanionBuilder,
+      $EconomicSeriesRefreshStateUpdateCompanionBuilder,
+      (
+        EconomicSeriesRefreshStateData,
+        BaseReferences<
+          _$EquisDatabase,
+          EconomicSeriesRefreshState,
+          EconomicSeriesRefreshStateData
+        >,
+      ),
+      EconomicSeriesRefreshStateData,
       PrefetchHooks Function()
     >;
 typedef $ManualMarketPricesCreateCompanionBuilder =
@@ -39571,6 +45012,161 @@ typedef $SyncOutboxProcessedTableManager =
       SyncOutboxData,
       PrefetchHooks Function()
     >;
+typedef $SyncOutboxDependenciesCreateCompanionBuilder =
+    SyncOutboxDependenciesCompanion Function({
+      required String operationId,
+      required String accountId,
+      Value<int> rowid,
+    });
+typedef $SyncOutboxDependenciesUpdateCompanionBuilder =
+    SyncOutboxDependenciesCompanion Function({
+      Value<String> operationId,
+      Value<String> accountId,
+      Value<int> rowid,
+    });
+
+class $SyncOutboxDependenciesFilterComposer
+    extends Composer<_$EquisDatabase, SyncOutboxDependencies> {
+  $SyncOutboxDependenciesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $SyncOutboxDependenciesOrderingComposer
+    extends Composer<_$EquisDatabase, SyncOutboxDependencies> {
+  $SyncOutboxDependenciesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $SyncOutboxDependenciesAnnotationComposer
+    extends Composer<_$EquisDatabase, SyncOutboxDependencies> {
+  $SyncOutboxDependenciesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
+}
+
+class $SyncOutboxDependenciesTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          SyncOutboxDependencies,
+          SyncOutboxDependency,
+          $SyncOutboxDependenciesFilterComposer,
+          $SyncOutboxDependenciesOrderingComposer,
+          $SyncOutboxDependenciesAnnotationComposer,
+          $SyncOutboxDependenciesCreateCompanionBuilder,
+          $SyncOutboxDependenciesUpdateCompanionBuilder,
+          (
+            SyncOutboxDependency,
+            BaseReferences<
+              _$EquisDatabase,
+              SyncOutboxDependencies,
+              SyncOutboxDependency
+            >,
+          ),
+          SyncOutboxDependency,
+          PrefetchHooks Function()
+        > {
+  $SyncOutboxDependenciesTableManager(
+    _$EquisDatabase db,
+    SyncOutboxDependencies table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $SyncOutboxDependenciesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $SyncOutboxDependenciesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $SyncOutboxDependenciesAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> operationId = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncOutboxDependenciesCompanion(
+                operationId: operationId,
+                accountId: accountId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String operationId,
+                required String accountId,
+                Value<int> rowid = const Value.absent(),
+              }) => SyncOutboxDependenciesCompanion.insert(
+                operationId: operationId,
+                accountId: accountId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $SyncOutboxDependenciesProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      SyncOutboxDependencies,
+      SyncOutboxDependency,
+      $SyncOutboxDependenciesFilterComposer,
+      $SyncOutboxDependenciesOrderingComposer,
+      $SyncOutboxDependenciesAnnotationComposer,
+      $SyncOutboxDependenciesCreateCompanionBuilder,
+      $SyncOutboxDependenciesUpdateCompanionBuilder,
+      (
+        SyncOutboxDependency,
+        BaseReferences<
+          _$EquisDatabase,
+          SyncOutboxDependencies,
+          SyncOutboxDependency
+        >,
+      ),
+      SyncOutboxDependency,
+      PrefetchHooks Function()
+    >;
 typedef $SyncCursorsCreateCompanionBuilder =
     SyncCursorsCompanion Function({
       Value<String?> vaultId,
@@ -40146,6 +45742,613 @@ typedef $SyncConflictsProcessedTableManager =
         BaseReferences<_$EquisDatabase, SyncConflicts, SyncConflict>,
       ),
       SyncConflict,
+      PrefetchHooks Function()
+    >;
+typedef $SyncQuarantineCreateCompanionBuilder =
+    SyncQuarantineCompanion Function({
+      Value<String?> eventId,
+      required String vaultId,
+      required int serverVersion,
+      required String entityType,
+      required String entityId,
+      required int entityRevision,
+      Value<String?> parentAccountId,
+      Value<String?> parentPocketId,
+      required String authenticatedEnvelope,
+      required String reason,
+      Value<String> replayState,
+      required int detectedAt,
+      Value<int?> replayedAt,
+      Value<int> rowid,
+    });
+typedef $SyncQuarantineUpdateCompanionBuilder =
+    SyncQuarantineCompanion Function({
+      Value<String?> eventId,
+      Value<String> vaultId,
+      Value<int> serverVersion,
+      Value<String> entityType,
+      Value<String> entityId,
+      Value<int> entityRevision,
+      Value<String?> parentAccountId,
+      Value<String?> parentPocketId,
+      Value<String> authenticatedEnvelope,
+      Value<String> reason,
+      Value<String> replayState,
+      Value<int> detectedAt,
+      Value<int?> replayedAt,
+      Value<int> rowid,
+    });
+
+class $SyncQuarantineFilterComposer
+    extends Composer<_$EquisDatabase, SyncQuarantine> {
+  $SyncQuarantineFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vaultId => $composableBuilder(
+    column: $table.vaultId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverVersion => $composableBuilder(
+    column: $table.serverVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get entityRevision => $composableBuilder(
+    column: $table.entityRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get parentAccountId => $composableBuilder(
+    column: $table.parentAccountId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get parentPocketId => $composableBuilder(
+    column: $table.parentPocketId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authenticatedEnvelope => $composableBuilder(
+    column: $table.authenticatedEnvelope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get replayState => $composableBuilder(
+    column: $table.replayState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get detectedAt => $composableBuilder(
+    column: $table.detectedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get replayedAt => $composableBuilder(
+    column: $table.replayedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $SyncQuarantineOrderingComposer
+    extends Composer<_$EquisDatabase, SyncQuarantine> {
+  $SyncQuarantineOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vaultId => $composableBuilder(
+    column: $table.vaultId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverVersion => $composableBuilder(
+    column: $table.serverVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get entityRevision => $composableBuilder(
+    column: $table.entityRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get parentAccountId => $composableBuilder(
+    column: $table.parentAccountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get parentPocketId => $composableBuilder(
+    column: $table.parentPocketId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authenticatedEnvelope => $composableBuilder(
+    column: $table.authenticatedEnvelope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get replayState => $composableBuilder(
+    column: $table.replayState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get detectedAt => $composableBuilder(
+    column: $table.detectedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get replayedAt => $composableBuilder(
+    column: $table.replayedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $SyncQuarantineAnnotationComposer
+    extends Composer<_$EquisDatabase, SyncQuarantine> {
+  $SyncQuarantineAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get eventId =>
+      $composableBuilder(column: $table.eventId, builder: (column) => column);
+
+  GeneratedColumn<String> get vaultId =>
+      $composableBuilder(column: $table.vaultId, builder: (column) => column);
+
+  GeneratedColumn<int> get serverVersion => $composableBuilder(
+    column: $table.serverVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<int> get entityRevision => $composableBuilder(
+    column: $table.entityRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get parentAccountId => $composableBuilder(
+    column: $table.parentAccountId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get parentPocketId => $composableBuilder(
+    column: $table.parentPocketId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get authenticatedEnvelope => $composableBuilder(
+    column: $table.authenticatedEnvelope,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get replayState => $composableBuilder(
+    column: $table.replayState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get detectedAt => $composableBuilder(
+    column: $table.detectedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get replayedAt => $composableBuilder(
+    column: $table.replayedAt,
+    builder: (column) => column,
+  );
+}
+
+class $SyncQuarantineTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          SyncQuarantine,
+          SyncQuarantineData,
+          $SyncQuarantineFilterComposer,
+          $SyncQuarantineOrderingComposer,
+          $SyncQuarantineAnnotationComposer,
+          $SyncQuarantineCreateCompanionBuilder,
+          $SyncQuarantineUpdateCompanionBuilder,
+          (
+            SyncQuarantineData,
+            BaseReferences<_$EquisDatabase, SyncQuarantine, SyncQuarantineData>,
+          ),
+          SyncQuarantineData,
+          PrefetchHooks Function()
+        > {
+  $SyncQuarantineTableManager(_$EquisDatabase db, SyncQuarantine table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $SyncQuarantineFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $SyncQuarantineOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $SyncQuarantineAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String?> eventId = const Value.absent(),
+                Value<String> vaultId = const Value.absent(),
+                Value<int> serverVersion = const Value.absent(),
+                Value<String> entityType = const Value.absent(),
+                Value<String> entityId = const Value.absent(),
+                Value<int> entityRevision = const Value.absent(),
+                Value<String?> parentAccountId = const Value.absent(),
+                Value<String?> parentPocketId = const Value.absent(),
+                Value<String> authenticatedEnvelope = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<String> replayState = const Value.absent(),
+                Value<int> detectedAt = const Value.absent(),
+                Value<int?> replayedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncQuarantineCompanion(
+                eventId: eventId,
+                vaultId: vaultId,
+                serverVersion: serverVersion,
+                entityType: entityType,
+                entityId: entityId,
+                entityRevision: entityRevision,
+                parentAccountId: parentAccountId,
+                parentPocketId: parentPocketId,
+                authenticatedEnvelope: authenticatedEnvelope,
+                reason: reason,
+                replayState: replayState,
+                detectedAt: detectedAt,
+                replayedAt: replayedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String?> eventId = const Value.absent(),
+                required String vaultId,
+                required int serverVersion,
+                required String entityType,
+                required String entityId,
+                required int entityRevision,
+                Value<String?> parentAccountId = const Value.absent(),
+                Value<String?> parentPocketId = const Value.absent(),
+                required String authenticatedEnvelope,
+                required String reason,
+                Value<String> replayState = const Value.absent(),
+                required int detectedAt,
+                Value<int?> replayedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncQuarantineCompanion.insert(
+                eventId: eventId,
+                vaultId: vaultId,
+                serverVersion: serverVersion,
+                entityType: entityType,
+                entityId: entityId,
+                entityRevision: entityRevision,
+                parentAccountId: parentAccountId,
+                parentPocketId: parentPocketId,
+                authenticatedEnvelope: authenticatedEnvelope,
+                reason: reason,
+                replayState: replayState,
+                detectedAt: detectedAt,
+                replayedAt: replayedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $SyncQuarantineProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      SyncQuarantine,
+      SyncQuarantineData,
+      $SyncQuarantineFilterComposer,
+      $SyncQuarantineOrderingComposer,
+      $SyncQuarantineAnnotationComposer,
+      $SyncQuarantineCreateCompanionBuilder,
+      $SyncQuarantineUpdateCompanionBuilder,
+      (
+        SyncQuarantineData,
+        BaseReferences<_$EquisDatabase, SyncQuarantine, SyncQuarantineData>,
+      ),
+      SyncQuarantineData,
+      PrefetchHooks Function()
+    >;
+typedef $SyncDependencyPauseCreateCompanionBuilder =
+    SyncDependencyPauseCompanion Function({
+      required String vaultId,
+      required String accountId,
+      required String blockingEventId,
+      Value<String?> permittedRestoreOperationId,
+      Value<int?> acceptedRestoreRevision,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $SyncDependencyPauseUpdateCompanionBuilder =
+    SyncDependencyPauseCompanion Function({
+      Value<String> vaultId,
+      Value<String> accountId,
+      Value<String> blockingEventId,
+      Value<String?> permittedRestoreOperationId,
+      Value<int?> acceptedRestoreRevision,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $SyncDependencyPauseFilterComposer
+    extends Composer<_$EquisDatabase, SyncDependencyPause> {
+  $SyncDependencyPauseFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get vaultId => $composableBuilder(
+    column: $table.vaultId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get blockingEventId => $composableBuilder(
+    column: $table.blockingEventId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get permittedRestoreOperationId => $composableBuilder(
+    column: $table.permittedRestoreOperationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get acceptedRestoreRevision => $composableBuilder(
+    column: $table.acceptedRestoreRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $SyncDependencyPauseOrderingComposer
+    extends Composer<_$EquisDatabase, SyncDependencyPause> {
+  $SyncDependencyPauseOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get vaultId => $composableBuilder(
+    column: $table.vaultId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get blockingEventId => $composableBuilder(
+    column: $table.blockingEventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get permittedRestoreOperationId => $composableBuilder(
+    column: $table.permittedRestoreOperationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get acceptedRestoreRevision => $composableBuilder(
+    column: $table.acceptedRestoreRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $SyncDependencyPauseAnnotationComposer
+    extends Composer<_$EquisDatabase, SyncDependencyPause> {
+  $SyncDependencyPauseAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get vaultId =>
+      $composableBuilder(column: $table.vaultId, builder: (column) => column);
+
+  GeneratedColumn<String> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
+
+  GeneratedColumn<String> get blockingEventId => $composableBuilder(
+    column: $table.blockingEventId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get permittedRestoreOperationId => $composableBuilder(
+    column: $table.permittedRestoreOperationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get acceptedRestoreRevision => $composableBuilder(
+    column: $table.acceptedRestoreRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $SyncDependencyPauseTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          SyncDependencyPause,
+          SyncDependencyPauseData,
+          $SyncDependencyPauseFilterComposer,
+          $SyncDependencyPauseOrderingComposer,
+          $SyncDependencyPauseAnnotationComposer,
+          $SyncDependencyPauseCreateCompanionBuilder,
+          $SyncDependencyPauseUpdateCompanionBuilder,
+          (
+            SyncDependencyPauseData,
+            BaseReferences<
+              _$EquisDatabase,
+              SyncDependencyPause,
+              SyncDependencyPauseData
+            >,
+          ),
+          SyncDependencyPauseData,
+          PrefetchHooks Function()
+        > {
+  $SyncDependencyPauseTableManager(
+    _$EquisDatabase db,
+    SyncDependencyPause table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $SyncDependencyPauseFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $SyncDependencyPauseOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $SyncDependencyPauseAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> vaultId = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<String> blockingEventId = const Value.absent(),
+                Value<String?> permittedRestoreOperationId =
+                    const Value.absent(),
+                Value<int?> acceptedRestoreRevision = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncDependencyPauseCompanion(
+                vaultId: vaultId,
+                accountId: accountId,
+                blockingEventId: blockingEventId,
+                permittedRestoreOperationId: permittedRestoreOperationId,
+                acceptedRestoreRevision: acceptedRestoreRevision,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String vaultId,
+                required String accountId,
+                required String blockingEventId,
+                Value<String?> permittedRestoreOperationId =
+                    const Value.absent(),
+                Value<int?> acceptedRestoreRevision = const Value.absent(),
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SyncDependencyPauseCompanion.insert(
+                vaultId: vaultId,
+                accountId: accountId,
+                blockingEventId: blockingEventId,
+                permittedRestoreOperationId: permittedRestoreOperationId,
+                acceptedRestoreRevision: acceptedRestoreRevision,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $SyncDependencyPauseProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      SyncDependencyPause,
+      SyncDependencyPauseData,
+      $SyncDependencyPauseFilterComposer,
+      $SyncDependencyPauseOrderingComposer,
+      $SyncDependencyPauseAnnotationComposer,
+      $SyncDependencyPauseCreateCompanionBuilder,
+      $SyncDependencyPauseUpdateCompanionBuilder,
+      (
+        SyncDependencyPauseData,
+        BaseReferences<
+          _$EquisDatabase,
+          SyncDependencyPause,
+          SyncDependencyPauseData
+        >,
+      ),
+      SyncDependencyPauseData,
       PrefetchHooks Function()
     >;
 typedef $DevicePreferencesCreateCompanionBuilder =
@@ -40875,6 +47078,10 @@ class $EquisDatabaseManager {
       $InvestmentEventsTableManager(_db, _db.investmentEvents);
   $InvestmentLotsTableManager get investmentLots =>
       $InvestmentLotsTableManager(_db, _db.investmentLots);
+  $FixedIncomeContractsTableManager get fixedIncomeContracts =>
+      $FixedIncomeContractsTableManager(_db, _db.fixedIncomeContracts);
+  $FixedIncomeManualValuesTableManager get fixedIncomeManualValues =>
+      $FixedIncomeManualValuesTableManager(_db, _db.fixedIncomeManualValues);
   $InvestmentLotDisposalsTableManager get investmentLotDisposals =>
       $InvestmentLotDisposalsTableManager(_db, _db.investmentLotDisposals);
   $FxRateCacheTableManager get fxRateCache =>
@@ -40883,6 +47090,13 @@ class $EquisDatabaseManager {
       $ManualFxRatesTableManager(_db, _db.manualFxRates);
   $MarketPriceCacheTableManager get marketPriceCache =>
       $MarketPriceCacheTableManager(_db, _db.marketPriceCache);
+  $EconomicSeriesCacheTableManager get economicSeriesCache =>
+      $EconomicSeriesCacheTableManager(_db, _db.economicSeriesCache);
+  $EconomicSeriesRefreshStateTableManager get economicSeriesRefreshState =>
+      $EconomicSeriesRefreshStateTableManager(
+        _db,
+        _db.economicSeriesRefreshState,
+      );
   $ManualMarketPricesTableManager get manualMarketPrices =>
       $ManualMarketPricesTableManager(_db, _db.manualMarketPrices);
   $AttachmentsTableManager get attachments =>
@@ -40893,10 +47107,16 @@ class $EquisDatabaseManager {
       $SyncEntityStateTableManager(_db, _db.syncEntityState);
   $SyncOutboxTableManager get syncOutbox =>
       $SyncOutboxTableManager(_db, _db.syncOutbox);
+  $SyncOutboxDependenciesTableManager get syncOutboxDependencies =>
+      $SyncOutboxDependenciesTableManager(_db, _db.syncOutboxDependencies);
   $SyncCursorsTableManager get syncCursors =>
       $SyncCursorsTableManager(_db, _db.syncCursors);
   $SyncConflictsTableManager get syncConflicts =>
       $SyncConflictsTableManager(_db, _db.syncConflicts);
+  $SyncQuarantineTableManager get syncQuarantine =>
+      $SyncQuarantineTableManager(_db, _db.syncQuarantine);
+  $SyncDependencyPauseTableManager get syncDependencyPause =>
+      $SyncDependencyPauseTableManager(_db, _db.syncDependencyPause);
   $DevicePreferencesTableManager get devicePreferences =>
       $DevicePreferencesTableManager(_db, _db.devicePreferences);
   $VaultPreferencesTableManager get vaultPreferences =>

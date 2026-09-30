@@ -1,6 +1,7 @@
 import 'package:equis/app/providers/app_providers.dart';
 import 'package:equis/app/theme/equis_theme.dart';
 import 'package:equis/application/services/local_finance_session_service.dart';
+import 'package:equis/application/services/everyday_transaction_service.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/entities/account_profile.dart';
 import 'package:equis/domain/shared/currency.dart';
@@ -122,6 +123,12 @@ class _HomeContent extends StatelessWidget {
                 spacing: 8,
                 children: [
                   const _AddAccountButton(),
+                  TextButton.icon(
+                    key: const Key('account-management-home'),
+                    onPressed: () => context.push('/accounts'),
+                    icon: const Icon(Icons.manage_accounts_outlined),
+                    label: Text(l10n.accountManagementTitle),
+                  ),
                   TextButton.icon(
                     onPressed: () => context.push('/taxonomy'),
                     icon: const Icon(Icons.category_outlined),
@@ -430,16 +437,19 @@ class _RecentTransactions extends ConsumerWidget {
                       TransactionAmountText(transaction: transaction),
                       TransactionActionMenu(
                         transaction: transaction,
+                        canEdit: everydayTransactionCanEdit(
+                          transaction,
+                          accounts: snapshot.accounts,
+                          categories: snapshot.categories,
+                        ),
                         onSelected: (action) =>
                             _act(context, ref, transaction, action),
                       ),
                     ],
                   ),
-                  onTap: transactionIsEditable(transaction)
-                      ? () => context.push(
-                          '/transactions/${transaction.id.value}',
-                        )
-                      : null,
+                  onTap: () => context.push(
+                    '/transactions/${transaction.id.value}/details',
+                  ),
                 ),
           ],
         ),

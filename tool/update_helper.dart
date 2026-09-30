@@ -4,6 +4,8 @@ import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 import 'package:equis/infrastructure/updates/update_manifest.dart';
 import 'package:equis/infrastructure/updates/update_public_key.dart';
+import 'package:equis/infrastructure/updates/windows_update_native.dart';
+import 'windows_installed_update.dart';
 
 Future<void> main(List<String> args) async {
   if (!await runUpdate(args)) exitCode = 1;
@@ -14,6 +16,9 @@ Future<bool> runUpdate(
   String publicKey = updatePublicKey,
   Future<void> Function(String)? launch,
 }) async {
+  if (args.length == 2 && args[0] == 'installed-v2') {
+    return runWindowsInstalledUpdate(args[1]);
+  }
   if (args.length < 5) {
     throw ArgumentError('prepare|apply <cache> <target> <platform> <pid>');
   }
@@ -27,6 +32,40 @@ Future<bool> runUpdate(
     if (p.isWithin(target.path, cache.path) ||
         p.equals(target.path, cache.path)) {
       throw const FormatException('Helper must be outside installation');
+    }
+    if (platform == 'windows-installed') {
+      WindowsUpdateMutex? refusalLease;
+      try {
+        if (Platform.isWindows) {
+          refusalLease = WindowsUpdateMutex.acquire(target.path);
+        }
+        // Older positional calls do not participate in the PrepareToInstall
+        // closure handshake. Preserve pending diagnostics when refusing them.
+        if (await journal.exists()) {
+          final existing = jsonDecode(await journal.readAsString());
+          if (existing is! Map ||
+              const {
+                'installation_started',
+                'manual_recovery',
+                'relaunch_consumed',
+                'replacing',
+              }.contains(existing['state'])) {
+            return false;
+          }
+        }
+        await writeJournal(
+          journal,
+          jsonEncode({
+            'state': 'preflight_failed',
+            'phase': 'helper',
+            'code': 'installed_session_required',
+          }),
+          flush: true,
+        );
+        return false;
+      } finally {
+        refusalLease?.close();
+      }
     }
     if (args[0] == 'recover') {
       await recoverInterrupted(cache, target);
@@ -171,15 +210,7 @@ Future<bool> runUpdate(
       await Future<void>.delayed(const Duration(seconds: 1));
     }
     if (!stopped) throw StateError('App still running');
-    if (platform == 'windows-installed') {
-      final install = await Process.run(payload.path, [
-        '/VERYSILENT',
-        '/SUPPRESSMSGBOXES',
-        '/NORESTART',
-        '/DIR=${target.path}',
-      ]);
-      if (install.exitCode != 0) throw StateError('Installer failed');
-    } else {
+    if (platform == 'windows-portable') {
       // Validate staged bytes against the authenticated archive again, before
       // replacing anything. A stale or modified staging tree is not trusted.
       final archive = ZipDecoder().decodeBytes(
@@ -249,6 +280,8 @@ Future<bool> runUpdate(
         }
         rethrow;
       }
+    } else {
+      throw const FormatException('Unsupported helper platform');
     }
     // Persist before launching: recovery must never roll back a potentially migrated DB.
     await writeJournal(

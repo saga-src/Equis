@@ -696,6 +696,45 @@ CREATE TABLE investment_lots (
         REFERENCES investment_events(id)
 );
 
+-- Optional contractual terms belong to one acquisition lot. Legacy lots stay
+-- without a row and continue through the existing price-based valuation.
+CREATE TABLE fixed_income_contracts (
+    lot_id                  TEXT PRIMARY KEY,
+    principal               TEXT NOT NULL,
+    currency_code           TEXT NOT NULL,
+    product_name            TEXT NOT NULL,
+    issuer_name             TEXT,
+    accrual_start           TEXT NOT NULL,
+    maturity_on             TEXT,
+    liquidity_on            TEXT,
+    remuneration_mode       TEXT NOT NULL,
+    index_code              INTEGER,
+    index_multiplier        TEXT,
+    annual_rate             TEXT,
+    annual_spread           TEXT,
+    day_count_basis         INTEGER,
+    calendar_version        TEXT,
+    publication_lag_months  INTEGER NOT NULL DEFAULT 0,
+    anniversary_day         INTEGER,
+    update_rule             TEXT NOT NULL,
+    FOREIGN KEY (lot_id) REFERENCES investment_lots(id)
+);
+
+-- Removed overrides remain as history. The latest non-removed dated entry
+-- for a lot is selected by recorded_at and id.
+CREATE TABLE fixed_income_manual_values (
+    id                      TEXT PRIMARY KEY,
+    lot_id                  TEXT NOT NULL,
+    value_date              TEXT NOT NULL,
+    amount_minor            INTEGER NOT NULL,
+    currency_code           TEXT NOT NULL,
+    notes                   TEXT,
+    recorded_at             INTEGER NOT NULL,
+    removed_at              INTEGER,
+    disposal_fingerprint    TEXT,
+    FOREIGN KEY (lot_id) REFERENCES investment_lots(id)
+);
+
 CREATE TABLE investment_lot_disposals (
     id                      TEXT PRIMARY KEY,
 
@@ -764,6 +803,28 @@ CREATE TABLE market_price_cache (
         price_timestamp,
         provider
     )
+);
+
+-- Public BCB observations only. No vault, instrument, lot or user identity.
+CREATE TABLE economic_series_cache (
+    code                    INTEGER NOT NULL,
+    reference_start         TEXT NOT NULL,
+    reference_end           TEXT NOT NULL,
+    value                   TEXT NOT NULL,
+    unit                    TEXT NOT NULL,
+    source                  TEXT NOT NULL,
+    fetched_at              INTEGER NOT NULL,
+    PRIMARY KEY (code, reference_start)
+);
+
+-- Public refresh metadata, including successful requests with no publication.
+CREATE TABLE economic_series_refresh_state (
+    code                    INTEGER PRIMARY KEY,
+    requested_from          TEXT NOT NULL,
+    requested_through       TEXT NOT NULL,
+    last_attempt_at         INTEGER NOT NULL,
+    last_success_at         INTEGER,
+    last_error_code         TEXT
 );
 
 CREATE TABLE manual_market_prices (
@@ -857,6 +918,13 @@ CREATE TABLE sync_outbox (
     last_error_code         TEXT
 );
 
+CREATE TABLE sync_outbox_dependencies (
+    operation_id            TEXT NOT NULL,
+    account_id              TEXT NOT NULL,
+    PRIMARY KEY (operation_id, account_id),
+    FOREIGN KEY (operation_id) REFERENCES sync_outbox(operation_id) ON DELETE CASCADE
+);
+
 CREATE TABLE sync_cursors (
     vault_id                TEXT PRIMARY KEY,
 
@@ -887,6 +955,36 @@ CREATE TABLE sync_conflicts (
     resolved_at             INTEGER,
 
     resolution              TEXT
+);
+
+-- Authenticated cloud envelopes are retained verbatim until a dependency
+-- conflict can be replayed safely. No ledger event is silently discarded.
+CREATE TABLE sync_quarantine (
+    event_id                TEXT PRIMARY KEY,
+    vault_id                TEXT NOT NULL,
+    server_version          INTEGER NOT NULL,
+    entity_type             TEXT NOT NULL,
+    entity_id               TEXT NOT NULL,
+    entity_revision         INTEGER NOT NULL,
+    parent_account_id       TEXT,
+    parent_pocket_id        TEXT,
+    authenticated_envelope  TEXT NOT NULL,
+    reason                  TEXT NOT NULL,
+    replay_state            TEXT NOT NULL DEFAULT 'pending',
+    detected_at             INTEGER NOT NULL,
+    replayed_at             INTEGER,
+    UNIQUE (vault_id, server_version, entity_type, entity_id)
+);
+
+CREATE TABLE sync_dependency_pause (
+    vault_id                TEXT NOT NULL,
+    account_id              TEXT NOT NULL,
+    blocking_event_id       TEXT NOT NULL,
+    permitted_restore_operation_id TEXT,
+    accepted_restore_revision INTEGER,
+    created_at              INTEGER NOT NULL,
+    PRIMARY KEY (vault_id, account_id),
+    FOREIGN KEY (blocking_event_id) REFERENCES sync_quarantine(event_id)
 );
 
 CREATE TABLE device_preferences (

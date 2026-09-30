@@ -190,6 +190,104 @@ void main() {
     );
   });
 
+  test('defers backup until quarantined sync data is replayed', () async {
+    await sourceDatabase.customStatement(
+      "INSERT INTO sync_quarantine (event_id, vault_id, server_version, entity_type, entity_id, entity_revision, authenticated_envelope, reason, detected_at) VALUES ('event-1', ?, 1, 'transaction', ?, 2, 'ciphertext', 'dependency', 1)",
+      [vault, transaction],
+    );
+    final backup = File('${temporary.path}/pending.equis');
+    await expectLater(
+      sourceService.create(
+        vaultId: vault,
+        password: password,
+        destination: backup,
+      ),
+      throwsA(isA<VaultSnapshotUnresolvedSyncConflict>()),
+    );
+    expect(await backup.exists(), isFalse);
+
+    await sourceDatabase.customStatement(
+      "UPDATE sync_quarantine SET replay_state = 'replayed', replayed_at = 2 WHERE event_id = 'event-1'",
+    );
+    await sourceService.create(
+      vaultId: vault,
+      password: password,
+      destination: backup,
+    );
+    await targetService.restore(source: backup, password: password);
+    expect(
+      await targetDatabase.customSelect('SELECT * FROM sync_quarantine').get(),
+      isEmpty,
+    );
+    expect(
+      await targetDatabase.customSelect('PRAGMA foreign_key_check').get(),
+      isEmpty,
+    );
+  });
+
+  test('restores a real encrypted schema v6 backup into schema v7', () async {
+    final fixture = File('test/fixtures/v1.1-schema-v6.equis');
+    const fixturePassword = 'synthetic v6 fixture password';
+    final keys = VaultKeyManager(
+      store: _Store(base64UrlEncode(List<int>.filled(32, 91))),
+      protocolVersion: 2,
+    );
+    final service = _service(
+      database: targetDatabase,
+      codec: EncryptedAttachmentFileCodec(cipher: AttachmentCipher(keys: keys)),
+      layout: targetLayout,
+      seed: 19,
+    );
+    final inspected = await service.validate(
+      source: fixture,
+      password: fixturePassword,
+    );
+    expect(inspected.schemaVersion, 6);
+    final restored = await service.restore(
+      source: fixture,
+      password: fixturePassword,
+    );
+    expect(restored.schemaVersion, 6);
+    expect(targetDatabase.schemaVersion, 7);
+    expect(
+      (await targetDatabase
+              .customSelect('SELECT name FROM accounts')
+              .getSingle())
+          .read<String>('name'),
+      'Synthetic checking',
+    );
+    expect(
+      (await targetDatabase
+              .customSelect('SELECT title FROM transactions')
+              .getSingle())
+          .read<String>('title'),
+      'Synthetic lunch',
+    );
+    expect(
+      (await targetDatabase
+              .customSelect('SELECT amount_minor FROM account_movements')
+              .getSingle())
+          .read<int>('amount_minor'),
+      -2590,
+    );
+    expect(
+      await targetDatabase
+          .customSelect('SELECT * FROM fixed_income_contracts')
+          .get(),
+      isEmpty,
+    );
+    expect(
+      await targetDatabase
+          .customSelect('SELECT * FROM fixed_income_manual_values')
+          .get(),
+      isEmpty,
+    );
+    expect(
+      await targetDatabase.customSelect('PRAGMA foreign_key_check').get(),
+      isEmpty,
+    );
+  });
+
   test(
     'migrates legacy backup once and restores a single identity on two devices',
     () async {

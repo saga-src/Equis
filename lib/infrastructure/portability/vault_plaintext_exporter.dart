@@ -16,7 +16,10 @@ final class VaultPlaintextExporter {
     required String vaultId,
     required File destination,
   }) async {
-    final snapshot = await snapshots.capture(vaultId);
+    final snapshot = await snapshots.capture(
+      vaultId,
+      requireSyncSettled: false,
+    );
     final bytes = utf8.encode(
       const JsonEncoder.withIndent('  ').convert(snapshot.toJson()),
     );
@@ -35,7 +38,10 @@ final class VaultPlaintextExporter {
     required String vaultId,
     required File destination,
   }) async {
-    final snapshot = await snapshots.capture(vaultId);
+    final snapshot = await snapshots.capture(
+      vaultId,
+      requireSyncSettled: false,
+    );
     final transactions = snapshot.tables['transactions']!;
     const columns = [
       'transaction_id',

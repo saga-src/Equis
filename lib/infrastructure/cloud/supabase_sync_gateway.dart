@@ -8,12 +8,32 @@ import '../security/vault_identity.dart';
 import '../../application/sync/encrypted_sync_models.dart';
 
 final class SupabaseSyncGateway
-    implements CloudSyncGateway, CloudSyncWakeupGateway {
-  const SupabaseSyncGateway(this.client, {this.keys});
+    implements
+        CloudSyncGateway,
+        CloudSyncWakeupGateway,
+        CloudSyncAggregateFormatGateway {
+  SupabaseSyncGateway(this.client, {this.keys});
   final VaultKeyManager? keys;
+  final Set<String> _format2Vaults = {};
   bool get usesVaultIdentity => keys?.protocolVersion == 2;
   String get _records => 'sync_records';
   final SupabaseClient client;
+
+  @override
+  Future<void> activateAggregateFormat2({required String vaultId}) async {
+    if (!usesVaultIdentity) {
+      throw const CloudSyncFailure(CloudSyncFailureCode.incompatibleServer);
+    }
+    final fingerprint = await (await keys!.requireVault(vaultId)).fingerprint();
+    final floor = await _translate(
+      () => client.rpc<int>(
+        'activate_sync_aggregate_format_2',
+        params: {'p_vault_id': vaultId, 'p_key_fingerprint': fingerprint},
+      ),
+    );
+    if (floor != 2) throw const CloudSyncFormatException();
+    _format2Vaults.add(vaultId);
+  }
 
   @override
   Future<void> ensureVaultAndDevice({
@@ -75,9 +95,12 @@ final class SupabaseSyncGateway
     final fingerprint = usesVaultIdentity
         ? await (await keys!.requireVault(vaultId)).fingerprint()
         : null;
+    if (usesVaultIdentity && !_format2Vaults.contains(vaultId)) {
+      throw const CloudSyncFailure(CloudSyncFailureCode.clientObsolete);
+    }
     final response = await _translate(
       () => client.rpc<List<dynamic>>(
-        'apply_sync_batch',
+        usesVaultIdentity ? 'apply_sync_batch_format_2' : 'apply_sync_batch',
         params: {
           'p_vault_id': vaultId,
           'p_mutations': mutations.map(_mutationJson).toList(growable: false),
@@ -212,7 +235,7 @@ Future<T> _translate<T>(Future<T> Function() action) async {
   } on PostgrestException catch (error) {
     final code = switch (error.code) {
       'EVK01' => CloudSyncFailureCode.keyMismatch,
-      'EVP01' => CloudSyncFailureCode.clientObsolete,
+      'EVP01' || 'EVP02' => CloudSyncFailureCode.clientObsolete,
       '42501' => CloudSyncFailureCode.accessDenied,
       '22023' => CloudSyncFailureCode.invalidMutation,
       'PGRST301' ||

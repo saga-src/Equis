@@ -8,6 +8,7 @@ import 'package:equis/domain/shared/money.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
 import 'package:equis/l10n/app_localizations.dart';
 import 'package:equis/presentation/formatting/taxonomy_labels.dart';
+import 'package:equis/presentation/transactions/transaction_detail_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,69 +16,168 @@ import 'package:go_router/go_router.dart';
 import 'quick_transaction_screen.dart';
 import 'transaction_attachments_panel.dart';
 
-class LocalTransactionPage extends ConsumerWidget {
+class LocalTransactionPage extends ConsumerStatefulWidget {
   const LocalTransactionPage({this.transactionId, super.key});
   final String? transactionId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LocalTransactionPage> createState() =>
+      _LocalTransactionPageState();
+}
+
+class _LocalTransactionPageState extends ConsumerState<LocalTransactionPage> {
+  LedgerTransaction? _opened;
+  bool _redirected = false;
+
+  @override
+  void didUpdateWidget(LocalTransactionPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.transactionId != widget.transactionId) {
+      _opened = null;
+      _redirected = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(localFinanceControllerProvider);
-    return state.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, stack) => Scaffold(
+    final snapshot = state.valueOrNull;
+    if (snapshot == null) {
+      return Scaffold(
         appBar: AppBar(),
         body: Center(
-          child: Text(AppLocalizations.of(context).localVaultErrorMessage),
+          child: state.hasError
+              ? Text(l10n.localVaultErrorMessage)
+              : state.isLoading
+              ? const CircularProgressIndicator()
+              : Text(l10n.setupRequiredMessage),
         ),
-      ),
-      data: (snapshot) {
-        if (snapshot?.vault == null) {
+      );
+    }
+    return Builder(
+      builder: (context) {
+        if (snapshot.vault == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: Center(
-              child: Text(AppLocalizations.of(context).setupRequiredMessage),
-            ),
+            body: Center(child: Text(l10n.setupRequiredMessage)),
           );
         }
-        LedgerTransaction? existing;
-        if (transactionId != null) {
-          for (final transaction in snapshot!.recentTransactions) {
-            if (transaction.id.value == transactionId) existing = transaction;
-          }
-          if (existing == null) {
+        if (_opened != null && _opened!.vaultId != snapshot.vault!.id) {
+          _opened = null;
+          _redirected = false;
+        }
+        final rawId = widget.transactionId;
+        if (rawId != null) {
+          EntityId id;
+          try {
+            id = EntityId.parse(rawId);
+          } on FormatException {
             return Scaffold(
               appBar: AppBar(),
-              body: Center(
-                child: Text(
-                  AppLocalizations.of(context).transactionNotFoundMessage,
-                ),
-              ),
+              body: Center(child: Text(l10n.transactionNotFoundMessage)),
             );
           }
-        }
-        final accounts = [
-          for (final account in snapshot!.accounts)
-            for (final pocket in account.pockets.where(
-              (pocket) => !pocket.archived,
-            ))
-              QuickAccountOption(
-                label: '${account.account.name} · ${pocket.currency.value}',
-                accountType: account.account.type,
-                card: account.account.type == AccountType.creditCard
-                    ? CreditCardContext(
-                        vaultId: snapshot.vault!.id,
-                        accountId: account.account.id,
-                        pocketId: pocket.id,
-                        currency: pocket.currency,
-                      )
-                    : null,
-                pocket: LedgerPocket(
-                  id: pocket.id,
-                  currency: pocket.currency,
-                  nature: account.account.nature,
-                ),
+          final detail = ref.watch(
+            transactionDetailControllerProvider(
+              TransactionDetailKey(
+                vaultId: snapshot.vault!.id,
+                transactionId: id,
               ),
+            ),
+          );
+          final currentData = detail.data;
+          final nowIneligible =
+              currentData != null &&
+              !everydayTransactionCanEdit(
+                currentData.transaction,
+                accounts: currentData.accounts,
+                categories: currentData.categories,
+              );
+          if (_opened != null) {
+            if (detail.status == TransactionDetailStatus.missing ||
+                nowIneligible ||
+                !everydayTransactionCanEdit(
+                  _opened!,
+                  accounts: snapshot.accounts,
+                  categories: snapshot.categories,
+                )) {
+              return _redirectToDetails(context, rawId);
+            }
+          } else {
+            switch (detail.status) {
+              case TransactionDetailStatus.loading:
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              case TransactionDetailStatus.missing:
+                return Scaffold(
+                  appBar: AppBar(),
+                  body: Center(child: Text(l10n.transactionNotFoundMessage)),
+                );
+              case TransactionDetailStatus.error:
+                return Scaffold(
+                  appBar: AppBar(),
+                  body: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(l10n.transactionDetailLoadFailedMessage),
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: () => ref
+                              .read(
+                                transactionDetailControllerProvider(
+                                  TransactionDetailKey(
+                                    vaultId: snapshot.vault!.id,
+                                    transactionId: id,
+                                  ),
+                                ).notifier,
+                              )
+                              .reload(),
+                          child: Text(l10n.transactionDetailRetryAction),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              case TransactionDetailStatus.ready:
+                final data = detail.data!;
+                if (!everydayTransactionCanEdit(
+                  data.transaction,
+                  accounts: data.accounts,
+                  categories: data.categories,
+                )) {
+                  return _redirectToDetails(context, rawId);
+                }
+                _opened = data.transaction;
+            }
+          }
+        }
+        final existing = _opened;
+        final accounts = [
+          for (final account in snapshot.accounts)
+            if (account.account.deletedAt == null && !account.account.archived)
+              for (final pocket in account.pockets.where(
+                (pocket) => !pocket.archived,
+              ))
+                QuickAccountOption(
+                  label: '${account.account.name} · ${pocket.currency.value}',
+                  accountType: account.account.type,
+                  card: account.account.type == AccountType.creditCard
+                      ? CreditCardContext(
+                          vaultId: snapshot.vault!.id,
+                          accountId: account.account.id,
+                          pocketId: pocket.id,
+                          currency: pocket.currency,
+                        )
+                      : null,
+                  pocket: LedgerPocket(
+                    id: pocket.id,
+                    currency: pocket.currency,
+                    nature: account.account.nature,
+                  ),
+                ),
         ];
         final categories = _categoryOptions(context, snapshot.categories);
         return QuickTransactionScreen(
@@ -88,6 +188,11 @@ class LocalTransactionPage extends ConsumerWidget {
               QuickTagOption(id: tag.id, label: tagLabel(context, tag)),
           ],
           initialDraft: existing == null ? null : _initial(existing),
+          onRevisionConflict: existing == null
+              ? null
+              : () => context.replace(
+                  '/transactions/${existing.id.value}/details',
+                ),
           attachmentSection: existing == null
               ? null
               : TransactionAttachmentsPanel(
@@ -142,6 +247,16 @@ class LocalTransactionPage extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Widget _redirectToDetails(BuildContext context, String rawId) {
+    if (!_redirected) {
+      _redirected = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.replace('/transactions/$rawId/details');
+      });
+    }
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 

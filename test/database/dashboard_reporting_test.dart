@@ -44,6 +44,79 @@ void main() {
 
   tearDown(() => database.close());
 
+  test('quarantine and dependency pause mark only this vault incomplete', () async {
+    final baseline = await service.load(
+      vaultId: fixture.vault,
+      reportingCurrency: CurrencyCode.brl,
+      asOf: LocalDate(2026, 8, 17),
+    );
+    expect(baseline.hasIncompleteAccounts, isFalse);
+    final event = EntityId.generate().value;
+    await database.customStatement(
+      'INSERT INTO sync_quarantine '
+      '(event_id, vault_id, server_version, entity_type, entity_id, entity_revision, '
+      'authenticated_envelope, reason, detected_at) '
+      "VALUES (?, ?, 1, 'account', ?, 1, '{}', 'account_conflict', 1)",
+      [event, EntityId.generate().value, EntityId.generate().value],
+    );
+    expect(await repository.hasIncompleteAccounts(fixture.vault), isFalse);
+    await database.customStatement(
+      'UPDATE sync_quarantine SET vault_id = ? WHERE event_id = ?',
+      [fixture.vault.value, event],
+    );
+    final partial = await service.load(
+      vaultId: fixture.vault,
+      reportingCurrency: CurrencyCode.brl,
+      asOf: LocalDate(2026, 8, 17),
+    );
+    expect(partial.hasIncompleteAccounts, isTrue);
+    expect(partial.isComplete, isFalse);
+    expect(partial.availableMoneyMinor, baseline.availableMoneyMinor);
+    await database.customStatement(
+      "UPDATE sync_quarantine SET replay_state = 'replayed', replayed_at = 2 WHERE event_id = ?",
+      [event],
+    );
+    expect(await repository.hasIncompleteAccounts(fixture.vault), isFalse);
+    await database.customStatement(
+      'INSERT INTO sync_dependency_pause (vault_id, account_id, blocking_event_id, created_at) '
+      'VALUES (?, ?, ?, 1)',
+      [fixture.vault.value, EntityId.generate().value, event],
+    );
+    expect(await repository.hasIncompleteAccounts(fixture.vault), isTrue);
+    await database.customStatement('DELETE FROM sync_dependency_pause');
+    final replayed = await service.load(
+      vaultId: fixture.vault,
+      reportingCurrency: CurrencyCode.brl,
+      asOf: LocalDate(2026, 8, 17),
+    );
+    expect(replayed.isComplete, isTrue);
+  });
+
+  test(
+    'archived account and pocket remain in balances before closedOn',
+    () async {
+      await database.customStatement(
+        "UPDATE accounts SET archived = 1, closed_on = '2026-08-18' "
+        'WHERE id = (SELECT account_id FROM account_pockets WHERE id = ?)',
+        [fixture.bank.id.value],
+      );
+      await database.customStatement(
+        'UPDATE account_pockets SET archived = 1 WHERE id = ?',
+        [fixture.bank.id.value],
+      );
+      final before = await repository.loadAccountBalances(
+        vaultId: fixture.vault,
+        asOf: LocalDate(2026, 8, 17),
+      );
+      final onClose = await repository.loadAccountBalances(
+        vaultId: fixture.vault,
+        asOf: LocalDate(2026, 8, 18),
+      );
+      expect(before.any((row) => row.pocketId == fixture.bank.id), isTrue);
+      expect(onClose.any((row) => row.pocketId == fixture.bank.id), isFalse);
+    },
+  );
+
   test(
     'split transactions with multiple tags retain the original expense total',
     () async {

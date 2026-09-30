@@ -111,7 +111,7 @@ final class DriftSyncMetadataStore
     required Map<String, Object?>? baseSnapshot,
     required int newRevision,
     required SyncOperation operation,
-  }) async {
+  }) => database.transaction(() async {
     if (newRevision < 1 || (baseRevision != null && baseRevision < 1)) {
       throw ArgumentError('Sync revisions must be positive.');
     }
@@ -130,6 +130,12 @@ final class DriftSyncMetadataStore
     final now = DateTime.now().toUtc().microsecondsSinceEpoch;
     final operationId =
         existing?.read<String>('operation_id') ?? EntityId.generate().value;
+    final retainedDependencies = await database
+        .customSelect(
+          'SELECT account_id FROM sync_outbox_dependencies WHERE operation_id = ?',
+          variables: [Variable(operationId)],
+        )
+        .get();
     // A null base on an existing outbox row means creation has not been sent.
     // Preserve that null rather than replacing it with an intermediate edit.
     final retainedBaseRevision = existing != null
@@ -161,6 +167,13 @@ final class DriftSyncMetadataStore
         existing?.read<int>('created_at') ?? now,
       ],
     );
+    await _writeDependencies(operationId, entityType, recordId);
+    for (final row in retainedDependencies) {
+      await database.customStatement(
+        'INSERT OR IGNORE INTO sync_outbox_dependencies (operation_id, account_id) VALUES (?, ?)',
+        [operationId, row.read<String>('account_id')],
+      );
+    }
     await database.customStatement(
       'INSERT INTO sync_entity_state ('
       'entity_type, record_id, local_revision, sync_state'
@@ -174,7 +187,117 @@ final class DriftSyncMetadataStore
         operation == SyncOperation.delete ? 'deleted_pending' : 'pending',
       ],
     );
+  });
+
+  Future<void> _writeDependencies(
+    String operationId,
+    SyncEntityType type,
+    String recordId,
+  ) async {
+    final sql = switch (type) {
+      SyncEntityType.account => 'SELECT ? AS account_id',
+      SyncEntityType.transaction =>
+        'SELECT DISTINCT p.account_id FROM account_movements m '
+            'LEFT JOIN account_pockets p ON p.id = m.account_pocket_id '
+            'WHERE m.transaction_id = ?',
+      SyncEntityType.recurringRule =>
+        'SELECT DISTINCT p.account_id FROM recurring_template_movements m '
+            'LEFT JOIN account_pockets p ON p.id = m.account_pocket_id '
+            'WHERE m.recurring_rule_id = ?',
+      SyncEntityType.installmentPlan =>
+        'SELECT p.account_id FROM installment_plans plan '
+            'LEFT JOIN account_pockets p ON p.id = plan.account_pocket_id '
+            'WHERE plan.id = ?',
+      SyncEntityType.creditCardStatement =>
+        'SELECT p.account_id FROM credit_card_statements statement '
+            'LEFT JOIN account_pockets p ON p.id = statement.account_pocket_id '
+            'WHERE statement.id = ?',
+      SyncEntityType.goal =>
+        'SELECT DISTINCT p.account_id FROM goal_accounts link '
+            'LEFT JOIN account_pockets p ON p.id = link.account_pocket_id '
+            'WHERE link.goal_id = ?',
+      SyncEntityType.budget =>
+        'SELECT DISTINCT account_id FROM budget_accounts WHERE budget_id = ?',
+      SyncEntityType.attachment =>
+        'SELECT DISTINCT entity_id AS account_id FROM attachment_links '
+            "WHERE attachment_id = ? AND entity_type = 'account'",
+      _ => null,
+    };
+    if (sql == null) return;
+    final rows = await database
+        .customSelect(sql, variables: [Variable(recordId)])
+        .get();
+    if ((type == SyncEntityType.transaction && rows.isEmpty) ||
+        rows.any((row) => row.readNullable<String>('account_id') == null)) {
+      throw StateError('Account sync dependencies cannot be resolved.');
+    }
+    for (final row in rows) {
+      await database.customStatement(
+        'INSERT OR IGNORE INTO sync_outbox_dependencies (operation_id, account_id) '
+        'VALUES (?, ?)',
+        [operationId, row.read<String>('account_id')],
+      );
+    }
   }
+
+  /// Rebasing changes the confirmed cloud base, preserving operation identity
+  /// and every dependency recorded before a concurrent local edit.
+  Future<void> rebasePending({
+    required PendingSyncMutation mutation,
+    required int baseRevision,
+    required Map<String, Object?> baseSnapshot,
+    required int newRevision,
+    SyncOperation? operation,
+  }) => database.transaction(() async {
+    if (baseRevision < 1 || newRevision <= baseRevision) {
+      throw ArgumentError(
+        'Rebased sync revisions must advance the cloud base.',
+      );
+    }
+    await database.customStatement(
+      'UPDATE sync_outbox SET base_revision = ?, base_snapshot = ?, new_revision = ?, operation = ?, '
+      'next_retry_at = NULL, last_error_code = NULL WHERE operation_id = ?',
+      [
+        baseRevision,
+        CanonicalJson.encode(baseSnapshot),
+        newRevision,
+        (operation ?? mutation.operation).name,
+        mutation.operationId,
+      ],
+    );
+    await _writeDependencies(
+      mutation.operationId,
+      mutation.entityType,
+      mutation.recordId,
+    );
+    await database.customStatement(
+      'UPDATE sync_entity_state SET local_revision = ?, sync_state = ? '
+      'WHERE entity_type = ? AND record_id = ?',
+      [
+        newRevision,
+        (operation ?? mutation.operation) == SyncOperation.delete
+            ? 'deleted_pending'
+            : 'pending',
+        mutation.entityType.wireName,
+        mutation.recordId,
+      ],
+    );
+  });
+
+  Future<void> confirmAccountRestore({
+    required String vaultId,
+    required String accountId,
+    required String operationId,
+    required int revision,
+  }) => database.customStatement(
+    'UPDATE sync_dependency_pause SET permitted_restore_operation_id = NULL, accepted_restore_revision = ? '
+    'WHERE vault_id = ? AND account_id = ? AND permitted_restore_operation_id = ? '
+    'AND accepted_restore_revision < ? AND EXISTS ('
+    'SELECT 1 FROM accounts a WHERE a.id = sync_dependency_pause.account_id '
+    'AND a.vault_id = sync_dependency_pause.vault_id '
+    'AND a.archived = 0 AND a.deleted_at IS NULL AND a.revision >= ?)',
+    [revision, vaultId, accountId, operationId, revision, revision],
+  );
 
   @override
   Future<List<PendingSyncMutation>> readyMutations({
@@ -185,12 +308,46 @@ final class DriftSyncMetadataStore
     if (limit < 1 || limit > 100) {
       throw ArgumentError.value(limit, 'limit');
     }
+    // Queues created before dependency tracking must be checked before a push.
+    // Keeping prior links also protects edits that removed a previous reference.
+    await database.transaction(() async {
+      final queued = await database
+          .customSelect(
+            'SELECT operation_id, entity_type, record_id FROM sync_outbox WHERE vault_id = ?',
+            variables: [Variable(vaultId)],
+          )
+          .get();
+      for (final row in queued) {
+        await _writeDependencies(
+          row.read<String>('operation_id'),
+          SyncEntityType.parse(row.read<String>('entity_type')),
+          row.read<String>('record_id'),
+        );
+      }
+    });
     final rows = await database
         .customSelect(
           'SELECT * FROM sync_outbox WHERE vault_id = ? '
           'AND (next_retry_at IS NULL OR next_retry_at <= ?) '
+          'AND NOT EXISTS (SELECT 1 FROM sync_conflicts c '
+          'WHERE c.vault_id = sync_outbox.vault_id '
+          'AND c.entity_type = sync_outbox.entity_type '
+          'AND c.record_id = sync_outbox.record_id '
+          "AND c.resolved_at IS NULL AND c.resolution IN ('protected_legacy_format', 'protected_private_terms')) "
+          'AND NOT EXISTS (SELECT 1 FROM sync_outbox_dependencies d '
+          'JOIN sync_dependency_pause p ON p.vault_id = sync_outbox.vault_id '
+          'AND p.account_id = d.account_id WHERE d.operation_id = sync_outbox.operation_id '
+          'AND NOT (sync_outbox.entity_type = ? AND sync_outbox.operation = ? '
+          'AND p.permitted_restore_operation_id = sync_outbox.operation_id '
+          'AND sync_outbox.new_revision > p.accepted_restore_revision)) '
           'ORDER BY created_at, operation_id LIMIT ?',
-          variables: [Variable(vaultId), Variable(nowMicros), Variable(limit)],
+          variables: [
+            Variable(vaultId),
+            Variable(nowMicros),
+            Variable(SyncEntityType.account.wireName),
+            Variable(SyncOperation.upsert.name),
+            Variable(limit),
+          ],
         )
         .get();
     return rows.map(_readMutation).toList(growable: false);
@@ -231,6 +388,14 @@ final class DriftSyncMetadataStore
         )
         .getSingleOrNull();
     if (row == null) return;
+    if (row.read<String>('entity_type') == SyncEntityType.account.wireName) {
+      await confirmAccountRestore(
+        vaultId: row.read<String>('vault_id'),
+        accountId: row.read<String>('record_id'),
+        operationId: operationId,
+        revision: revision,
+      );
+    }
     await recordActivity(
       vaultId: row.read<String>('vault_id'),
       entityType: row.read<String>('entity_type'),

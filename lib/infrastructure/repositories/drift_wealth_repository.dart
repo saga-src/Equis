@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../application/ports/wealth_repository.dart';
+import '../../application/ports/account_sync_read_status.dart';
 import '../../domain/entities/account_profile.dart';
 import '../../domain/shared/currency.dart';
 import '../../domain/shared/decimal_value.dart';
@@ -13,10 +14,31 @@ import '../persistence/database/equis_database.dart' hide AssetValuation;
 import '../../application/sync/sync_models.dart';
 import '../sync/drift_sync_mutation_recorder.dart';
 
-final class DriftWealthRepository implements WealthRepository {
+final class DriftWealthRepository
+    implements WealthRepository, AccountSyncReadStatus {
   const DriftWealthRepository(this.database, {this.syncRecorder});
   final EquisDatabase database;
   final DriftSyncMutationRecorder? syncRecorder;
+
+  @override
+  Future<bool> hasIncompleteAccounts(EntityId vaultId) async {
+    final row = await database
+        .customSelect(
+          'SELECT EXISTS (SELECT 1 FROM sync_dependency_pause WHERE vault_id = ?) '
+          'OR EXISTS (SELECT 1 FROM sync_quarantine WHERE vault_id = ? '
+          "AND (replayed_at IS NULL OR replay_state <> 'replayed') "
+          "AND (entity_type IN ('account', 'transaction') "
+          'OR parent_account_id IS NOT NULL OR parent_pocket_id IS NOT NULL)) '
+          'AS incomplete',
+          variables: [
+            Variable<String>(vaultId.value),
+            Variable<String>(vaultId.value),
+          ],
+          readsFrom: {database.syncDependencyPause, database.syncQuarantine},
+        )
+        .getSingle();
+    return row.read<int>('incomplete') != 0;
+  }
 
   @override
   Future<void> saveAsset(PhysicalAsset asset) =>
@@ -276,15 +298,17 @@ final class DriftWealthRepository implements WealthRepository {
           'FROM accounts AS account INNER JOIN account_pockets AS pocket ON pocket.account_id = account.id '
           'LEFT JOIN account_movements AS movement ON movement.account_pocket_id = pocket.id '
           'LEFT JOIN transactions AS parent ON parent.id = movement.transaction_id '
-          'WHERE account.vault_id = ? AND account.deleted_at IS NULL AND account.archived = 0 '
+          'WHERE account.vault_id = ? AND account.deleted_at IS NULL '
           'AND account.include_in_net_worth = 1 '
           'AND (account.opened_on IS NULL OR account.opened_on <= ?) '
           'AND (account.closed_on IS NULL OR account.closed_on > ?) '
+          'AND (account.archived = 0 OR account.closed_on > ?) '
           'GROUP BY account.id, account.name, account.nature, pocket.currency_code '
           'ORDER BY account.name, pocket.currency_code',
           variables: [
             Variable<String>(asOf.toString()),
             Variable<String>(vaultId.value),
+            Variable<String>(asOf.toString()),
             Variable<String>(asOf.toString()),
             Variable<String>(asOf.toString()),
           ],

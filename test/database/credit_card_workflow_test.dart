@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:equis/application/services/credit_card_service.dart';
 import 'package:equis/domain/credit_cards/credit_card_models.dart';
 import 'package:equis/domain/entities/account_profile.dart';
+import 'package:equis/domain/entities/account_removal_assessment.dart';
 import 'package:equis/domain/ledger/ledger_models.dart';
 import 'package:equis/domain/shared/currency.dart';
 import 'package:equis/domain/shared/local_date.dart';
@@ -17,6 +18,7 @@ import 'package:equis/infrastructure/persistence/database/equis_database.dart'
         InstallmentPlan;
 import 'package:equis/infrastructure/repositories/drift_credit_card_repository.dart';
 import 'package:equis/infrastructure/repositories/drift_ledger_repository.dart';
+import 'package:equis/infrastructure/repositories/drift_foundational_repositories.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -45,6 +47,178 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  for (final deleted in [false, true]) {
+    test(
+      'card with a ${deleted ? 'deleted' : 'cancelled'} purchase archives with zero debt',
+      () async {
+        final purchase = await service.purchase(
+          card: fixture.brlCard,
+          amount: fixture.brl(1000),
+          categoryId: fixture.category,
+          date: LocalDate(2026, 8, 10),
+          now: fixture.now,
+        );
+        await ledger.save(
+          deleted
+              ? purchase.softDelete(at: fixture.later)
+              : purchase.transitionTo(
+                  LedgerTransactionStatus.cancelled,
+                  at: fixture.later,
+                ),
+        );
+        final statementId = purchase.movements.single.statementId!;
+        expect((await repository.statementAmounts(statementId)).dueMinor, 0);
+        final accounts = DriftAccountAggregateRepository(database);
+        final closeAt = UtcInstant.fromEpochMicroseconds(
+          DateTime.utc(2026, 8, 14).microsecondsSinceEpoch,
+        );
+        final assessment = await accounts.assessRemoval(
+          vaultId: fixture.brlCard.vaultId,
+          accountId: fixture.brlCard.accountId,
+          now: closeAt,
+        );
+        expect(
+          assessment.balances,
+          everyElement(
+            isA<AccountPocketBalance>().having(
+              (item) => item.minorUnits,
+              'balance',
+              0,
+            ),
+          ),
+        );
+        expect(assessment.blockers, isEmpty);
+        expect(assessment.disposition, AccountRemovalDisposition.archive);
+        final result = await accounts.remove(
+          vaultId: fixture.brlCard.vaultId,
+          accountId: fixture.brlCard.accountId,
+          expectedRevision: assessment.aggregate.account.revision,
+          now: closeAt,
+        );
+        expect(result.aggregate.account.archived, isTrue);
+        final historicalStatement = (await repository.listStatements(
+          fixture.brlCard.pocketId,
+        )).singleWhere((item) => item.id == statementId);
+        await expectLater(
+          repository.saveStatement(
+            historicalStatement.withStatus(
+              CreditCardStatementStatus.overdue,
+              at: fixture.later,
+            ),
+          ),
+          throwsStateError,
+        );
+        await expectLater(
+          service.refreshLifecycle(
+            card: fixture.brlCard,
+            asOf: LocalDate(2026, 9, 7),
+            now: fixture.later,
+          ),
+          throwsStateError,
+        );
+        expect(
+          (await repository.listStatements(
+            fixture.brlCard.pocketId,
+          )).map((item) => item.id),
+          contains(statementId),
+        );
+        expect(await ledger.find(purchase.id), isNotNull);
+        expect(
+          await database.customSelect('PRAGMA foreign_key_check').get(),
+          isEmpty,
+        );
+      },
+    );
+  }
+
+  test(
+    'stale card context cannot create charges or change configuration',
+    () async {
+      await service.purchase(
+        card: fixture.brlCard,
+        amount: fixture.brl(1000),
+        categoryId: fixture.category,
+        date: LocalDate(2026, 8, 10),
+        now: fixture.now,
+      );
+      await database.customStatement(
+        "UPDATE accounts SET archived = 1, closed_on = '2026-08-11' WHERE id = ?",
+        [fixture.brlCard.accountId.value],
+      );
+      await expectLater(
+        service.purchase(
+          card: fixture.brlCard,
+          amount: fixture.brl(100),
+          categoryId: fixture.category,
+          date: LocalDate(2026, 8, 10),
+          now: fixture.now,
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        service.configure(
+          card: fixture.brlCard,
+          closingDay: 20,
+          dueDay: 5,
+          limitMinor: 300000,
+        ),
+        throwsStateError,
+      );
+      expect(
+        (await database
+                .customSelect('SELECT COUNT(*) AS total FROM transactions')
+                .getSingle())
+            .read<int>('total'),
+        1,
+      );
+    },
+  );
+
+  test('stale card context cannot change installment status', () async {
+    final plan = await service.createInstallmentPlan(
+      card: fixture.brlCard,
+      originalAmount: fixture.brl(300),
+      financedAmount: fixture.brl(300),
+      installmentCount: 3,
+      categoryId: fixture.category,
+      firstInstallmentDate: LocalDate(2026, 8, 10),
+      asOf: LocalDate(2026, 8, 10),
+      now: fixture.now,
+      description: 'Plan',
+    );
+    await database.customStatement(
+      "UPDATE accounts SET archived = 1, closed_on = '2026-08-11' WHERE id = ?",
+      [fixture.brlCard.accountId.value],
+    );
+    await expectLater(
+      repository.updateInstallmentPlanStatus(
+        plan.plan,
+        InstallmentPlanStatus.cancelled,
+        at: fixture.later,
+      ),
+      throwsStateError,
+    );
+    await expectLater(
+      repository.saveInstallment(
+        plan.items.last.withStatus(InstallmentStatus.posted),
+      ),
+      throwsStateError,
+    );
+    await expectLater(
+      service.cancelInstallmentPlan(
+        card: fixture.brlCard,
+        value: plan,
+        refundDate: LocalDate(2026, 8, 11),
+        now: fixture.later,
+        refundPosted: false,
+      ),
+      throwsStateError,
+    );
+    final unchanged = await repository.findInstallmentPlan(plan.plan.id);
+    expect(unchanged!.plan.status, plan.plan.status);
+    expect(unchanged.plan.revision, plan.plan.revision);
+  });
 
   test(
     'purchases cross closing boundary and due boundary is deterministic',

@@ -109,15 +109,7 @@ final class SyncEngine implements SyncRunner {
       // Receive related records together before resolving upload conflicts.
       // The production transaction defers foreign keys across all pull pages.
       _stage = SyncStage.pull;
-      late (int, int) pullResult;
-      final transaction = pullTransaction;
-      if (transaction == null) {
-        pullResult = await _pull(vaultId, deviceId);
-      } else {
-        await transaction(() async {
-          pullResult = await _pull(vaultId, deviceId);
-        });
-      }
+      final pullResult = await _pullCommitted(vaultId, deviceId);
       pulled += pullResult.$1;
       conflicts += pullResult.$2;
       _stage = SyncStage.push;
@@ -143,13 +135,68 @@ final class SyncEngine implements SyncRunner {
         }
       }
       _stage = SyncStage.push;
+      final ready = await _readyMutations(vaultId);
+      if (ready.isNotEmpty) {
+        if (cloud is CloudSyncAggregateFormatGateway) {
+          await (cloud as CloudSyncAggregateFormatGateway)
+              .activateAggregateFormat2(vaultId: vaultId);
+          // A 1.1 writer may have committed immediately before floor activation.
+          // Rebase against that accepted write before sending any 1.2 mutation.
+          _stage = SyncStage.pull;
+          final afterActivation = await _pullCommitted(vaultId, deviceId);
+          pulled += afterActivation.$1;
+          conflicts += afterActivation.$2;
+          _stage = SyncStage.push;
+        } else {
+          for (final mutation in ready) {
+            final payload = await aggregates.loadPayload(
+              vaultId: vaultId,
+              entityType: mutation.entityType,
+              recordId: mutation.recordId,
+            );
+            if (payload?['format_version'] == 2) {
+              throw const CloudSyncFailure(
+                CloudSyncFailureCode.incompatibleServer,
+              );
+            }
+          }
+        }
+      }
       pushed += await _drainPush(vaultId);
       _stage = SyncStage.pull;
+      if (aggregates is SyncQuarantineRecoveryStore) {
+        final recovery = aggregates as SyncQuarantineRecoveryStore;
+        final replays = <AuthenticatedSyncReplay>[];
+        for (final record in await recovery.replayCandidates(vaultId)) {
+          replays.add(
+            AuthenticatedSyncReplay(
+              cloudRecord: record,
+              payload: await cipher.decrypt(
+                identity: record.record.identity,
+                envelope: record.record.envelope,
+              ),
+            ),
+          );
+        }
+        if (replays.isNotEmpty) {
+          pulled += await recovery.replayQuarantined(
+            records: replays,
+            nowMicros: _nowMicros,
+          );
+        }
+      }
       await afterPull?.call(vaultId);
       if (aggregates is SyncConflictResolver) {
         conflicts = (await (aggregates as SyncConflictResolver).unresolved(
           vaultId,
         )).length;
+      }
+      if (aggregates is SyncAuthenticatedInboundStore) {
+        final quarantined = await (aggregates as SyncAuthenticatedInboundStore)
+            .unresolvedQuarantineCount(vaultId);
+        conflicts = aggregates is SyncConflictResolver
+            ? conflicts + quarantined
+            : quarantined;
       }
       if (metadata is SyncDiagnosticsStore &&
           (await diagnostics(vaultId)).pending == 0 &&
@@ -248,10 +295,7 @@ final class SyncEngine implements SyncRunner {
 
   Future<(int, bool)> _push(String vaultId) async {
     final now = _nowMicros;
-    final pending = await metadata.readyMutations(
-      vaultId: vaultId,
-      nowMicros: now,
-    );
+    final pending = await _readyMutations(vaultId, nowMicros: now);
     if (pending.isEmpty) return (0, false);
     final cloudMutations = <CloudSyncMutation>[];
     var snapshotChanged = false;
@@ -368,27 +412,96 @@ final class SyncEngine implements SyncRunner {
     return (accepted, changed);
   }
 
-  Future<(int, int)> _pull(String vaultId, String deviceId) async {
+  Future<List<PendingSyncMutation>> _readyMutations(
+    String vaultId, {
+    int? nowMicros,
+  }) async {
+    final pending = await metadata.readyMutations(
+      vaultId: vaultId,
+      nowMicros: nowMicros ?? _nowMicros,
+    );
+    if (aggregates is! SyncPushEligibility) return pending;
+    final eligibility = aggregates as SyncPushEligibility;
+    final ready = <PendingSyncMutation>[];
+    for (final mutation in pending) {
+      if (await eligibility.canPush(
+        vaultId: vaultId,
+        entityType: mutation.entityType,
+        recordId: mutation.recordId,
+      )) {
+        ready.add(mutation);
+      }
+    }
+    return ready;
+  }
+
+  Future<(int, int)> _pullCommitted(String vaultId, String deviceId) async {
+    late (int, int) result;
+    final transaction = pullTransaction;
+    if (aggregates is SyncBootstrapHistoryStore &&
+        (await metadata.cursor(vaultId)).lastServerVersion == 0) {
+      Future<void> hydrate() =>
+          (aggregates as SyncBootstrapHistoryStore).hydrateBootstrapHistory(
+            vaultId: vaultId,
+            nowMicros: _nowMicros,
+            pull: (hydrate) async {
+              result = await _pull(
+                vaultId,
+                accountsFirst: hydrate || transaction != null,
+              );
+            },
+          );
+      if (transaction == null) {
+        await hydrate();
+      } else {
+        await transaction(hydrate);
+      }
+    } else if (transaction == null) {
+      result = await _pull(vaultId);
+    } else {
+      await transaction(() async {
+        result = await _pull(vaultId, accountsFirst: true);
+      });
+    }
+    final cursor = await metadata.cursor(vaultId);
+    if (cursor.lastServerVersion > 0) {
+      _stage = SyncStage.acknowledgement;
+      await cloud.acknowledgeCursor(
+        vaultId: vaultId,
+        deviceId: deviceId,
+        serverVersion: cursor.lastServerVersion,
+      );
+    }
+    _stage = SyncStage.pull;
+    return result;
+  }
+
+  Future<(int, int)> _pull(String vaultId, {bool accountsFirst = false}) async {
     var pulled = 0;
     var conflicts = 0;
+    var scanVersion = (await metadata.cursor(vaultId)).lastServerVersion;
+    final deferredRecords = <CloudSyncRecord>[];
+    Future<void> receive(CloudSyncRecord record) async {
+      if (!_reconciledVersions.contains(record.serverVersion)) {
+        final result = await _reconcile(record, advanceCursor: !accountsFirst);
+        if (result.remoteApplied) pulled++;
+        if (result.conflictDetected) conflicts++;
+      } else if (!accountsFirst) {
+        await metadata.advanceCursor(
+          vaultId: vaultId,
+          serverVersion: record.serverVersion,
+          nowMicros: _nowMicros,
+        );
+      }
+    }
+
     while (true) {
-      final cursor = await metadata.cursor(vaultId);
       final records = await cloud.pull(
         vaultId: vaultId,
-        afterServerVersion: cursor.lastServerVersion,
+        afterServerVersion: scanVersion,
       );
-      if (records.isEmpty) {
-        if (cursor.lastServerVersion > 0) {
-          _stage = SyncStage.acknowledgement;
-          await cloud.acknowledgeCursor(
-            vaultId: vaultId,
-            deviceId: deviceId,
-            serverVersion: cursor.lastServerVersion,
-          );
-        }
-        break;
-      }
-      var lastSeen = cursor.lastServerVersion;
+      if (records.isEmpty) break;
+      var lastSeen = scanVersion;
       for (final record in records) {
         if (record.record.identity.vaultId != vaultId ||
             record.serverVersion <= lastSeen) {
@@ -396,36 +509,55 @@ final class SyncEngine implements SyncRunner {
         }
         lastSeen = record.serverVersion;
       }
+      scanVersion = lastSeen;
       for (final record in records) {
-        if (!_reconciledVersions.contains(record.serverVersion)) {
-          final result = await _reconcile(record);
-          if (result.remoteApplied) pulled++;
+        if (accountsFirst &&
+            record.record.identity.entityType !=
+                SyncEntityType.account.wireName &&
+            record.record.identity.entityType !=
+                SyncEntityType.vault.wireName) {
+          // Latest-only cloud roots can follow their historical movements.
+          // Keep their authenticated envelopes until account identities from
+          // every page are available inside this same database transaction.
+          deferredRecords.add(record);
+        } else {
+          await receive(record);
         }
-        await metadata.advanceCursor(
-          vaultId: vaultId,
-          serverVersion: record.serverVersion,
-          nowMicros: _nowMicros,
-        );
       }
-      _stage = SyncStage.acknowledgement;
-      await cloud.acknowledgeCursor(
-        vaultId: vaultId,
-        deviceId: deviceId,
-        serverVersion: lastSeen,
-      );
-      _stage = SyncStage.pull;
       if (records.length < 100) break;
+    }
+    for (final record in deferredRecords) {
+      await receive(record);
+    }
+    if (accountsFirst &&
+        scanVersion > (await metadata.cursor(vaultId)).lastServerVersion) {
+      await metadata.advanceCursor(
+        vaultId: vaultId,
+        serverVersion: scanVersion,
+        nowMicros: _nowMicros,
+      );
     }
     return (pulled, conflicts);
   }
 
-  Future<SyncReconciliation> _reconcile(CloudSyncRecord cloudRecord) async {
+  Future<SyncReconciliation> _reconcile(
+    CloudSyncRecord cloudRecord, {
+    bool advanceCursor = false,
+  }) async {
     final record = cloudRecord.record;
     final remote = await cipher.decrypt(
       identity: record.identity,
       envelope: record.envelope,
     );
-    return aggregates.reconcileRemote(
+    if (aggregates is SyncAuthenticatedInboundStore) {
+      return (aggregates as SyncAuthenticatedInboundStore).receiveCloudRecord(
+        cloudRecord: cloudRecord,
+        payload: remote,
+        nowMicros: _nowMicros,
+        advanceCursor: advanceCursor,
+      );
+    }
+    final result = await aggregates.reconcileRemote(
       vaultId: record.identity.vaultId,
       entityType: SyncEntityType.parse(record.identity.entityType),
       recordId: record.identity.recordId,
@@ -434,6 +566,14 @@ final class SyncEngine implements SyncRunner {
       isDeleted: record.isDeleted,
       payload: remote,
     );
+    if (advanceCursor) {
+      await metadata.advanceCursor(
+        vaultId: record.identity.vaultId,
+        serverVersion: cloudRecord.serverVersion,
+        nowMicros: _nowMicros,
+      );
+    }
+    return result;
   }
 
   Future<void> _scheduleFailure(

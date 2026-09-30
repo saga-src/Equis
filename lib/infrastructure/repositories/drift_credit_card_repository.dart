@@ -62,6 +62,7 @@ final class DriftCreditCardRepository implements CreditCardRepository {
     final root = await _accountRootForPocket(limit.accountPocketId.value);
     await _mutateAccountAggregate(
       root: root,
+      pocketId: limit.accountPocketId.value,
       action: () => database.customStatement(
         'INSERT INTO credit_card_limits (account_pocket_id, limit_minor) '
         'VALUES (?, ?) ON CONFLICT(account_pocket_id) DO UPDATE SET '
@@ -107,13 +108,17 @@ final class DriftCreditCardRepository implements CreditCardRepository {
   Future<void> _mutateAccountAggregate({
     required _AccountSyncRoot root,
     required Future<void> Function() action,
+    String? pocketId,
   }) {
     final nextRevision = root.revision + 1;
     Future<void> write() => database.transaction(() async {
+      if (pocketId != null) {
+        await _assertActivePocket(root.vaultId, pocketId);
+      }
       await action();
       final updated = await database.customUpdate(
         'UPDATE accounts SET revision = ?, updated_at = ? '
-        'WHERE id = ? AND revision = ?',
+        'WHERE id = ? AND revision = ? AND archived = 0 AND deleted_at IS NULL',
         variables: [
           Variable(nextRevision),
           Variable(DateTime.now().toUtc().microsecondsSinceEpoch),
@@ -171,11 +176,16 @@ final class DriftCreditCardRepository implements CreditCardRepository {
     CreditCardStatement statement,
   ) => database.transaction(() async {
     final rows = await _rows(
-      'SELECT revision FROM credit_card_statements WHERE id = ?',
+      'SELECT revision, vault_id, account_pocket_id '
+      'FROM credit_card_statements WHERE id = ?',
       [statement.id.value],
       readsFrom: {database.creditCardStatements},
     );
     if (rows.isEmpty) {
+      await _assertActivePocket(
+        statement.vaultId.value,
+        statement.accountPocketId.value,
+      );
       if (statement.revision != 1) {
         throw CreditCardRevisionConflict(
           recordId: statement.id,
@@ -206,6 +216,14 @@ final class DriftCreditCardRepository implements CreditCardRepository {
       return;
     }
     final actual = rows.single['revision']! as int;
+    if (rows.single['vault_id'] != statement.vaultId.value ||
+        rows.single['account_pocket_id'] != statement.accountPocketId.value) {
+      throw StateError('Credit-card statement identity changed.');
+    }
+    await _assertActivePocket(
+      statement.vaultId.value,
+      statement.accountPocketId.value,
+    );
     final expected = statement.revision - 1;
     if (actual != expected) {
       throw CreditCardRevisionConflict(
@@ -338,6 +356,10 @@ final class DriftCreditCardRepository implements CreditCardRepository {
         if (rows.isNotEmpty) {
           throw StateError('Installment plans are immutable after creation.');
         }
+        await _assertActivePocket(
+          plan.vaultId.value,
+          plan.accountPocketId.value,
+        );
         await database.customStatement(
           'INSERT INTO installment_plans '
           '(id, vault_id, account_pocket_id, counterparty_id, category_id, '
@@ -370,26 +392,57 @@ final class DriftCreditCardRepository implements CreditCardRepository {
         }
       });
 
+  Future<void> _assertActivePocket(String vaultId, String pocketId) async {
+    final row = await database
+        .customSelect(
+          'SELECT pocket.id FROM account_pockets AS pocket '
+          'JOIN accounts AS account ON account.id = pocket.account_id '
+          'WHERE pocket.id = ? AND account.vault_id = ? '
+          'AND pocket.archived = 0 AND account.archived = 0 '
+          'AND account.deleted_at IS NULL',
+          variables: [Variable<String>(pocketId), Variable<String>(vaultId)],
+          readsFrom: {database.accountPockets, database.accounts},
+        )
+        .getSingleOrNull();
+    if (row == null) {
+      throw StateError('Credit-card pocket is inactive.');
+    }
+  }
+
   @override
   Future<void> saveInstallment(
     CardInstallment item,
-  ) => database.customStatement(
-    'INSERT INTO installments '
-    '(id, installment_plan_id, installment_number, amount_minor, expected_date, '
-    'transaction_id, statement_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?) '
-    'ON CONFLICT(id) DO UPDATE SET transaction_id = excluded.transaction_id, '
-    'statement_id = excluded.statement_id, status = excluded.status',
-    [
-      item.id.value,
-      item.installmentPlanId.value,
-      item.installmentNumber,
-      item.amountMinor,
-      item.expectedDate.toString(),
-      item.transactionId?.value,
-      item.statementId?.value,
-      item.status.name,
-    ],
-  );
+  ) => database.transaction(() async {
+    final plan = await database
+        .customSelect(
+          'SELECT vault_id, account_pocket_id FROM installment_plans WHERE id = ?',
+          variables: [Variable(item.installmentPlanId.value)],
+          readsFrom: {database.installmentPlans},
+        )
+        .getSingleOrNull();
+    if (plan == null) throw StateError('Installment plan is unavailable.');
+    await _assertActivePocket(
+      plan.read<String>('vault_id'),
+      plan.read<String>('account_pocket_id'),
+    );
+    await database.customStatement(
+      'INSERT INTO installments '
+      '(id, installment_plan_id, installment_number, amount_minor, expected_date, '
+      'transaction_id, statement_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?) '
+      'ON CONFLICT(id) DO UPDATE SET transaction_id = excluded.transaction_id, '
+      'statement_id = excluded.statement_id, status = excluded.status',
+      [
+        item.id.value,
+        item.installmentPlanId.value,
+        item.installmentNumber,
+        item.amountMinor,
+        item.expectedDate.toString(),
+        item.transactionId?.value,
+        item.statementId?.value,
+        item.status.name,
+      ],
+    );
+  });
 
   @override
   Future<void> updateInstallmentPlanStatus(
@@ -413,7 +466,21 @@ final class DriftCreditCardRepository implements CreditCardRepository {
     InstallmentPlan plan,
     InstallmentPlanStatus status, {
     required UtcInstant at,
-  }) async {
+  }) => database.transaction(() async {
+    final stored = await database
+        .customSelect(
+          'SELECT vault_id, account_pocket_id FROM installment_plans WHERE id = ?',
+          variables: [Variable(plan.id.value)],
+          readsFrom: {database.installmentPlans},
+        )
+        .getSingleOrNull();
+    if (stored == null ||
+        stored.read<String>('vault_id') != plan.vaultId.value ||
+        stored.read<String>('account_pocket_id') !=
+            plan.accountPocketId.value) {
+      throw StateError('Installment plan identity changed.');
+    }
+    await _assertActivePocket(plan.vaultId.value, plan.accountPocketId.value);
     final changed = await database.customUpdate(
       'UPDATE installment_plans SET status = ?, revision = ?, updated_at = ? '
       'WHERE id = ? AND revision = ?',
@@ -438,7 +505,7 @@ final class DriftCreditCardRepository implements CreditCardRepository {
         actualRevision: rows.isEmpty ? null : rows.single['revision']! as int,
       );
     }
-  }
+  });
 
   @override
   Future<InstallmentPlanView?> findInstallmentPlan(EntityId id) async {

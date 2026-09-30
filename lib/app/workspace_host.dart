@@ -20,6 +20,7 @@ class WorkspaceHost extends StatefulWidget {
     this.themeStore,
     this.localeStore,
     this.updateService,
+    this.windowsUpdateRegistrationIssue = false,
   });
   final VaultWorkspace workspace;
   final Locale initialLocale;
@@ -27,6 +28,7 @@ class WorkspaceHost extends StatefulWidget {
   final SharedPreferencesThemeStore? themeStore;
   final SharedPreferencesLocaleStore? localeStore;
   final AppUpdateService? updateService;
+  final bool windowsUpdateRegistrationIssue;
   @override
   State<WorkspaceHost> createState() => _WorkspaceHostState();
 }
@@ -51,6 +53,9 @@ class _WorkspaceHostState extends State<WorkspaceHost> {
       ProviderContainer(
         overrides: [
           appUpdateServiceProvider.overrideWithValue(widget.updateService),
+          windowsUpdateRegistrationIssueProvider.overrideWithValue(
+            widget.windowsUpdateRegistrationIssue,
+          ),
           vaultWorkspaceProvider.overrideWithValue(widget.workspace),
           localAppDependenciesProvider.overrideWithValue(
             widget.workspace.active,
