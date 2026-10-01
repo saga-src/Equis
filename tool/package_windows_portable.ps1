@@ -7,6 +7,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Windows PowerShell 5.1 does not load ZipArchive from FileSystem alone.
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $releaseRoot = (Resolve-Path -LiteralPath $ReleaseDirectory).Path.TrimEnd('\', '/')
 $releasePrefix = $releaseRoot + [IO.Path]::DirectorySeparatorChar
