@@ -30,6 +30,17 @@ void main() {
     );
     expect(restore.enabled, isTrue);
     expect(create.enabled, isFalse);
+    await tester.scrollUntilVisible(
+      find.text('Export vault as JSON'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Export vault as JSON'), findsOneWidget);
     expect(find.text('Export transactions as CSV'), findsOneWidget);
   });

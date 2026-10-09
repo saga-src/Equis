@@ -16,7 +16,8 @@ import 'package:equis/domain/shared/money.dart';
 import 'package:equis/domain/shared/utc_instant.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
 import 'package:equis/infrastructure/persistence/database/drift_local_unit_of_work.dart';
-import 'package:equis/infrastructure/persistence/database/equis_database.dart';
+import 'package:equis/infrastructure/persistence/database/equis_database.dart'
+    hide RecurringTemplate;
 import 'package:equis/infrastructure/repositories/drift_dashboard_repository.dart';
 import 'package:equis/infrastructure/repositories/drift_goal_repository.dart';
 import 'package:equis/infrastructure/repositories/drift_ledger_repository.dart';
@@ -59,6 +60,69 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'projection preserves pending customization and excludes skipped recurrence',
+    () async {
+      final occurrences = await cashFlow.recurring.upcoming(
+        vaultId: fixture.vault,
+        from: LocalDate(2026, 9, 1),
+        through: LocalDate(2026, 9, 30),
+      );
+      final rent = occurrences.singleWhere(
+        (item) => item.schedule.rule.name == 'Rent',
+      );
+      final template = rent.template;
+      const now = UtcInstant.fromEpochMicroseconds(1000);
+      await cashFlow.recurring.modifyOne(
+        rent,
+        replacement: RecurringTemplate(
+          transactionType: LedgerTransactionType.expense,
+          movements: [
+            LedgerMovement(
+              id: EntityId.generate(),
+              pocket: template.movements.single.pocket,
+              amountMinor: -3500,
+              sortOrder: 0,
+            ),
+          ],
+          splits: [
+            LedgerSplit(
+              id: EntityId.generate(),
+              categoryId: template.splits.single.categoryId,
+              money: Money(currency: CurrencyCode.brl, minorUnits: 3500),
+              sortOrder: 0,
+            ),
+          ],
+        ),
+        now: now,
+      );
+      await cashFlow.recurring.skip(
+        occurrences.singleWhere((item) => item.schedule.rule.name == 'Salary'),
+        now: now,
+      );
+      final projection = await cashFlow.load(
+        vaultId: fixture.vault,
+        reportingCurrency: CurrencyCode.brl,
+        asOf: LocalDate(2026, 8, 18),
+        through: LocalDate(2026, 9, 30),
+      );
+      expect(
+        projection.events.where(
+          (item) => item.type == CashFlowEventType.recurringIncome,
+        ),
+        isEmpty,
+      );
+      expect(
+        projection.events
+            .singleWhere(
+              (item) => item.type == CashFlowEventType.recurringExpense,
+            )
+            .amountMinor,
+        -3500,
+      );
+    },
+  );
 
   test('manual and linked goals derive exact progress and dates', () async {
     final progress = await goals.loadProgress(

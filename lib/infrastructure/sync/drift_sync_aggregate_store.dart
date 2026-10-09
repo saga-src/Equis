@@ -16,6 +16,8 @@ import '../persistence/database/equis_database.dart';
 import '../repositories/drift_foundational_repositories.dart';
 import '../security/canonical_json.dart';
 import 'drift_sync_metadata_store.dart';
+import 'budget_sync_history.dart';
+import 'recurring_sync_history.dart';
 
 final class _BootstrapHistory {
   _BootstrapHistory(this.vaultId, this.knownAccounts);
@@ -563,6 +565,27 @@ final class DriftSyncAggregateStore
       recordId: identity.recordId,
       revision: identity.revision,
     );
+    if ((type == SyncEntityType.recurringRule &&
+            await RecurringSyncHistory(
+              database,
+            ).protected(identity.recordId, normalized)) ||
+        (type == SyncEntityType.budget &&
+            await BudgetSyncHistory(
+                  database,
+                ).protection(identity.recordId, normalized) !=
+                null)) {
+      final result = await reconcileRemote(
+        vaultId: identity.vaultId,
+        entityType: type,
+        recordId: identity.recordId,
+        revision: identity.revision,
+        serverVersion: cloudRecord.serverVersion,
+        isDeleted: record.isDeleted,
+        payload: normalized,
+      );
+      await _advanceInboundCursor(cloudRecord, nowMicros, advanceCursor);
+      return result;
+    }
     if (type == SyncEntityType.account &&
         record.isDeleted !=
             ((normalized['root'] as Map)['deleted_at'] != null)) {
@@ -823,7 +846,34 @@ final class DriftSyncAggregateStore
       case SyncEntityType.transaction:
         pocketRows('account_movements', 'transaction_id');
       case SyncEntityType.recurringRule:
-        pocketRows('recurring_template_movements', 'recurring_rule_id');
+        if (payload['format_version'] != 2) {
+          pocketRows('recurring_template_movements', 'recurring_rule_id');
+        } else {
+          final versions = _rows(children['recurring_rule_versions'])
+            ..sort(
+              (a, b) => (a['effective_from'] as String).compareTo(
+                b['effective_from'] as String,
+              ),
+            );
+          final today = RecurringSyncHistory.today(root['timezone'] as String);
+          for (var i = 0; i < versions.length; i++) {
+            final version = versions[i];
+            if ((i + 1 < versions.length &&
+                    (versions[i + 1]['effective_from'] as String).compareTo(
+                          today,
+                        ) <=
+                        0) ||
+                (version['ends_on'] != null &&
+                    (version['ends_on'] as String).compareTo(today) < 0)) {
+              continue;
+            }
+            final template =
+                jsonDecode(version['template_json'] as String) as Map;
+            for (final raw in template['movements'] as List) {
+              references.add((null, (raw as Map)['pocket_id'] as String));
+            }
+          }
+        }
       case SyncEntityType.goal:
         pocketRows('goal_accounts', 'goal_id');
       case SyncEntityType.installmentPlan:
@@ -838,6 +888,11 @@ final class DriftSyncAggregateStore
             throw const SyncAggregateFormatException();
           }
           references.add((row['account_id'] as String, null));
+        }
+        if (payload['format_version'] == 2) {
+          for (final row in budgetRows(children['budget_monthly_accounts'])) {
+            references.add((row['account_id'] as String, null));
+          }
         }
       case SyncEntityType.attachment:
         for (final row in _rows(children['attachment_links'])) {
@@ -912,6 +967,11 @@ final class DriftSyncAggregateStore
             CanonicalJson.encode(current) == CanonicalJson.encode(payload);
         archiveConflict = !same;
       }
+      if (inactive && type == SyncEntityType.budget) {
+        archiveConflict = await BudgetSyncHistory(
+          database,
+        ).hasActiveAccountReference(payload, accountId, nowMicros);
+      }
       if (account.readNullable<int>('deleted_at') != null ||
           account.read<int>('paused') != 0 ||
           archiveConflict) {
@@ -937,8 +997,10 @@ final class DriftSyncAggregateStore
           'EXISTS (SELECT 1 FROM credit_card_statements WHERE account_pocket_id IN (SELECT id FROM pockets)) OR '
           'EXISTS (SELECT 1 FROM installment_plans WHERE account_pocket_id IN (SELECT id FROM pockets)) OR '
           'EXISTS (SELECT 1 FROM recurring_template_movements WHERE account_pocket_id IN (SELECT id FROM pockets)) OR '
+          'EXISTS (SELECT 1 FROM recurring_rule_versions v, json_each(v.template_json, \'\$.movements\') m WHERE json_extract(m.value, \'\$.pocket_id\') IN (SELECT id FROM pockets)) OR '
           'EXISTS (SELECT 1 FROM goal_accounts WHERE account_pocket_id IN (SELECT id FROM pockets)) OR '
           'EXISTS (SELECT 1 FROM budget_accounts WHERE account_id = (SELECT account_id FROM scope)) OR '
+          'EXISTS (SELECT 1 FROM budget_monthly_accounts WHERE account_id = (SELECT account_id FROM scope)) OR '
           "EXISTS (SELECT 1 FROM attachment_links WHERE entity_type = 'account' AND entity_id = (SELECT account_id FROM scope)) OR "
           "EXISTS (SELECT 1 FROM attachment_links WHERE entity_type = 'account_pocket' AND entity_id IN (SELECT id FROM pockets))"
           ') AS referenced',
@@ -1025,7 +1087,7 @@ final class DriftSyncAggregateStore
     final blocked = await database
         .customSelect(
           'SELECT 1 FROM sync_conflicts WHERE vault_id = ? AND entity_type = ? '
-          "AND record_id = ? AND resolved_at IS NULL AND resolution IN ('protected_legacy_format', 'protected_private_terms') LIMIT 1",
+          "AND record_id = ? AND resolved_at IS NULL AND resolution IN ('protected_legacy_format', 'protected_private_terms', 'protected_budget_history', 'protected_recurring_history') LIMIT 1",
           variables: [
             Variable(vaultId),
             Variable(entityType.wireName),
@@ -1059,6 +1121,68 @@ final class DriftSyncAggregateStore
       isDeleted: isDeleted,
       payload: payload,
     );
+    // Check before revision ordering or pending-write disposal. Legacy writes
+    // remain incompatible even when their revision is higher.
+    if (entityType == SyncEntityType.recurringRule &&
+        await RecurringSyncHistory(database).protected(recordId, payload)) {
+      final local = await loadPayload(
+        vaultId: vaultId,
+        entityType: entityType,
+        recordId: recordId,
+      );
+      await _protectConflict(
+        vaultId: vaultId,
+        entityType: entityType,
+        recordId: recordId,
+        pending: await metadata.pendingFor(
+          vaultId: vaultId,
+          entityType: entityType,
+          recordId: recordId,
+        ),
+        local: local!,
+        remote: payload,
+        remoteRevision: revision,
+        serverVersion: serverVersion,
+        reason: 'protected_recurring_history',
+      );
+      return const SyncReconciliation(conflictDetected: true);
+    }
+    if (entityType == SyncEntityType.budget &&
+        await BudgetSyncHistory(database).protection(recordId, payload) !=
+            null) {
+      // A pull of the exact acknowledged base is not a competing legacy edit.
+      // This path never applies it or disposes the pending monthly mutation.
+      if (await _isConfirmedBudgetBase(
+        vaultId,
+        recordId,
+        revision,
+        serverVersion,
+        payload,
+      )) {
+        return const SyncReconciliation();
+      }
+      final local = await loadPayload(
+        vaultId: vaultId,
+        entityType: entityType,
+        recordId: recordId,
+      );
+      await _protectConflict(
+        vaultId: vaultId,
+        entityType: entityType,
+        recordId: recordId,
+        pending: await metadata.pendingFor(
+          vaultId: vaultId,
+          entityType: entityType,
+          recordId: recordId,
+        ),
+        local: local!,
+        remote: payload,
+        remoteRevision: revision,
+        serverVersion: serverVersion,
+        reason: 'protected_budget_history',
+      );
+      return const SyncReconciliation(conflictDetected: true);
+    }
     final state = await database
         .customSelect(
           'SELECT server_version, sync_state FROM sync_entity_state WHERE entity_type = ? AND record_id = ?',
@@ -1239,7 +1363,7 @@ final class DriftSyncAggregateStore
     final rows = await database
         .customSelect(
           'SELECT id, vault_id, entity_type, record_id, base_revision, '
-          'local_revision, remote_revision, detected_at FROM sync_conflicts '
+          'local_revision, remote_revision, detected_at, resolution FROM sync_conflicts '
           'WHERE vault_id = ? AND resolved_at IS NULL ORDER BY detected_at, id',
           variables: [Variable(vaultId)],
         )
@@ -1255,8 +1379,38 @@ final class DriftSyncAggregateStore
           localRevision: row.read<int>('local_revision'),
           remoteRevision: row.read<int>('remote_revision'),
           detectedAtMicros: row.read<int>('detected_at'),
+          protectionReason: row.readNullable<String>('resolution'),
         ),
     ];
+  }
+
+  Future<bool> _isConfirmedBudgetBase(
+    String vaultId,
+    String recordId,
+    int revision,
+    int serverVersion,
+    Map<String, Object?> payload,
+  ) async {
+    final state = await database
+        .customSelect(
+          'SELECT last_synced_revision, server_version FROM sync_entity_state WHERE entity_type = ? AND record_id = ?',
+          variables: [const Variable('budget'), Variable(recordId)],
+        )
+        .getSingleOrNull();
+    if (state?.readNullable<int>('last_synced_revision') != revision ||
+        state?.readNullable<int>('server_version') != serverVersion) {
+      return false;
+    }
+    final pending = await metadata.pendingFor(
+      vaultId: vaultId,
+      entityType: SyncEntityType.budget,
+      recordId: recordId,
+    );
+    return pending != null &&
+        pending.baseRevision == revision &&
+        pending.baseSnapshot != null &&
+        CanonicalJson.encode(pending.baseSnapshot) ==
+            CanonicalJson.encode(payload);
   }
 
   @override
@@ -1281,24 +1435,48 @@ final class DriftSyncAggregateStore
     final remoteRevision = row.read<int>('remote_revision');
     final remote = _decodeSnapshot(row.read<String>('remote_snapshot'));
     final protection = row.readNullable<String>('resolution');
-    final protectedLegacy = protection == 'protected_legacy_format';
+    final protectedLegacy =
+        protection == 'protected_legacy_format' ||
+        protection == 'protected_budget_history' ||
+        protection == 'protected_recurring_history' ||
+        (type == SyncEntityType.recurringRule &&
+            await RecurringSyncHistory(database).protected(recordId, remote)) ||
+        (type == SyncEntityType.budget &&
+            await BudgetSyncHistory(database).protection(recordId, remote) !=
+                null);
     final protectedTerms = protection == 'protected_private_terms';
     final protectedPrivate = protectedLegacy || protectedTerms;
     if ((protectedLegacy && resolution != SyncConflictResolution.keepLocal) ||
         (protectedTerms && resolution == SyncConflictResolution.merged)) {
       throw const SyncAggregateFormatException();
     }
-    // The review snapshot can predate additional offline lot edits. Resolve
+    // The review snapshot can predate additional offline edits. Resolve
     // against the current aggregate while holding this database transaction.
-    final current = protectedPrivate
+    final current =
+        protectedPrivate ||
+            type == SyncEntityType.budget ||
+            type == SyncEntityType.recurringRule
         ? await loadPayload(
             vaultId: vaultId,
             entityType: type,
             recordId: recordId,
           )
         : null;
-    if (protectedPrivate && current == null) {
+    if ((protectedPrivate ||
+            type == SyncEntityType.budget ||
+            type == SyncEntityType.recurringRule) &&
+        current == null) {
       throw const SyncAggregateFormatException();
+    }
+    if (type == SyncEntityType.budget || type == SyncEntityType.recurringRule) {
+      final currentRevision = (current!['root'] as Map)['revision'] as int;
+      if ((resolution == SyncConflictResolution.keepRemote &&
+              currentRevision != row.read<int>('local_revision')) ||
+          (resolution == SyncConflictResolution.merged &&
+              (mergedSnapshot!['root'] as Map)['revision'] !=
+                  currentRevision)) {
+        throw const SyncAggregateFormatException();
+      }
     }
     final preferred = switch (resolution) {
       SyncConflictResolution.keepRemote => remote,
@@ -1316,7 +1494,10 @@ final class DriftSyncAggregateStore
             resolution == SyncConflictResolution.keepLocal ? remote : current!,
           )
         : preferred;
-    if (resolution == SyncConflictResolution.keepRemote && !protectedPrivate) {
+    if (resolution == SyncConflictResolution.keepRemote &&
+        !protectedPrivate &&
+        type != SyncEntityType.budget &&
+        type != SyncEntityType.recurringRule) {
       await database.customStatement(
         'DELETE FROM sync_outbox WHERE vault_id = ? AND entity_type = ? AND record_id = ?',
         [vaultId, type.wireName, recordId],
@@ -1339,7 +1520,10 @@ final class DriftSyncAggregateStore
       final localRevision =
           ((current ?? selected)['root'] as Map)['revision'] as int;
       final nextRevision =
-          (protectedPrivate && localRevision > remoteRevision
+          ((protectedPrivate ||
+                      type == SyncEntityType.budget ||
+                      type == SyncEntityType.recurringRule) &&
+                  localRevision > remoteRevision
               ? localRevision
               : remoteRevision) +
           1;
@@ -1359,7 +1543,9 @@ final class DriftSyncAggregateStore
         baseRevision: remoteRevision,
         baseSnapshot: remote,
         newRevision: nextRevision,
-        operation: SyncOperation.upsert,
+        operation: ((normalized['root'] as Map)['deleted_at'] != null)
+            ? SyncOperation.delete
+            : SyncOperation.upsert,
       );
     }
     await database.customStatement(
@@ -1427,10 +1613,27 @@ final class DriftSyncAggregateStore
       root.remove('local_path');
       root.remove('upload_state');
     }
+    final budgetAdvanced =
+        entityType == SyncEntityType.budget &&
+        await BudgetSyncHistory(database).append(root, children);
+    if (entityType == SyncEntityType.recurringRule) {
+      if (root['schedule_history_edited'] == 1) {
+        children['recurring_rule_versions'] = await _manyIn(
+          'recurring_rule_versions',
+          'recurring_rule_id',
+          [recordId],
+        );
+      } else {
+        root.remove('schedule_history_edited');
+      }
+    }
     return {
       'format_version':
           entityType == SyncEntityType.transaction ||
-              entityType == SyncEntityType.account
+              entityType == SyncEntityType.account ||
+              budgetAdvanced ||
+              (entityType == SyncEntityType.recurringRule &&
+                  root['schedule_history_edited'] == 1)
           ? 2
           : 1,
       'entity_type': entityType.wireName,
@@ -1492,7 +1695,36 @@ final class DriftSyncAggregateStore
     required Map<String, Object?> remoteSnapshot,
     required Map<String, Object?> mergedSnapshot,
   }) => database.transaction(() async {
-    final nextRevision = remoteRevision + 1;
+    var nextRevision = remoteRevision + 1;
+    if (entityType == SyncEntityType.recurringRule &&
+        await RecurringSyncHistory(
+          database,
+        ).protected(recordId, remoteSnapshot)) {
+      throw const SyncAggregateFormatException();
+    }
+    if (entityType == SyncEntityType.budget &&
+        await BudgetSyncHistory(
+              database,
+            ).protection(recordId, remoteSnapshot) !=
+            null) {
+      throw const BudgetHistoryCompatibilityException();
+    }
+    if (entityType == SyncEntityType.budget ||
+        entityType == SyncEntityType.recurringRule) {
+      final current = await loadPayload(
+        vaultId: vaultId,
+        entityType: entityType,
+        recordId: recordId,
+      );
+      final localRevision = current == null
+          ? 0
+          : (current['root'] as Map)['revision'] as int;
+      if (current != null &&
+          (mergedSnapshot['root'] as Map)['revision'] != localRevision) {
+        throw const SyncAggregateFormatException();
+      }
+      if (localRevision >= nextRevision) nextRevision = localRevision + 1;
+    }
     final updated = _withRootRevision(mergedSnapshot, nextRevision);
     final normalized = _validatePayload(
       updated,
@@ -1632,7 +1864,9 @@ final class DriftSyncAggregateStore
     if ((format != 1 &&
             !(format == 2 &&
                 (entityType == SyncEntityType.transaction ||
-                    entityType == SyncEntityType.account))) ||
+                    entityType == SyncEntityType.account ||
+                    entityType == SyncEntityType.budget ||
+                    entityType == SyncEntityType.recurringRule))) ||
         payload['entity_type'] != entityType.wireName ||
         payload['root'] is! Map ||
         payload['children'] is! Map) {
@@ -1650,6 +1884,10 @@ final class DriftSyncAggregateStore
     final allowed = {
       for (final child in _specs[entityType]!.children) child.table,
       if (entityType == SyncEntityType.account) 'credit_card_limits',
+      if (entityType == SyncEntityType.budget && format == 2)
+        ...budgetHistoryTables,
+      if (entityType == SyncEntityType.recurringRule && format == 2)
+        'recurring_rule_versions',
       if (entityType == SyncEntityType.transaction) ...{
         'investment_lots',
         'investment_lot_disposals',
@@ -1719,6 +1957,13 @@ final class DriftSyncAggregateStore
         }
       }
     }
+    if (entityType == SyncEntityType.budget) {
+      validateBudgetPayload({
+        'format_version': format,
+        'root': root,
+        'children': children,
+      });
+    }
     return {
       'format_version': format,
       'entity_type': entityType.wireName,
@@ -1732,6 +1977,23 @@ final class DriftSyncAggregateStore
     String recordId,
     Map<String, Object?> payload,
   ) async {
+    if (type == SyncEntityType.recurringRule) {
+      final history = RecurringSyncHistory(database);
+      if (await history.protected(recordId, payload)) {
+        throw const SyncAggregateFormatException();
+      }
+      await history.validate(payload);
+      await database.customStatement(
+        'DELETE FROM recurring_rule_versions WHERE recurring_rule_id = ?',
+        [recordId],
+      );
+    }
+    if (type == SyncEntityType.budget) {
+      await BudgetSyncHistory(
+        database,
+      ).replace(recordId, payload, _insert, (root) => _upsert('budgets', root));
+      return;
+    }
     if (type == SyncEntityType.transaction) {
       await _replaceTransaction(recordId, payload);
       return;
@@ -1750,6 +2012,13 @@ final class DriftSyncAggregateStore
       );
     }
     await _upsert(spec.table, root);
+    if (type == SyncEntityType.recurringRule) {
+      for (final row in _rows(
+        children['recurring_rule_versions'] ?? const [],
+      )) {
+        await _insert('recurring_rule_versions', row);
+      }
+    }
     for (final child in spec.children) {
       for (final row in _rows(children[child.table])) {
         await _insert(child.table, row);
@@ -1856,7 +2125,8 @@ final class DriftSyncAggregateStore
     required bool isDeleted,
     required Map<String, Object?> payload,
   }) async {
-    if (entityType == SyncEntityType.account) {
+    if (entityType == SyncEntityType.account ||
+        entityType == SyncEntityType.budget) {
       final root = Map<String, Object?>.from(payload['root']! as Map);
       if (isDeleted != (root['deleted_at'] != null)) {
         throw const SyncAggregateFormatException();

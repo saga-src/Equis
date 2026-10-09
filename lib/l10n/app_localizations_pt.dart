@@ -144,7 +144,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get setupRequiredMessage =>
-      'Configure o cofre local antes de adicionar transações.';
+      'Você precisa criar ou abrir um cofre antes de registrar ou editar dados financeiros. A sincronização também exige um cofre ativo. É possível usar o Equis offline, sem entrar em uma conta.';
 
   @override
   String get transactionNotFoundMessage => 'Transação não encontrada.';
@@ -234,7 +234,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get setupLocalVaultBody =>
-      'Seus dados ficam criptografados neste dispositivo e funcionam offline.';
+      'Crie seu primeiro cofre e sua primeira conta abaixo para começar a registrar receitas e despesas. Seus dados financeiros ficam criptografados neste dispositivo. Escolha Continuar offline para usar o Equis sem login ou crie uma conta Equis para sincronizar, se quiser.';
 
   @override
   String get profileNameLabel => 'Nome do perfil';
@@ -802,6 +802,151 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get budgetLimitLabel => 'Limite';
+
+  @override
+  String get budgetPreviousMonth => 'Mês anterior';
+
+  @override
+  String get budgetNextMonth => 'Próximo mês';
+
+  @override
+  String get budgetCurrentMonth => 'Mês atual';
+
+  @override
+  String get budgetSelectMonth => 'Selecionar mês';
+
+  @override
+  String get budgetYearLabel => 'Ano';
+
+  @override
+  String get budgetInvalidMonth => 'Informe um ano de 1 a 9999.';
+
+  @override
+  String get budgetMonthScopeHint =>
+      'O mês se aplica aos orçamentos mensais. As outras modalidades mostram o progresso atual.';
+
+  @override
+  String get budgetShowDeleted => 'Incluir orçamentos excluídos';
+
+  @override
+  String get budgetEmptyMonth =>
+      'Nenhum orçamento neste mês. Orçamentos aparecem a partir do mês de criação.';
+
+  @override
+  String get budgetRetryAction => 'Tentar novamente';
+
+  @override
+  String get budgetDeletedReadOnly =>
+      'Orçamento excluído · histórico somente para leitura';
+
+  @override
+  String get budgetFutureMonthHint => 'Mês futuro: ainda sem gasto realizado.';
+
+  @override
+  String get budgetPastMonthHint => 'O gasto realizado inclui o mês inteiro.';
+
+  @override
+  String budgetCurrentMonthHint(String date) {
+    return 'Gasto realizado até $date.';
+  }
+
+  @override
+  String get budgetLimitMethodLabel => 'Cálculo do limite mensal';
+
+  @override
+  String get budgetFixedMonthly => 'Valor mensal fixo';
+
+  @override
+  String get budgetPerDay => 'Por dia';
+
+  @override
+  String get budgetPerWeekday => 'Por dia útil';
+
+  @override
+  String get budgetDailyAmountLabel => 'Valor diário';
+
+  @override
+  String get budgetEditScopeLabel => 'Aplicar alterações a';
+
+  @override
+  String get budgetOnlyMonth => 'Só este mês';
+
+  @override
+  String get budgetFromMonth => 'Este mês e os próximos';
+
+  @override
+  String get budgetPreserveOverridesHint =>
+      'Meses futuros com configuração própria são preservados.';
+
+  @override
+  String get budgetGeneralNameHint =>
+      'O nome é compartilhado por todos os meses.';
+
+  @override
+  String get budgetCreationMonthHint =>
+      'Um novo orçamento começa no mês atual.';
+
+  @override
+  String get budgetPreviewHint =>
+      'Informe um valor para conferir o limite mensal.';
+
+  @override
+  String get budgetWeekdayHint =>
+      'Segunda a sexta. Feriados não são descontados.';
+
+  @override
+  String budgetMonthlyTotal(String total) {
+    return 'Limite mensal: $total';
+  }
+
+  @override
+  String budgetLimitCalculation(String rate, int days, String total) {
+    return '$rate × $days dias = $total';
+  }
+
+  @override
+  String get budgetInvalidAmount =>
+      'Informe um valor positivo dentro da faixa monetária suportada.';
+
+  @override
+  String get budgetInvalidForm =>
+      'Confira nome, valor positivo, percentual de alerta (até 100%) e datas.';
+
+  @override
+  String get budgetSaveFailed =>
+      'Não foi possível salvar. Confira se os filtros selecionados continuam disponíveis e tente novamente.';
+
+  @override
+  String get budgetRevisionChanged =>
+      'Este orçamento mudou em outra tela ou dispositivo. Feche e reabra o editor para conferir a configuração atual.';
+
+  @override
+  String get budgetSaving => 'Salvando…';
+
+  @override
+  String get budgetUsageLabel => 'Usado (%)';
+
+  @override
+  String budgetWarningValue(String percent) {
+    return 'Alerta em $percent';
+  }
+
+  @override
+  String get budgetUnavailableCategory => 'Categoria indisponível';
+
+  @override
+  String budgetCategoryWithDescendants(String category) {
+    return '$category (e subcategorias)';
+  }
+
+  @override
+  String get budgetUnavailableAccount => 'Conta inativa ou indisponível';
+
+  @override
+  String get budgetUnavailableTag => 'Etiqueta indisponível';
+
+  @override
+  String get budgetAllFilters => 'Todos';
 
   @override
   String get budgetPeriodLabel => 'Período';
@@ -1602,6 +1747,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get syncConflictsTitle => 'Conflitos que exigem revisão';
 
   @override
+  String get syncBudgetHistoryProtected =>
+      'Outro dispositivo precisa ser atualizado para aceitar o histórico mensal de orçamentos. Atualize-o e mantenha a versão local atual para preservar suas configurações.';
+
+  @override
   String syncConflictBody(
     String entityType,
     String recordId,
@@ -2342,6 +2491,187 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get accountReferencesAttachments => 'Anexos';
+
+  @override
+  String get editRecurringAction => 'Editar regra';
+
+  @override
+  String get deleteRecurringAction => 'Excluir regra';
+
+  @override
+  String get deleteRecurringConfirmation =>
+      'Excluir esta regra interrompe novas ocorrências. Seus lançamentos existentes serão preservados.';
+
+  @override
+  String get recurrenceEffectiveFromLabel => 'Vigência (hoje ou data futura)';
+
+  @override
+  String get dashboardInvalidSelectionMessage =>
+      'O intervalo salvo ficou inválido. Usamos o mês atual; selecione outro intervalo para corrigir.';
+
+  @override
+  String get dashboardLastThreeMonthsLabel => 'Últimos 3 meses';
+
+  @override
+  String get dashboardDailyLabel => 'Diário';
+
+  @override
+  String get dashboardThisYearLabel => 'Este ano';
+
+  @override
+  String get dashboardCurrentPositionLabel => 'Posição financeira atual';
+
+  @override
+  String get dashboardPeriodTitle => 'Intervalo selecionado';
+
+  @override
+  String get dashboardCumulativeLabel => 'Acumulado';
+
+  @override
+  String get experiencePreferenceFailedMessage =>
+      'Não foi possível salvar sua preferência local.';
+
+  @override
+  String get dashboardCustomRangeLabel => 'Personalizado';
+
+  @override
+  String get dashboardLastMonthLabel => 'Mês anterior';
+
+  @override
+  String get dashboardFlowModeLabel => 'Modo do fluxo';
+
+  @override
+  String get checklistAccountLabel => 'Configurar uma conta';
+
+  @override
+  String get guideBackupBody =>
+      'Salve um backup criptografado e guarde sua senha para poder restaurar o cofre. Valide o arquivo salvo; o checklist só marca esse passo depois que o backup é salvo. Exportações JSON e CSV não são criptografadas e não substituem um backup.';
+
+  @override
+  String get guideCategoriesBody =>
+      'Use categorias para organizar receitas e despesas. Adicione etiquetas quando precisar de outra forma de agrupar os registros. Um lançamento com várias etiquetas aparece em cada uma, mas seu valor é contado uma única vez no total.';
+
+  @override
+  String get checklistShowAction => 'Mostrar checklist na inicial';
+
+  @override
+  String get guideTransactionsBody =>
+      'Depois de criar o cofre e a primeira conta, registre receitas, despesas ou transferências. Confira data, conta, valor e categoria antes de salvar. Abra o Histórico para localizar ou corrigir um registro.';
+
+  @override
+  String get guideIntroBody =>
+      'Comece na tela Início criando seu primeiro cofre e sua primeira conta. O cofre guarda seus dados financeiros; é preciso ter um ativo para adicionar ou editar registros e sincronizá-los. Os tópicos abaixo explicam cada recurso e abrem sua tela.';
+
+  @override
+  String get checklistTransactionLabel => 'Registrar um lançamento';
+
+  @override
+  String get checklistPendingLabel => 'Pendente';
+
+  @override
+  String get guideBudgetsBody =>
+      'Defina um limite de gastos e escolha as contas, categorias ou etiquetas que ele cobre. No orçamento mensal, aplique a edição a um mês ou a esse mês e aos seguintes. Meses com configurações próprias as mantêm. O valor por dia é multiplicado por todos os dias do mês. Por dia útil, contam as segundas a sextas, inclusive feriados.';
+
+  @override
+  String get gettingStartedGuideTitle => 'Guia de primeiros passos';
+
+  @override
+  String get guideOpenAction => 'Abrir recurso';
+
+  @override
+  String get guideVaultsBody =>
+      'Crie seu primeiro cofre na tela Início: informe o nome do perfil, o nome da primeira conta e a moeda dos relatórios. Escolha Continuar offline ou crie uma conta Equis para sincronizar depois. Para usar um cofre existente, abra Cofres e conta ou restaure um backup criptografado. Cada cofre mantém suas finanças separadas.';
+
+  @override
+  String get checklistHideAction => 'Ocultar checklist';
+
+  @override
+  String get backupSavedChecklistFailedMessage =>
+      'Backup salvo. Não foi possível atualizar a preferência local do checklist.';
+
+  @override
+  String get guideSkipAction => 'Pular e começar';
+
+  @override
+  String get checklistBackupLabel => 'Criar e salvar um backup';
+
+  @override
+  String get guideReportsBody =>
+      'Escolha um período para ver suas receitas, despesas e fluxo de caixa. A primeira e a última data entram no cálculo. Diário mostra o fluxo de cada dia; Acumulado soma esses fluxos desde o início do período, sem saldo inicial. Saldos, patrimônio e investimentos continuam mostrando a posição atual.';
+
+  @override
+  String get checklistCompleteMessage =>
+      'Seus primeiros passos estão concluídos.';
+
+  @override
+  String get guideTransactionsTitle => 'Lançamentos';
+
+  @override
+  String get checklistDoneLabel => 'Concluído';
+
+  @override
+  String get guideSyncTitle => 'Sincronização opcional';
+
+  @override
+  String get guideSyncBody =>
+      'Primeiro crie ou abra um cofre. Depois entre em uma conta para sincronizá-lo entre dispositivos. Fazer login, por si só, não cria um cofre. Atualize todos os dispositivos antes de editar históricos de orçamentos ou regras; versões antigas podem exigir revisão de conflito.';
+
+  @override
+  String get guideWelcomeBody =>
+      'Primeiro, crie um cofre na tela Início. Ele guarda suas contas e seus lançamentos; você precisa de um para registrar ou editar dados financeiros. O Equis funciona offline. O login só é necessário para sincronizar. Este guia explica os recursos e pode ser reaberto em Configurações.';
+
+  @override
+  String get guideVaultsTitle => 'Cofres e perfis locais';
+
+  @override
+  String get guideAccountsBody =>
+      'Adicione as contas bancárias, carteiras de dinheiro ou cartões que deseja acompanhar e defina suas moedas. Informe um saldo inicial para o dinheiro que você já tem. Arquivar uma conta preserva seus lançamentos.';
+
+  @override
+  String get guideWelcomeTitle => 'Bem-vindo ao Equis';
+
+  @override
+  String get gettingStartedChecklistTitle => 'Primeiros passos';
+
+  @override
+  String get guideRecurringBody =>
+      'Crie uma regra para uma despesa ou receita que se repete. Confirme uma ocorrência proposta para registrar sua despesa ou receita. Você pode pular, reagendar ou ajustar ocorrências individuais. Editar a regra altera propostas futuras; excluir interrompe novas propostas e preserva os lançamentos existentes.';
+
+  @override
+  String get checklistBudgetLabel => 'Criar um orçamento';
+
+  @override
+  String get licensesOverviewBody =>
+      'Licença do Equis e avisos das fontes, dados e componentes incluídos no aplicativo.';
+
+  @override
+  String get licensesFontsTitle => 'Fontes';
+
+  @override
+  String get licensesDataTitle => 'Dados';
+
+  @override
+  String get licensesDependenciesTitle => 'Bibliotecas e componentes';
+
+  @override
+  String get licensesDependenciesBody =>
+      'Avisos de terceiros usados pelo aplicativo, incluindo Flutter e seus componentes.';
+
+  @override
+  String get licensesSearchLabel => 'Buscar componente';
+
+  @override
+  String get licensesNoMatches => 'Nenhum componente encontrado.';
+
+  @override
+  String get licensesLoadFailed =>
+      'Não foi possível carregar este aviso. Volte e tente novamente.';
+
+  @override
+  String get vaultRequiredTitle => 'Crie ou abra um cofre para continuar';
+
+  @override
+  String get vaultOpenAction => 'Abrir cofres ou restaurar dados';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -2484,7 +2814,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get setupRequiredMessage =>
-      'Configure o cofre local antes de adicionar transações.';
+      'Você precisa criar ou abrir um cofre antes de registrar ou editar dados financeiros. A sincronização também exige um cofre ativo. É possível usar o Equis offline, sem entrar em uma conta.';
 
   @override
   String get transactionNotFoundMessage => 'Transação não encontrada.';
@@ -2574,7 +2904,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get setupLocalVaultBody =>
-      'Seus dados ficam criptografados neste dispositivo e funcionam offline.';
+      'Crie seu primeiro cofre e sua primeira conta abaixo para começar a registrar receitas e despesas. Seus dados financeiros ficam criptografados neste dispositivo. Escolha Continuar offline para usar o Equis sem login ou crie uma conta Equis para sincronizar, se quiser.';
 
   @override
   String get profileNameLabel => 'Nome do perfil';
@@ -3142,6 +3472,151 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get budgetLimitLabel => 'Limite';
+
+  @override
+  String get budgetPreviousMonth => 'Mês anterior';
+
+  @override
+  String get budgetNextMonth => 'Próximo mês';
+
+  @override
+  String get budgetCurrentMonth => 'Mês atual';
+
+  @override
+  String get budgetSelectMonth => 'Selecionar mês';
+
+  @override
+  String get budgetYearLabel => 'Ano';
+
+  @override
+  String get budgetInvalidMonth => 'Informe um ano de 1 a 9999.';
+
+  @override
+  String get budgetMonthScopeHint =>
+      'O mês se aplica aos orçamentos mensais. As outras modalidades mostram o progresso atual.';
+
+  @override
+  String get budgetShowDeleted => 'Incluir orçamentos excluídos';
+
+  @override
+  String get budgetEmptyMonth =>
+      'Nenhum orçamento neste mês. Orçamentos aparecem a partir do mês de criação.';
+
+  @override
+  String get budgetRetryAction => 'Tentar novamente';
+
+  @override
+  String get budgetDeletedReadOnly =>
+      'Orçamento excluído · histórico somente para leitura';
+
+  @override
+  String get budgetFutureMonthHint => 'Mês futuro: ainda sem gasto realizado.';
+
+  @override
+  String get budgetPastMonthHint => 'O gasto realizado inclui o mês inteiro.';
+
+  @override
+  String budgetCurrentMonthHint(String date) {
+    return 'Gasto realizado até $date.';
+  }
+
+  @override
+  String get budgetLimitMethodLabel => 'Cálculo do limite mensal';
+
+  @override
+  String get budgetFixedMonthly => 'Valor mensal fixo';
+
+  @override
+  String get budgetPerDay => 'Por dia';
+
+  @override
+  String get budgetPerWeekday => 'Por dia útil';
+
+  @override
+  String get budgetDailyAmountLabel => 'Valor diário';
+
+  @override
+  String get budgetEditScopeLabel => 'Aplicar alterações a';
+
+  @override
+  String get budgetOnlyMonth => 'Só este mês';
+
+  @override
+  String get budgetFromMonth => 'Este mês e os próximos';
+
+  @override
+  String get budgetPreserveOverridesHint =>
+      'Meses futuros com configuração própria são preservados.';
+
+  @override
+  String get budgetGeneralNameHint =>
+      'O nome é compartilhado por todos os meses.';
+
+  @override
+  String get budgetCreationMonthHint =>
+      'Um novo orçamento começa no mês atual.';
+
+  @override
+  String get budgetPreviewHint =>
+      'Informe um valor para conferir o limite mensal.';
+
+  @override
+  String get budgetWeekdayHint =>
+      'Segunda a sexta. Feriados não são descontados.';
+
+  @override
+  String budgetMonthlyTotal(String total) {
+    return 'Limite mensal: $total';
+  }
+
+  @override
+  String budgetLimitCalculation(String rate, int days, String total) {
+    return '$rate × $days dias = $total';
+  }
+
+  @override
+  String get budgetInvalidAmount =>
+      'Informe um valor positivo dentro da faixa monetária suportada.';
+
+  @override
+  String get budgetInvalidForm =>
+      'Confira nome, valor positivo, percentual de alerta (até 100%) e datas.';
+
+  @override
+  String get budgetSaveFailed =>
+      'Não foi possível salvar. Confira se os filtros selecionados continuam disponíveis e tente novamente.';
+
+  @override
+  String get budgetRevisionChanged =>
+      'Este orçamento mudou em outra tela ou dispositivo. Feche e reabra o editor para conferir a configuração atual.';
+
+  @override
+  String get budgetSaving => 'Salvando…';
+
+  @override
+  String get budgetUsageLabel => 'Usado (%)';
+
+  @override
+  String budgetWarningValue(String percent) {
+    return 'Alerta em $percent';
+  }
+
+  @override
+  String get budgetUnavailableCategory => 'Categoria indisponível';
+
+  @override
+  String budgetCategoryWithDescendants(String category) {
+    return '$category (e subcategorias)';
+  }
+
+  @override
+  String get budgetUnavailableAccount => 'Conta inativa ou indisponível';
+
+  @override
+  String get budgetUnavailableTag => 'Etiqueta indisponível';
+
+  @override
+  String get budgetAllFilters => 'Todos';
 
   @override
   String get budgetPeriodLabel => 'Período';
@@ -3942,6 +4417,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get syncConflictsTitle => 'Conflitos que exigem revisão';
 
   @override
+  String get syncBudgetHistoryProtected =>
+      'Outro dispositivo precisa ser atualizado para aceitar o histórico mensal de orçamentos. Atualize-o e mantenha a versão local atual para preservar suas configurações.';
+
+  @override
   String syncConflictBody(
     String entityType,
     String recordId,
@@ -4682,4 +5161,185 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get accountReferencesAttachments => 'Anexos';
+
+  @override
+  String get editRecurringAction => 'Editar regra';
+
+  @override
+  String get deleteRecurringAction => 'Excluir regra';
+
+  @override
+  String get deleteRecurringConfirmation =>
+      'Excluir esta regra interrompe novas ocorrências. Seus lançamentos existentes serão preservados.';
+
+  @override
+  String get recurrenceEffectiveFromLabel => 'Vigência (hoje ou data futura)';
+
+  @override
+  String get dashboardInvalidSelectionMessage =>
+      'O intervalo salvo ficou inválido. Usamos o mês atual; selecione outro intervalo para corrigir.';
+
+  @override
+  String get dashboardLastThreeMonthsLabel => 'Últimos 3 meses';
+
+  @override
+  String get dashboardDailyLabel => 'Diário';
+
+  @override
+  String get dashboardThisYearLabel => 'Este ano';
+
+  @override
+  String get dashboardCurrentPositionLabel => 'Posição financeira atual';
+
+  @override
+  String get dashboardPeriodTitle => 'Intervalo selecionado';
+
+  @override
+  String get dashboardCumulativeLabel => 'Acumulado';
+
+  @override
+  String get experiencePreferenceFailedMessage =>
+      'Não foi possível salvar sua preferência local.';
+
+  @override
+  String get dashboardCustomRangeLabel => 'Personalizado';
+
+  @override
+  String get dashboardLastMonthLabel => 'Mês anterior';
+
+  @override
+  String get dashboardFlowModeLabel => 'Modo do fluxo';
+
+  @override
+  String get checklistAccountLabel => 'Configurar uma conta';
+
+  @override
+  String get guideBackupBody =>
+      'Salve um backup criptografado e guarde sua senha para poder restaurar o cofre. Valide o arquivo salvo; o checklist só marca esse passo depois que o backup é salvo. Exportações JSON e CSV não são criptografadas e não substituem um backup.';
+
+  @override
+  String get guideCategoriesBody =>
+      'Use categorias para organizar receitas e despesas. Adicione etiquetas quando precisar de outra forma de agrupar os registros. Um lançamento com várias etiquetas aparece em cada uma, mas seu valor é contado uma única vez no total.';
+
+  @override
+  String get checklistShowAction => 'Mostrar checklist na inicial';
+
+  @override
+  String get guideTransactionsBody =>
+      'Depois de criar o cofre e a primeira conta, registre receitas, despesas ou transferências. Confira data, conta, valor e categoria antes de salvar. Abra o Histórico para localizar ou corrigir um registro.';
+
+  @override
+  String get guideIntroBody =>
+      'Comece na tela Início criando seu primeiro cofre e sua primeira conta. O cofre guarda seus dados financeiros; é preciso ter um ativo para adicionar ou editar registros e sincronizá-los. Os tópicos abaixo explicam cada recurso e abrem sua tela.';
+
+  @override
+  String get checklistTransactionLabel => 'Registrar um lançamento';
+
+  @override
+  String get checklistPendingLabel => 'Pendente';
+
+  @override
+  String get guideBudgetsBody =>
+      'Defina um limite de gastos e escolha as contas, categorias ou etiquetas que ele cobre. No orçamento mensal, aplique a edição a um mês ou a esse mês e aos seguintes. Meses com configurações próprias as mantêm. O valor por dia é multiplicado por todos os dias do mês. Por dia útil, contam as segundas a sextas, inclusive feriados.';
+
+  @override
+  String get gettingStartedGuideTitle => 'Guia de primeiros passos';
+
+  @override
+  String get guideOpenAction => 'Abrir recurso';
+
+  @override
+  String get guideVaultsBody =>
+      'Crie seu primeiro cofre na tela Início: informe o nome do perfil, o nome da primeira conta e a moeda dos relatórios. Escolha Continuar offline ou crie uma conta Equis para sincronizar depois. Para usar um cofre existente, abra Cofres e conta ou restaure um backup criptografado. Cada cofre mantém suas finanças separadas.';
+
+  @override
+  String get checklistHideAction => 'Ocultar checklist';
+
+  @override
+  String get backupSavedChecklistFailedMessage =>
+      'Backup salvo. Não foi possível atualizar a preferência local do checklist.';
+
+  @override
+  String get guideSkipAction => 'Pular e começar';
+
+  @override
+  String get checklistBackupLabel => 'Criar e salvar um backup';
+
+  @override
+  String get guideReportsBody =>
+      'Escolha um período para ver suas receitas, despesas e fluxo de caixa. A primeira e a última data entram no cálculo. Diário mostra o fluxo de cada dia; Acumulado soma esses fluxos desde o início do período, sem saldo inicial. Saldos, patrimônio e investimentos continuam mostrando a posição atual.';
+
+  @override
+  String get checklistCompleteMessage =>
+      'Seus primeiros passos estão concluídos.';
+
+  @override
+  String get guideTransactionsTitle => 'Lançamentos';
+
+  @override
+  String get checklistDoneLabel => 'Concluído';
+
+  @override
+  String get guideSyncTitle => 'Sincronização opcional';
+
+  @override
+  String get guideSyncBody =>
+      'Primeiro crie ou abra um cofre. Depois entre em uma conta para sincronizá-lo entre dispositivos. Fazer login, por si só, não cria um cofre. Atualize todos os dispositivos antes de editar históricos de orçamentos ou regras; versões antigas podem exigir revisão de conflito.';
+
+  @override
+  String get guideWelcomeBody =>
+      'Primeiro, crie um cofre na tela Início. Ele guarda suas contas e seus lançamentos; você precisa de um para registrar ou editar dados financeiros. O Equis funciona offline. O login só é necessário para sincronizar. Este guia explica os recursos e pode ser reaberto em Configurações.';
+
+  @override
+  String get guideVaultsTitle => 'Cofres e perfis locais';
+
+  @override
+  String get guideAccountsBody =>
+      'Adicione as contas bancárias, carteiras de dinheiro ou cartões que deseja acompanhar e defina suas moedas. Informe um saldo inicial para o dinheiro que você já tem. Arquivar uma conta preserva seus lançamentos.';
+
+  @override
+  String get guideWelcomeTitle => 'Bem-vindo ao Equis';
+
+  @override
+  String get gettingStartedChecklistTitle => 'Primeiros passos';
+
+  @override
+  String get guideRecurringBody =>
+      'Crie uma regra para uma despesa ou receita que se repete. Confirme uma ocorrência proposta para registrar sua despesa ou receita. Você pode pular, reagendar ou ajustar ocorrências individuais. Editar a regra altera propostas futuras; excluir interrompe novas propostas e preserva os lançamentos existentes.';
+
+  @override
+  String get checklistBudgetLabel => 'Criar um orçamento';
+
+  @override
+  String get licensesOverviewBody =>
+      'Licença do Equis e avisos das fontes, dados e componentes incluídos no aplicativo.';
+
+  @override
+  String get licensesFontsTitle => 'Fontes';
+
+  @override
+  String get licensesDataTitle => 'Dados';
+
+  @override
+  String get licensesDependenciesTitle => 'Bibliotecas e componentes';
+
+  @override
+  String get licensesDependenciesBody =>
+      'Avisos de terceiros usados pelo aplicativo, incluindo Flutter e seus componentes.';
+
+  @override
+  String get licensesSearchLabel => 'Buscar componente';
+
+  @override
+  String get licensesNoMatches => 'Nenhum componente encontrado.';
+
+  @override
+  String get licensesLoadFailed =>
+      'Não foi possível carregar este aviso. Volte e tente novamente.';
+
+  @override
+  String get vaultRequiredTitle => 'Crie ou abra um cofre para continuar';
+
+  @override
+  String get vaultOpenAction => 'Abrir cofres ou restaurar dados';
 }

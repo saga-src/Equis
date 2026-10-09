@@ -15,6 +15,7 @@ import '../../domain/entities/account_profile.dart';
 import '../../domain/reporting/dashboard_models.dart';
 import '../../domain/shared/currency.dart';
 import '../../domain/shared/uuid_v7.dart';
+import '../../domain/shared/local_date.dart';
 import '../../l10n/app_localizations.dart';
 import '../formatting/taxonomy_labels.dart';
 import '../budgets/budget_controller.dart';
@@ -28,12 +29,14 @@ class DashboardOverview extends ConsumerWidget {
     required this.finance,
     this.reportOverride,
     this.wealthStateOverride,
+    this.investmentStateOverride,
     super.key,
   });
 
   final LocalFinanceSnapshot finance;
   final DashboardSnapshot? reportOverride;
   final WealthState? wealthStateOverride;
+  final InvestmentState? investmentStateOverride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,28 +48,41 @@ class DashboardOverview extends ConsumerWidget {
         wealthStateOverride ??
         ref.watch(wealthControllerProvider) ??
         const WealthState();
-    final investments = ref.watch(investmentControllerProvider);
+    final InvestmentState investments =
+        investmentStateOverride ?? ref.watch(investmentControllerProvider);
     final report = reportOverride ?? state.snapshot;
     if (report == null) {
       if (state.error != null) {
-        return EquisGlassCard(
-          child: ListTile(
-            leading: const Icon(Icons.error_outline),
-            title: Text(l10n.localVaultErrorMessage),
-            trailing: IconButton(
-              tooltip: l10n.refreshAction,
-              onPressed: () =>
-                  ref.read(dashboardControllerProvider.notifier).reload(),
-              icon: const Icon(Icons.refresh),
+        return Column(
+          children: [
+            const _DashboardControls(),
+            EquisGlassCard(
+              child: ListTile(
+                leading: const Icon(Icons.error_outline),
+                title: Text(l10n.localVaultErrorMessage),
+                trailing: IconButton(
+                  tooltip: l10n.refreshAction,
+                  onPressed: () =>
+                      ref.read(dashboardControllerProvider.notifier).reload(),
+                  icon: const Icon(Icons.refresh),
+                ),
+              ),
             ),
-          ),
+          ],
         );
       }
-      return const Center(child: CircularProgressIndicator());
+      return const Column(
+        children: [
+          _DashboardControls(),
+          SizedBox(height: 16),
+          Center(child: CircularProgressIndicator()),
+        ],
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (state.loading) const LinearProgressIndicator(),
         _AvailableMoney(report: report),
         if (report.missingRates.isNotEmpty || report.usesEstimatedRates) ...[
           const SizedBox(height: 8),
@@ -89,6 +105,7 @@ class DashboardOverview extends ConsumerWidget {
           second: _Planning(report: report, budgets: budgets, goals: goals),
         ),
         const SizedBox(height: 16),
+        Text(l10n.dashboardCurrentPositionLabel),
         _ResponsivePair(
           first: _NetWorthSummary(state: wealth),
           second: _InvestmentSummary(state: investments),
@@ -99,10 +116,10 @@ class DashboardOverview extends ConsumerWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        _ResponsivePair(
-          first: _SpendingReport(report: report, finance: finance),
-          second: _CashFlowReport(report: report),
-          matchHeight: false,
+        _SpendingReport(
+          report: report,
+          finance: finance,
+          mode: state.selection.mode,
         ),
         const SizedBox(height: 16),
         _AccountBalances(report: report),
@@ -111,15 +128,139 @@ class DashboardOverview extends ConsumerWidget {
   }
 }
 
+class _DashboardControls extends ConsumerWidget {
+  const _DashboardControls();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final state = ref.watch(dashboardControllerProvider);
+    final controller = ref.read(dashboardControllerProvider.notifier);
+    final theme = Theme.of(context);
+    final controlStyle = theme.textTheme.bodySmall;
+    String periodLabel(DashboardRangePreset preset) => switch (preset) {
+      DashboardRangePreset.thisMonth => l10n.thisMonthTitle,
+      DashboardRangePreset.lastMonth => l10n.dashboardLastMonthLabel,
+      DashboardRangePreset.lastThreeMonths =>
+        l10n.dashboardLastThreeMonthsLabel,
+      DashboardRangePreset.thisYear => l10n.dashboardThisYearLabel,
+      DashboardRangePreset.custom => l10n.dashboardCustomRangeLabel,
+    };
+    Widget menuLabel(String label) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: controlStyle),
+          const SizedBox(width: 2),
+          const Icon(Icons.arrow_drop_down, size: 16),
+        ],
+      ),
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            PopupMenuButton<DashboardRangePreset>(
+              key: ValueKey('dashboard-range-${state.selection.preset.name}'),
+              initialValue: state.selection.preset,
+              tooltip: l10n.dashboardPeriodTitle,
+              child: menuLabel(periodLabel(state.selection.preset)),
+              itemBuilder: (context) => [
+                for (final preset in DashboardRangePreset.values)
+                  PopupMenuItem(
+                    value: preset,
+                    child: Text(
+                      periodLabel(preset),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onSelected: (preset) async {
+                DashboardDateRange? custom;
+                if (preset == DashboardRangePreset.custom) {
+                  final today = controller.today;
+                  final selected = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(1900),
+                    lastDate: today.toUtcDate(),
+                    initialDateRange: DateTimeRange(
+                      start: state.selection.resolve(today).from.toUtcDate(),
+                      end: state.selection.resolve(today).through.toUtcDate(),
+                    ),
+                  );
+                  if (selected == null) return;
+                  custom = DashboardDateRange(
+                    from: LocalDate(
+                      selected.start.year,
+                      selected.start.month,
+                      selected.start.day,
+                    ),
+                    through: LocalDate(
+                      selected.end.year,
+                      selected.end.month,
+                      selected.end.day,
+                    ),
+                  );
+                }
+                await controller.select(
+                  DashboardSelection(
+                    preset: preset,
+                    customRange: custom,
+                    mode: state.selection.mode,
+                  ),
+                );
+              },
+            ),
+            PopupMenuButton<CashFlowMode>(
+              key: ValueKey('dashboard-mode-${state.selection.mode.name}'),
+              initialValue: state.selection.mode,
+              tooltip: l10n.dashboardFlowModeLabel,
+              child: menuLabel(
+                state.selection.mode == CashFlowMode.daily
+                    ? l10n.dashboardDailyLabel
+                    : l10n.dashboardCumulativeLabel,
+              ),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: CashFlowMode.daily,
+                  child: Text(
+                    l10n.dashboardDailyLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: CashFlowMode.cumulative,
+                  child: Text(
+                    l10n.dashboardCumulativeLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+              onSelected: (mode) =>
+                  controller.select(state.selection.withMode(mode)),
+            ),
+          ],
+        ),
+        if (state.invalidSelection) Text(l10n.dashboardInvalidSelectionMessage),
+        if (state.preferenceError != null)
+          Text(l10n.experiencePreferenceFailedMessage),
+      ],
+    );
+  }
+}
+
 class _ResponsivePair extends StatelessWidget {
-  const _ResponsivePair({
-    required this.first,
-    required this.second,
-    this.matchHeight = true,
-  });
+  const _ResponsivePair({required this.first, required this.second});
   final Widget first;
   final Widget second;
-  final bool matchHeight;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -132,16 +273,14 @@ class _ResponsivePair extends StatelessWidget {
       }
       final row = Row(
         key: const Key('dashboard-wide-pair'),
-        crossAxisAlignment: matchHeight
-            ? CrossAxisAlignment.stretch
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(child: first),
           const SizedBox(width: 16),
           Expanded(child: second),
         ],
       );
-      return matchHeight ? IntrinsicHeight(child: row) : row;
+      return IntrinsicHeight(child: row);
     },
   );
 }
@@ -155,18 +294,24 @@ class _NetWorthSummary extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final report = state.report;
     return EquisGlassCard(
-      child: ListTile(
-        leading: const Icon(Icons.account_balance_outlined),
+      child: _PositionSummaryTile(
+        leading: const Icon(
+          Icons.account_balance_outlined,
+          key: Key('net-worth-summary-icon'),
+        ),
         title: Text(
           report != null &&
                   (report.current.hasIncompleteAccounts ||
                       report.current.hasIncompleteInvestments)
               ? l10n.netWorthKnownSubtotalLabel
               : l10n.netWorthLabel,
+          key: const Key('net-worth-summary-title'),
         ),
         subtitle: report == null
             ? Text(state.error == null ? '—' : l10n.wealthLoadFailedMessage)
             : Column(
+                key: const Key('net-worth-summary-values'),
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -181,7 +326,6 @@ class _NetWorthSummary extends StatelessWidget {
                     Text(l10n.accountSyncIncompleteMessage),
                 ],
               ),
-        trailing: const Icon(Icons.chevron_right),
         onTap: () => context.go('/wealth'),
       ),
     );
@@ -197,16 +341,22 @@ class _InvestmentSummary extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final report = state.report;
     return EquisGlassCard(
-      child: ListTile(
-        leading: const Icon(Icons.show_chart),
+      child: _PositionSummaryTile(
+        leading: const Icon(
+          Icons.show_chart,
+          key: Key('portfolio-summary-icon'),
+        ),
         title: Text(
           report?.isKnownSubtotal == true
               ? l10n.fixedIncomeKnownSubtotalLabel
               : l10n.portfolioValueLabel,
+          key: const Key('portfolio-summary-title'),
         ),
         subtitle: report == null
             ? Text(state.error == null ? '—' : l10n.investmentLoadFailedMessage)
             : Column(
+                key: const Key('portfolio-summary-values'),
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -217,8 +367,72 @@ class _InvestmentSummary extends StatelessWidget {
                     Text(l10n.accountSyncIncompleteMessage),
                 ],
               ),
-        trailing: const Icon(Icons.chevron_right),
         onTap: () => context.go('/investments'),
+      ),
+    );
+  }
+}
+
+class _PositionSummaryTile extends StatelessWidget {
+  const _PositionSummaryTile({
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final Widget leading;
+  final Widget title;
+  final Widget subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 72),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                IconTheme.merge(
+                  data: IconThemeData(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  child: leading,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DefaultTextStyle(
+                        style: theme.textTheme.bodyLarge!,
+                        child: title,
+                      ),
+                      DefaultTextStyle(
+                        style: theme.textTheme.bodyMedium!.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        child: subtitle,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -234,9 +448,41 @@ class _AvailableMoney extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.availableMoneyTitle,
-          style: Theme.of(context).textTheme.titleMedium,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final heading = Column(
+              key: const Key('available-money-heading'),
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.dashboardCurrentPositionLabel,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+                Text(
+                  l10n.availableMoneyTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            );
+            if (constraints.maxWidth >= 650) {
+              return Row(
+                children: [
+                  Expanded(child: heading),
+                  const SizedBox(width: 16),
+                  const _DashboardControls(),
+                ],
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                heading,
+                const SizedBox(height: 12),
+                const _DashboardControls(),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 8),
         EquisGlassCard(
@@ -288,11 +534,24 @@ class _ThisMonth extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final values = [report.incomeMinor, report.expenseMinor];
+    final values = [
+      report.incomeMinor,
+      report.expenseMinor,
+      report.netCashFlowMinor,
+    ];
     final maxValue = values.fold<int>(
       1,
       (max, value) => value > max ? value : max,
     );
+    final minValue = values.fold<int>(
+      0,
+      (min, value) => value < min ? value : min,
+    );
+    final colors = [
+      Theme.of(context).colorScheme.primary,
+      Theme.of(context).colorScheme.error,
+      Theme.of(context).colorScheme.onSurface,
+    ];
     return EquisGlassCard(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -300,15 +559,32 @@ class _ThisMonth extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.thisMonthTitle,
-              style: Theme.of(context).textTheme.titleMedium,
+            Wrap(
+              key: const Key('dashboard-period-summary'),
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  l10n.dashboardPeriodTitle,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                Text(
+                  EquisFormatters.dateRange(
+                    context,
+                    report.periodStart,
+                    report.periodEnd,
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: _Value(
+                    key: const Key('income-summary-column'),
                     label: l10n.incomeReportLabel,
                     value: _money(
                       context,
@@ -320,6 +596,7 @@ class _ThisMonth extends StatelessWidget {
                 ),
                 Expanded(
                   child: _Value(
+                    key: const Key('expenses-summary-column'),
                     label: l10n.expensesReportLabel,
                     value: _money(
                       context,
@@ -331,6 +608,7 @@ class _ThisMonth extends StatelessWidget {
                 ),
                 Expanded(
                   child: _Value(
+                    key: const Key('net-cash-flow-summary-column'),
                     label: l10n.netCashFlowLabel,
                     value: _money(
                       context,
@@ -349,11 +627,24 @@ class _ThisMonth extends StatelessWidget {
                     '${l10n.incomeReportLabel}: '
                     '${_money(context, report.reportingCurrency, report.incomeMinor)}. '
                     '${l10n.expensesReportLabel}: '
-                    '${_money(context, report.reportingCurrency, report.expenseMinor)}.',
+                    '${_money(context, report.reportingCurrency, report.expenseMinor)}. '
+                    '${l10n.netCashFlowLabel}: '
+                    '${_money(context, report.reportingCurrency, report.netCashFlowMinor)}.',
                 child: BarChart(
+                  chartRendererKey: const Key('dashboard-summary-bars'),
                   BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    barTouchData: BarTouchData(
+                      touchTooltipData: BarTouchTooltipData(
+                        getTooltipColor: (_) =>
+                            Theme.of(context).cardTheme.color ??
+                            Theme.of(context).colorScheme.surface,
+                        fitInsideHorizontally: true,
+                        fitInsideVertically: true,
+                      ),
+                    ),
                     maxY: _chart(maxValue) * 1.2,
-                    minY: 0,
+                    minY: _chart(minValue) * 1.2,
                     gridData: const FlGridData(show: false),
                     borderData: FlBorderData(show: false),
                     titlesData: FlTitlesData(
@@ -366,39 +657,22 @@ class _ThisMonth extends StatelessWidget {
                       rightTitles: const AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) => Text(
-                            value.toInt() == 0
-                                ? l10n.incomeReportLabel
-                                : l10n.expensesReportLabel,
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ),
+                      bottomTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
                       ),
                     ),
                     barGroups: [
-                      BarChartGroupData(
-                        x: 0,
-                        barRods: [
-                          BarChartRodData(
-                            toY: _chart(report.incomeMinor),
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 24,
-                          ),
-                        ],
-                      ),
-                      BarChartGroupData(
-                        x: 1,
-                        barRods: [
-                          BarChartRodData(
-                            toY: _chart(report.expenseMinor),
-                            color: Theme.of(context).colorScheme.error,
-                            width: 24,
-                          ),
-                        ],
-                      ),
+                      for (var index = 0; index < values.length; index++)
+                        BarChartGroupData(
+                          x: index,
+                          barRods: [
+                            BarChartRodData(
+                              toY: _chart(values[index]),
+                              color: colors[index],
+                              width: 24,
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -432,10 +706,10 @@ class _Planning extends StatelessWidget {
             leading: const Icon(Icons.pie_chart_outline),
             title: Text(l10n.budgetDashboardTitle),
             subtitle: Text(
-              budgets.items.isEmpty
+              budgets.currentItems.isEmpty
                   ? l10n.activeBudgetsCount(0)
-                  : '${l10n.activeBudgetsCount(budgets.items.length)} · '
-                        '${l10n.budgetUsagePercent((budgets.items.first.usageBps / 100).round())}',
+                  : '${l10n.activeBudgetsCount(budgets.currentItems.length)} · '
+                        '${l10n.budgetUsagePercent((budgets.currentItems.first.usageBps / 100).round())}',
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.go('/budgets'),
@@ -465,9 +739,14 @@ class _Planning extends StatelessWidget {
 }
 
 class _SpendingReport extends ConsumerStatefulWidget {
-  const _SpendingReport({required this.report, required this.finance});
+  const _SpendingReport({
+    required this.report,
+    required this.finance,
+    required this.mode,
+  });
   final DashboardSnapshot report;
   final LocalFinanceSnapshot finance;
+  final CashFlowMode mode;
   @override
   ConsumerState<_SpendingReport> createState() => _SpendingReportState();
 }
@@ -497,9 +776,7 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
         tagId: value.tagId,
         withoutTags: value.tagId == null,
         fromDate: report.periodStart,
-        toDate: report.cashFlow.isEmpty
-            ? report.periodEnd
-            : report.cashFlow.last.date,
+        toDate: report.periodEnd,
         reportingExpensesOnly: true,
       ),
     );
@@ -556,22 +833,19 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
       });
     final featured = positives.take(6).toList();
     final negatives = values.where((value) => value.amountMinor < 0);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SegmentedButton<bool>(
-          segments: [
-            ButtonSegment(value: false, label: Text(l.categoriesTitle)),
-            ButtonSegment(value: true, label: Text(l.tagsTitle)),
-          ],
-          selected: {_tags},
-          onSelectionChanged: (value) => setState(() => _tags = value.single),
-        ),
-        const SizedBox(height: 8),
-        if (!_tags)
-          _CategoryReport(report: report, finance: widget.finance)
-        else
-          EquisGlassCard(
+    final toggle = SegmentedButton<bool>(
+      key: const Key('dashboard-spending-toggle'),
+      segments: [
+        ButtonSegment(value: false, label: Text(l.categoriesTitle)),
+        ButtonSegment(value: true, label: Text(l.tagsTitle)),
+      ],
+      selected: {_tags},
+      onSelectionChanged: (value) => setState(() => _tags = value.single),
+    );
+    final spending = !_tags
+        ? _CategoryReport(report: report, finance: widget.finance)
+        : EquisGlassCard(
+            margin: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -667,8 +941,65 @@ class _SpendingReportState extends ConsumerState<_SpendingReport> {
                 ],
               ),
             ),
-          ),
-      ],
+          );
+    final cashFlow = _CashFlowReport(report: report, mode: widget.mode);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 900) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              toggle,
+              const SizedBox(height: 8),
+              spending,
+              const SizedBox(height: 16),
+              cashFlow,
+            ],
+          );
+        }
+        return Table(
+          key: const Key('dashboard-wide-pair'),
+          columnWidths: const {
+            0: FlexColumnWidth(),
+            1: FixedColumnWidth(16),
+            2: FlexColumnWidth(),
+          },
+          defaultVerticalAlignment: TableCellVerticalAlignment.top,
+          children: [
+            TableRow(
+              children: [
+                toggle,
+                const SizedBox.shrink(),
+                const SizedBox.shrink(),
+              ],
+            ),
+            const TableRow(
+              children: [
+                SizedBox(height: 8),
+                SizedBox(height: 8),
+                SizedBox(height: 8),
+              ],
+            ),
+            TableRow(
+              children: [
+                ConstrainedBox(
+                  key: const Key('dashboard-spending-card'),
+                  constraints: BoxConstraints(
+                    minHeight:
+                        360 + MediaQuery.textScalerOf(context).scale(48) - 48,
+                  ),
+                  child: spending,
+                ),
+                const SizedBox.shrink(),
+                TableCell(
+                  verticalAlignment: TableCellVerticalAlignment.fill,
+                  child: cashFlow,
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -882,31 +1213,34 @@ class _CategoryReportState extends State<_CategoryReport> {
                 child: Center(child: Text(l10n.noSpendingDataMessage)),
               )
             else
-              SizedBox(
-                height: 220,
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 220),
                 child: Row(
                   children: [
                     Expanded(
-                      child: AccessibleChart(
-                        label:
-                            '${l10n.categoryBreakdownTitle}: $classificationLabel',
-                        child: PieChart(
-                          PieChartData(
-                            centerSpaceRadius: 42,
-                            sectionsSpace: 2,
-                            sections: [
-                              for (
-                                var index = 0;
-                                index < values.length;
-                                index++
-                              )
-                                PieChartSectionData(
-                                  value: _chart(values[index].amountMinor),
-                                  color: colors[index],
-                                  showTitle: false,
-                                  radius: 42,
-                                ),
-                            ],
+                      child: SizedBox(
+                        height: 220,
+                        child: AccessibleChart(
+                          label:
+                              '${l10n.categoryBreakdownTitle}: $classificationLabel',
+                          child: PieChart(
+                            PieChartData(
+                              centerSpaceRadius: 42,
+                              sectionsSpace: 2,
+                              sections: [
+                                for (
+                                  var index = 0;
+                                  index < values.length;
+                                  index++
+                                )
+                                  PieChartSectionData(
+                                    value: _chart(values[index].amountMinor),
+                                    color: colors[index],
+                                    showTitle: false,
+                                    radius: 42,
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -914,6 +1248,7 @@ class _CategoryReportState extends State<_CategoryReport> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           for (var index = 0; index < values.length; index++)
@@ -1004,9 +1339,7 @@ TransactionSearchFilter dashboardCategoryHistoryFilter({
   vaultId: vaultId,
   categoryId: categoryId,
   fromDate: report.periodStart,
-  toDate: report.cashFlow.isEmpty
-      ? report.periodEnd
-      : report.cashFlow.last.date,
+  toDate: report.periodEnd,
   reportingExpensesOnly: classification == ReportClassification.expense,
   types: classification == ReportClassification.income
       ? const {
@@ -1044,93 +1377,148 @@ final class _CategorySlice {
 }
 
 class _CashFlowReport extends StatelessWidget {
-  const _CashFlowReport({required this.report});
+  const _CashFlowReport({required this.report, required this.mode});
   final DashboardSnapshot report;
+  final CashFlowMode mode;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    var runningIncome = 0;
-    var runningExpense = 0;
+    final series = cashFlowSeries(report.cashFlow, mode);
     final income = <FlSpot>[];
     final expense = <FlSpot>[];
     for (var index = 0; index < report.cashFlow.length; index++) {
-      runningIncome += report.cashFlow[index].incomeMinor;
-      runningExpense += report.cashFlow[index].expenseMinor;
-      income.add(FlSpot(index.toDouble(), _chart(runningIncome)));
-      expense.add(FlSpot(index.toDouble(), _chart(runningExpense)));
+      income.add(FlSpot(index.toDouble(), _chart(series[index].incomeMinor)));
+      expense.add(FlSpot(index.toDouble(), _chart(series[index].expenseMinor)));
     }
-    return EquisGlassCard(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.cashFlowChartTitle,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 220,
-              child: report.cashFlow.isEmpty
-                  ? Center(child: Text(l10n.noSpendingDataMessage))
-                  : AccessibleChart(
-                      label: l10n.cashFlowChartTitle,
-                      child: LineChart(
-                        LineChartData(
-                          minX: 0,
-                          maxX: (report.cashFlow.length - 1).toDouble(),
-                          minY: 0,
-                          gridData: FlGridData(
-                            drawVerticalLine: false,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: Theme.of(context).dividerColor,
-                              strokeWidth: 1,
+    return LayoutBuilder(
+      builder: (context, constraints) => EquisGlassCard(
+        key: const Key('cash-flow-report-card'),
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.cashFlowChartTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                mode == CashFlowMode.daily
+                    ? l10n.dashboardDailyLabel
+                    : l10n.dashboardCumulativeLabel,
+              ),
+              SizedBox(
+                height: 220,
+                child: report.cashFlow.isEmpty
+                    ? Center(child: Text(l10n.noSpendingDataMessage))
+                    : AccessibleChart(
+                        label: l10n.cashFlowChartTitle,
+                        child: LineChart(
+                          chartRendererKey: const Key('cash-flow-plot'),
+                          LineChartData(
+                            lineTouchData: LineTouchData(
+                              touchTooltipData: LineTouchTooltipData(
+                                getTooltipColor: (_) =>
+                                    Theme.of(context).cardTheme.color ??
+                                    Theme.of(context).colorScheme.surface,
+                                tooltipBorder: BorderSide(
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                                tooltipPadding: const EdgeInsets.all(8),
+                                maxContentWidth: (constraints.maxWidth - 56)
+                                    .clamp(40.0, 180.0)
+                                    .toDouble(),
+                                fitInsideHorizontally: true,
+                                fitInsideVertically: true,
+                              ),
                             ),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          titlesData: FlTitlesData(
-                            leftTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
+                            minX: 0,
+                            maxX: (report.cashFlow.length - 1)
+                                .clamp(1, 1 << 30)
+                                .toDouble(),
+                            minY: [...income, ...expense].fold<double>(
+                              0,
+                              (value, point) =>
+                                  point.y < value ? point.y : value,
                             ),
-                            topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
+                            gridData: FlGridData(
+                              drawVerticalLine: false,
+                              getDrawingHorizontalLine: (value) => FlLine(
+                                color: Theme.of(context).dividerColor,
+                                strokeWidth: 1,
+                              ),
                             ),
-                            rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                interval: 7,
-                                getTitlesWidget: (value, meta) => Text(
-                                  '${value.toInt() + 1}',
-                                  style: Theme.of(context).textTheme.labelSmall,
+                            borderData: FlBorderData(show: false),
+                            titlesData: FlTitlesData(
+                              leftTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize:
+                                      MediaQuery.textScalerOf(
+                                        context,
+                                      ).scale(18) +
+                                      8,
+                                  interval: (report.cashFlow.length / 5)
+                                      .ceil()
+                                      .clamp(1, 1 << 30)
+                                      .toDouble(),
+                                  getTitlesWidget: (value, meta) =>
+                                      value.toInt() < 0 ||
+                                          value.toInt() >= series.length
+                                      ? const SizedBox.shrink()
+                                      : SideTitleWidget(
+                                          meta: meta,
+                                          space: 4,
+                                          fitInside:
+                                              SideTitleFitInsideData.fromTitleMeta(
+                                                meta,
+                                                enabled: true,
+                                              ),
+                                          child: Text(
+                                            EquisFormatters.date(
+                                              context,
+                                              series[value.toInt()].date,
+                                            ),
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.labelSmall,
+                                          ),
+                                        ),
                                 ),
                               ),
                             ),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: income,
+                                color: Theme.of(context).colorScheme.primary,
+                                barWidth: 3,
+                                dotData: const FlDotData(show: false),
+                              ),
+                              LineChartBarData(
+                                spots: expense,
+                                color: Theme.of(context).colorScheme.error,
+                                barWidth: 3,
+                                dotData: const FlDotData(show: false),
+                              ),
+                            ],
                           ),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: income,
-                              color: Theme.of(context).colorScheme.primary,
-                              barWidth: 3,
-                              dotData: const FlDotData(show: false),
-                            ),
-                            LineChartBarData(
-                              spots: expense,
-                              color: Theme.of(context).colorScheme.error,
-                              barWidth: 3,
-                              dotData: const FlDotData(show: false),
-                            ),
-                          ],
                         ),
                       ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1189,19 +1577,30 @@ class _AccountBalances extends StatelessWidget {
 }
 
 class _Value extends StatelessWidget {
-  const _Value({required this.label, required this.value, this.color});
+  const _Value({
+    required this.label,
+    required this.value,
+    this.color,
+    super.key,
+  });
   final String label;
   final String value;
   final Color? color;
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      Text(label, style: Theme.of(context).textTheme.labelMedium),
+      Text(
+        label,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.labelMedium,
+      ),
       const SizedBox(height: 4),
       Text(
         value,
+        textAlign: TextAlign.center,
         style: EquisTypography.numeric.copyWith(color: color, fontSize: 16),
       ),
     ],

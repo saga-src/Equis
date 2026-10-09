@@ -14,6 +14,7 @@ import '../../domain/shared/uuid_v7.dart';
 import '../../domain/shared/zoned_recurrence.dart';
 import '../../domain/taxonomy/tag.dart' as domain;
 import '../persistence/database/equis_database.dart';
+import '../persistence/database/budget_monthly_history_migration.dart';
 import '../../application/sync/sync_models.dart';
 import '../sync/drift_sync_mutation_recorder.dart';
 
@@ -320,9 +321,11 @@ final class DriftAccountAggregateRepository
         accountId,
       ),
       AccountReferenceKind.recurrenceTemplates: await _count(
-        'SELECT COUNT(*) AS count FROM recurring_template_movements m '
-        'JOIN account_pockets p ON p.id = m.account_pocket_id '
-        'WHERE p.account_id = ?',
+        'SELECT COUNT(*) AS count FROM ('
+        'SELECT m.recurring_rule_id FROM recurring_template_movements m '
+        'JOIN account_pockets p ON p.id = m.account_pocket_id WHERE p.account_id = ?1 '
+        'UNION SELECT v.recurring_rule_id FROM recurring_rule_versions v, json_each(v.template_json, \'\$.movements\') m '
+        'JOIN account_pockets p ON p.id = json_extract(m.value, \'\$.pocket_id\') WHERE p.account_id = ?1)',
         accountId,
       ),
       AccountReferenceKind.transactions: await _count(
@@ -339,8 +342,9 @@ final class DriftAccountAggregateRepository
         accountId,
       ),
       AccountReferenceKind.budgets: await _count(
-        'SELECT COUNT(*) AS count FROM budget_accounts ba '
-        'WHERE ba.account_id = ?',
+        'SELECT COUNT(*) AS count FROM ('
+        'SELECT budget_id FROM budget_accounts WHERE account_id = ?1 '
+        'UNION SELECT c.budget_id FROM budget_monthly_accounts a JOIN budget_monthly_configurations c ON c.id = a.configuration_id WHERE a.account_id = ?1)',
         accountId,
       ),
       AccountReferenceKind.attachments: await _count(
@@ -379,12 +383,21 @@ final class DriftAccountAggregateRepository
       blockers.add(AccountRemovalBlocker.scheduledInstallment);
     }
     if (await _count(
-          'SELECT COUNT(*) AS count FROM recurring_template_movements m '
+          'SELECT COUNT(*) AS count FROM ('
+          'SELECT m.recurring_rule_id FROM recurring_template_movements m '
           'JOIN recurring_rules rule ON rule.id = m.recurring_rule_id '
           'JOIN account_pockets p ON p.id = m.account_pocket_id '
-          'WHERE p.account_id = ? AND rule.enabled = 1 '
-          'AND rule.deleted_at IS NULL',
+          'WHERE p.account_id = ?1 AND rule.enabled = 1 AND rule.deleted_at IS NULL '
+          'AND rule.schedule_history_edited = 0 UNION '
+          'SELECT v.recurring_rule_id FROM recurring_rule_versions v '
+          'JOIN recurring_rules rule ON rule.id = v.recurring_rule_id, json_each(v.template_json, \'\$.movements\') m '
+          'JOIN account_pockets p ON p.id = json_extract(m.value, \'\$.pocket_id\') '
+          'WHERE p.account_id = ?1 AND rule.enabled = 1 AND rule.deleted_at IS NULL '
+          'AND (v.ends_on IS NULL OR v.ends_on >= ?2) '
+          'AND NOT EXISTS (SELECT 1 FROM recurring_rule_versions n WHERE n.recurring_rule_id = v.recurring_rule_id '
+          'AND n.effective_from > v.effective_from AND n.effective_from <= ?2))',
           accountId,
+          second: effectiveOn.toString(),
         ) >
         0) {
       blockers.add(AccountRemovalBlocker.activeRecurrence);
@@ -414,13 +427,18 @@ final class DriftAccountAggregateRepository
       blockers.add(AccountRemovalBlocker.activeGoal);
     }
     if (await _count(
-          'SELECT COUNT(*) AS count FROM budget_accounts ba '
-          'JOIN budgets budget ON budget.id = ba.budget_id '
-          'WHERE ba.account_id = ? AND budget.enabled = 1 '
-          'AND budget.deleted_at IS NULL',
-          accountId,
-        ) >
-        0) {
+              'SELECT COUNT(*) AS count FROM budget_accounts ba '
+              'JOIN budgets budget ON budget.id = ba.budget_id '
+              'WHERE ba.account_id = ? AND budget.enabled = 1 '
+              "AND budget.deleted_at IS NULL AND budget.period_type <> 'monthly'",
+              accountId,
+            ) >
+            0 ||
+        await hasActiveMonthlyBudgetAccountReference(
+          database,
+          accountId.value,
+          effectiveOn,
+        )) {
       blockers.add(AccountRemovalBlocker.enabledBudget);
     }
     return AccountRemovalAssessment(

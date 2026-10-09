@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'dashboard_overview.dart';
+import 'getting_started_checklist.dart';
 import '../shared/equis_glass.dart';
 import '../transactions/transaction_presentation.dart';
 
@@ -115,6 +116,8 @@ class _HomeContent extends StatelessWidget {
               ),
             )
           else ...[
+            const GettingStartedChecklist(),
+            const SizedBox(height: 16),
             DashboardOverview(finance: snapshot!),
             const SizedBox(height: 16),
             Align(

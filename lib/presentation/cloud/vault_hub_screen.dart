@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/providers/app_providers.dart';
 import '../../l10n/app_localizations.dart';
+import '../shared/vault_required.dart';
 
 class VaultHubScreen extends ConsumerStatefulWidget {
   const VaultHubScreen({super.key});
@@ -130,6 +131,9 @@ class _VaultHubScreenState extends ConsumerState<VaultHubScreen> {
         padding: const EdgeInsets.all(24),
         children: [
           if (_busy) const LinearProgressIndicator(),
+          if (ref.watch(localFinanceControllerProvider).valueOrNull?.vault ==
+              null)
+            const VaultRequiredNotice(),
           if (_error != null)
             Text(
               _error!,

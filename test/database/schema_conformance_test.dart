@@ -146,6 +146,11 @@ const _expectedTables = <String>{
   'budget_categories',
   'budget_accounts',
   'budget_tags',
+  'budget_monthly_configurations',
+  'budget_monthly_categories',
+  'budget_monthly_accounts',
+  'budget_monthly_tags',
+  'recurring_rule_versions',
   'goals',
   'goal_accounts',
   'goal_contributions',
@@ -178,6 +183,7 @@ const _expectedTables = <String>{
 };
 
 const _expectedIndexes = <String>{
+  'idx_budget_monthly_accounts_account',
   'idx_transactions_vault_date',
   'idx_movements_pocket',
   'idx_categories_parent',

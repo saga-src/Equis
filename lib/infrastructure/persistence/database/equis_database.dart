@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 
 import 'schema_versions.dart';
+import 'budget_monthly_history_migration.dart';
 
 part 'equis_database.g.dart';
 
@@ -51,7 +52,7 @@ final class EquisDatabase extends _$EquisDatabase {
   }
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -119,6 +120,23 @@ final class EquisDatabase extends _$EquisDatabase {
               'SELECT operation_id, record_id FROM sync_outbox '
               "WHERE entity_type = 'account'",
             );
+          },
+          from7To8: (migrator, schema) async {
+            await migrator.addColumn(
+              schema.budgets,
+              schema.budgets.monthlyHistoryEdited,
+            );
+            await migrator.addColumn(
+              schema.recurringRules,
+              schema.recurringRules.scheduleHistoryEdited,
+            );
+            await migrator.create(schema.budgetMonthlyConfigurations);
+            await migrator.create(schema.budgetMonthlyCategories);
+            await migrator.create(schema.budgetMonthlyAccounts);
+            await migrator.create(schema.budgetMonthlyTags);
+            await migrator.create(schema.idxBudgetMonthlyAccountsAccount);
+            await migrator.create(schema.recurringRuleVersions);
+            await initializeBudgetMonthlyHistory(this);
           },
         )(migrator, from, to),
       );

@@ -203,7 +203,10 @@ final class DriftSyncMetadataStore
       SyncEntityType.recurringRule =>
         'SELECT DISTINCT p.account_id FROM recurring_template_movements m '
             'LEFT JOIN account_pockets p ON p.id = m.account_pocket_id '
-            'WHERE m.recurring_rule_id = ?',
+            'WHERE m.recurring_rule_id = ?1 UNION '
+            'SELECT p.account_id FROM recurring_rule_versions v, json_each(v.template_json, \'\$.movements\') m '
+            'LEFT JOIN account_pockets p ON p.id = json_extract(m.value, \'\$.pocket_id\') '
+            'WHERE v.recurring_rule_id = ?1',
       SyncEntityType.installmentPlan =>
         'SELECT p.account_id FROM installment_plans plan '
             'LEFT JOIN account_pockets p ON p.id = plan.account_pocket_id '
@@ -217,7 +220,9 @@ final class DriftSyncMetadataStore
             'LEFT JOIN account_pockets p ON p.id = link.account_pocket_id '
             'WHERE link.goal_id = ?',
       SyncEntityType.budget =>
-        'SELECT DISTINCT account_id FROM budget_accounts WHERE budget_id = ?',
+        'SELECT DISTINCT account_id FROM budget_accounts WHERE budget_id = ?1 '
+            'UNION SELECT a.account_id FROM budget_monthly_accounts a '
+            'JOIN budget_monthly_configurations c ON c.id = a.configuration_id WHERE c.budget_id = ?1',
       SyncEntityType.attachment =>
         'SELECT DISTINCT entity_id AS account_id FROM attachment_links '
             "WHERE attachment_id = ? AND entity_type = 'account'",
@@ -333,7 +338,7 @@ final class DriftSyncMetadataStore
           'WHERE c.vault_id = sync_outbox.vault_id '
           'AND c.entity_type = sync_outbox.entity_type '
           'AND c.record_id = sync_outbox.record_id '
-          "AND c.resolved_at IS NULL AND c.resolution IN ('protected_legacy_format', 'protected_private_terms')) "
+          "AND c.resolved_at IS NULL AND c.resolution IN ('protected_legacy_format', 'protected_private_terms', 'protected_budget_history', 'protected_recurring_history')) "
           'AND NOT EXISTS (SELECT 1 FROM sync_outbox_dependencies d '
           'JOIN sync_dependency_pause p ON p.vault_id = sync_outbox.vault_id '
           'AND p.account_id = d.account_id WHERE d.operation_id = sync_outbox.operation_id '

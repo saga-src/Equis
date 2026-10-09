@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/branding/logo.png" width="128" alt="Equis logo" />
   <h1>EQUIS</h1>
-  <p><strong>v1.2.1 | Personal Finance for Windows & Android</strong></p>
+  <p><strong>v1.3.0 | Personal Finance for Windows & Android</strong></p>
   <p>
     <a href="#features">Features</a> &middot;
     <a href="#tech-stack">Tech Stack</a> &middot;
@@ -32,6 +32,7 @@ To share a vault between devices, enable optional Supabase synchronization. Reco
 - Accounts, multiple currencies, income, expenses, transfers, and transaction splits. Quick expenses made from a credit-card account enter its statement as one-time purchases.
 - Categories and tags, searchable history, receipts and attachments.
 - Credit cards, statements, installments, and recurring transactions.
+- Edit recurring rules from the rules list with a date from which the new settings apply. Existing confirmed, pending, skipped, and rescheduled occurrences retain their individual values and identity. Deleting a rule stops new occurrences and retains its transaction history; transaction type and currency stay fixed during rule edits.
 - Transaction lists use consistent semantic colors and expose the same eligible edit, reconcile, and delete actions in recent activity and full history.
 - Accounts and credit cards with history can be archived and restored. Removal checks each pocket's balance and outstanding obligations; an unused account is deleted logically without removing historical records.
 - Open transaction details from recent activity or full history, including records older than the latest twenty. Editing remains limited to supported transactions; those linked to archived accounts remain readable until the account is restored.
@@ -39,8 +40,10 @@ To share a vault between devices, enable optional Supabase synchronization. Reco
 ### Reports and planning
 
 - Available money, cash flow, account balances, and income or spending by category.
+- Select an inclusive reporting interval on the home screen: this month, last month, the last three months, this year, or custom dates through today. Income, expenses, categories, tags, and their history links use that interval. Cash flow can show daily values or totals accumulated from the interval's first day; days without activity remain visible. Balances, net worth, investments, recent activity, and planning continue to describe the current position.
 - Switch to **Tags** for compact spending bubbles; their area represents each tag's positive amount. Hover, focus, or long press for the full name and exact value; tap to open matching expenses. The home shows up to six largest positive values, with smaller values in the text list and negative adjustments separately. Untagged expenses have their own group. Each tag receives the full expense amount, so totals across tags can overlap.
 - Budgets, savings goals, selectable monthly cash-flow projections, assets, net worth, and investments.
+- Monthly budgets retain their settings by month. Edit only the selected month or change the pattern from that month onward; future exceptions remain intact. Limits can be a monthly amount, an amount per calendar day, or an amount per weekday, multiplied over the whole month. Weekdays mean Monday through Friday, without holiday adjustments. Past spending includes the last day of the month, current spending runs through today, and future months show the limit without realized spending. Correcting a transaction updates spending while retaining historical budget settings.
 - Guided brokerage-account setup, currency-safe portfolio actions, and deletion of investment assets that have never been used.
 - Fixed-income terms belong to each purchase lot. Supported simple contracts show a gross estimated balance; a dated manual balance supports other structures. Missing observations remain explicit. These balances are not market quotes or net redemption prices, and tax or guarantee coverage is not inferred from a product name.
 - Market prices and required exchange rates refresh when the app opens, at most once per vault every three hours, while manual values keep priority and cached values remain available offline.
@@ -48,12 +51,16 @@ To share a vault between devices, enable optional Supabase synchronization. Reco
 
 ### Portability and personalization
 
+- A skippable welcome screen appears once per installation and guide version. Reopen the getting-started guide from Settings. The home checklist recognizes existing accounts, transactions, and budgets across their full history, and marks backup complete only after a validated file has been saved. Checklist visibility, backup completion, and home reporting choices are local to each profile.
+- Create your first vault and account on Home before entering or editing financial data. Features that require an active vault explain this and offer setup or restore actions. Settings, the guide, and backup restoration remain accessible during setup; signing in is optional for local use.
 - Password-encrypted `.equis` backups with integrity validation and restoration into a separate local vault.
 - JSON vault exports and transaction CSV exports. These exports are plaintext.
 - English and Brazilian Portuguese interfaces with a persistent language selection, theme and typography settings.
+- Settings groups licenses for Equis, fonts, data, and libraries. Library notices can be searched; entries belonging only to development tools and identical repeated notices are omitted, while runtime and bundled component notices remain accessible.
 - Sync diagnostics showing pending changes, last completed run, and actionable failure information.
 - Sync activity for the last 24 hours, saved separately for each vault on each device. Counts cover confirmed sends, remote versions applied locally, and conflicts, including those resolved automatically.
 - Automatic synchronization after edits while the app is open, with retries after reconnection. Conflicts select the higher revision of the complete record; equal revisions use edit time, then canonical content as a deterministic tie-break. Revision priority isn't a guarantee of chronological order across device clocks.
+- Update every device sharing a vault before editing monthly budget history or recurring rule segments. New history is included in backups, vault JSON exports, and synchronization. Incoming older-format records that would erase new history are held for review; a larger remote revision does not bypass that protection. Device preferences for the guide, checklist, and reporting interval are excluded from vault backups and synchronization.
 
 ## Tech Stack
 
@@ -121,7 +128,7 @@ flutter build apk --release --dart-define-from-file=.dart-defines.local.json
 
 This workspace also supports its ignored local SDK at `.tooling/flutter/bin/flutter.bat`. Live sync acceptance tests require dedicated test credentials; tests that skip for missing credentials don't establish cloud compatibility.
 
-The source tree targets **1.2.1**, with compact tag bubbles and fixes to automated checks. Its release packages have not been prepared in this workflow. Previous validation results and installer cases waived by the owner are recorded locally in `docs/release/1.2.0/VALIDACAO.md`. Releases are packaged and published manually.
+The source tree targets **1.3.0**, with monthly budget history, recurring rule editing, reporting intervals and cumulative cash flow, and a getting-started guide. Its release packages have not been prepared in this workflow. Source validation and platform limitations are recorded locally in `docs/next-update/VALIDACAO.md`. Releases are packaged and published manually.
 
 ## Backup and Updates
 
@@ -143,15 +150,15 @@ Restore a `.equis` backup with its password to add a local vault. Its identity a
 4. Open the new APK on your phone and choose **Update**. Don't uninstall the existing app or clear its storage.
 5. Open Equis and check your accounts, transactions, attachments and settings.
 
-The version prepared in source is **1.2.1**, application ID `app.saga.equis`. This does not indicate a published package. If Android rejects the update, check the package metadata and signing certificate. Keep the release keystore: future updates need the same signing key.
+The version prepared in source is **1.3.0**, application ID `app.saga.equis`. This does not indicate a published package. If Android rejects the update, check the package metadata and signing certificate. Keep the release keystore: future updates need the same signing key.
 
 The Android package uses `app.saga.equis`. If you used the earlier development app, export and validate an encrypted backup there first. Install this app separately, restore the backup, sign in, and check your data before removing the old installation. The two package identifiers cannot update each other in place.
 
-Public releases use one tag per version. The planned tag for this delivery is **v1.2.1**, which has not been created by this workflow. A new public update requires a higher public version; previous tags and packages remain unchanged.
+Public releases use one tag per version. The planned tag for this delivery is **v1.3.0**, which has not been created by this workflow. A new public update requires a higher public version; previous tags and packages remain unchanged.
 
 Android release signing reads the ignored `android/key.properties` file or the `EQUIS_ANDROID_*` environment variables declared in `android/app/build.gradle.kts`. Windows packaging uses `installer/equis.iss` and `tool/package_windows_release.ps1`.
 
-While open, Equis checks public GitHub releases and downloads verified stable updates. Android waits for Wi-Fi unless you choose to download now. You decide when to install; Settings also lets you turn off automatic downloads. Android and portable Windows keep their existing update routes.
+While open, Equis checks public releases in [saga-src/equis-releases](https://github.com/saga-src/equis-releases) and downloads verified stable updates. Android waits for Wi-Fi unless you choose to download now. You decide when to install; Settings also lets you turn off automatic downloads. Android and portable Windows keep their existing update routes.
 
 The redesigned installed-Windows route is enabled in the 1.2.0 packages and uses an unelevated helper with a visible Inno installer. In the isolated tests, Equis stayed open through UAC and the initial wizard pages, closed at **Install**, and reopened after verified success. The first catalog-bearing package must be installed manually over the existing installation, preserving its folder and install mode. See the [Windows packaging and diagnostics guide](docs/PACKAGING-1.2.0.pt-BR.md).
 

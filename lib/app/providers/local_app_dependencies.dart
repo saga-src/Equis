@@ -1,4 +1,9 @@
 import 'dart:io';
+import 'package:path/path.dart' as path;
+import '../../application/ports/local_experience_preferences.dart';
+import '../../application/services/getting_started_service.dart';
+import '../../infrastructure/repositories/drift_getting_started_repository.dart';
+import '../../infrastructure/settings/shared_preferences_experience_store.dart';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -82,6 +87,10 @@ import '../../infrastructure/repositories/drift_recurring_repository.dart';
 final class LocalAppDependencies {
   const LocalAppDependencies({
     required this.lifecycle,
+    this.experience,
+    this.profileId = 'legacy',
+    this.gettingStarted,
+    this.welcomeGuide,
     required this.session,
     required this.history,
     required this.recurring,
@@ -115,6 +124,10 @@ final class LocalAppDependencies {
   });
 
   final EncryptedDriftDatabaseLifecycle lifecycle;
+  final LocalExperiencePreferences? experience;
+  final String profileId;
+  final GettingStartedService? gettingStarted;
+  final WelcomeGuideGate? welcomeGuide;
   final LocalFinanceSessionService session;
   final TransactionHistoryRepository history;
   final RecurringTransactionService recurring;
@@ -149,6 +162,7 @@ final class LocalAppDependencies {
   static Future<LocalAppDependencies> bootstrap({
     Directory? profileDirectory,
     String? profileId,
+    String? installationNamespace,
     SecureStringStore? storage,
     bool cloudEnabled = true,
   }) async {
@@ -438,7 +452,23 @@ final class LocalAppDependencies {
             deviceName: Platform.isAndroid ? 'Equis Android' : 'Equis Windows',
             platform: Platform.isAndroid ? 'android' : 'windows',
           );
+    final experienceNamespace =
+        installationNamespace ??
+        path.normalize(path.absolute(dataDirectory.path));
+    final experience = SharedPreferencesExperienceStore.deferred(
+      experienceNamespace,
+    );
     return LocalAppDependencies(
+      gettingStarted: GettingStartedService(
+        repository: DriftGettingStartedRepository(database),
+        preferences: experience,
+      ),
+      welcomeGuide: WelcomeGuideGate.forInstallation(
+        experienceNamespace,
+        experience,
+      ),
+      profileId: profileId ?? 'legacy',
+      experience: experience,
       lifecycle: lifecycle,
       history: DriftTransactionHistoryRepository(
         database: database,

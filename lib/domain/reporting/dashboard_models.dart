@@ -5,6 +5,93 @@ import '../shared/uuid_v7.dart';
 
 enum ReportClassification { income, expense }
 
+enum DashboardRangePreset {
+  thisMonth,
+  lastMonth,
+  lastThreeMonths,
+  thisYear,
+  custom,
+}
+
+enum CashFlowMode { daily, cumulative }
+
+final class DashboardDateRange {
+  DashboardDateRange({required this.from, required this.through}) {
+    if (from.year < 1 || through.year > 9999 || from.compareTo(through) > 0) {
+      throw ArgumentError('Invalid reporting range.');
+    }
+  }
+  final LocalDate from;
+  final LocalDate through;
+  void validateAsOf(LocalDate asOf) {
+    if (through.compareTo(asOf) > 0) {
+      throw ArgumentError('A reporting range cannot end in the future.');
+    }
+  }
+}
+
+final class DashboardSelection {
+  const DashboardSelection({
+    this.preset = DashboardRangePreset.thisMonth,
+    this.customRange,
+    this.mode = CashFlowMode.daily,
+  });
+  final DashboardRangePreset preset;
+  final DashboardDateRange? customRange;
+  final CashFlowMode mode;
+  DashboardDateRange resolve(LocalDate today) {
+    final range = switch (preset) {
+      DashboardRangePreset.thisMonth => DashboardDateRange(
+        from: LocalDate(today.year, today.month, 1),
+        through: today,
+      ),
+      DashboardRangePreset.lastMonth => DashboardDateRange(
+        from: LocalDate(
+          today.month == 1 ? today.year - 1 : today.year,
+          today.month == 1 ? 12 : today.month - 1,
+          1,
+        ),
+        through: LocalDate(today.year, today.month, 1).addDays(-1),
+      ),
+      DashboardRangePreset.lastThreeMonths => DashboardDateRange(
+        from: LocalDate(
+          DateTime.utc(today.year, today.month - 2).year,
+          DateTime.utc(today.year, today.month - 2).month,
+          1,
+        ),
+        through: today,
+      ),
+      DashboardRangePreset.thisYear => DashboardDateRange(
+        from: LocalDate(today.year, 1, 1),
+        through: today,
+      ),
+      DashboardRangePreset.custom =>
+        customRange ?? (throw ArgumentError('A custom interval is required.')),
+    };
+    range.validateAsOf(today);
+    return range;
+  }
+
+  DashboardSelection withMode(CashFlowMode value) =>
+      DashboardSelection(preset: preset, customRange: customRange, mode: value);
+}
+
+List<CashFlowPoint> cashFlowSeries(
+  List<CashFlowPoint> daily,
+  CashFlowMode mode,
+) {
+  if (mode == CashFlowMode.daily) return List.unmodifiable(daily);
+  var income = 0, expense = 0;
+  return List.unmodifiable([
+    for (final point in daily)
+      CashFlowPoint(
+        date: point.date,
+        incomeMinor: income += point.incomeMinor,
+        expenseMinor: expense += point.expenseMinor,
+      ),
+  ]);
+}
+
 final class ReportingSplitRow {
   const ReportingSplitRow({
     required this.categoryId,

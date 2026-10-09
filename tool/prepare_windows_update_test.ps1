@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
-  [string]$Version = '1.2.1',
-  [int]$Build = 13,
+  [string]$Version = '1.3.0',
+  [int]$Build = 14,
   [string]$FixtureRoot = '',
   [string]$Flutter = '',
   [string]$Dart = '',

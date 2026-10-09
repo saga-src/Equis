@@ -10,6 +10,8 @@ import 'package:equis/domain/entities/category_node.dart';
 import 'package:equis/domain/entities/vault_profile.dart';
 import 'package:equis/domain/ledger/transaction_search.dart';
 import 'package:equis/domain/reporting/dashboard_models.dart';
+import 'package:equis/domain/wealth/net_worth_models.dart';
+import 'package:equis/domain/investments/investment_models.dart';
 import 'package:equis/domain/shared/currency.dart';
 import 'package:equis/domain/shared/local_date.dart';
 import 'package:equis/domain/shared/utc_instant.dart';
@@ -18,7 +20,14 @@ import 'package:equis/domain/shared/uuid_v7.dart';
 import 'package:equis/l10n/app_localizations.dart';
 import 'package:equis/app/theme/equis_theme.dart';
 import 'package:equis/presentation/home/dashboard_overview.dart';
+import 'package:equis/presentation/home/dashboard_controller.dart';
+import 'package:equis/presentation/wealth/wealth_controller.dart';
+import 'package:equis/presentation/investments/investment_controller.dart';
+import 'package:equis/presentation/shared/equis_glass.dart';
+import 'package:equis/app/providers/app_providers.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:fl_chart/src/chart/line_chart/line_chart_renderer.dart';
+import 'package:fl_chart/src/chart/bar_chart/bar_chart_renderer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/services.dart'
@@ -29,6 +38,489 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
+  setUpAll(() async {
+    if (Platform.environment['EQUIS_CAPTURE_DASHBOARD'] != '1') return;
+    for (final font in const {
+      'Inter': 'assets/fonts/Inter-Variable.ttf',
+      'Geist Sans': 'assets/fonts/Geist-Variable.ttf',
+      'Space Grotesk': 'assets/fonts/SpaceGrotesk-Variable.ttf',
+      'JetBrains Mono': 'assets/fonts/JetBrainsMono-Variable.ttf',
+      'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
+    }.entries) {
+      final loader = FontLoader(font.key)..addFont(rootBundle.load(font.value));
+      await loader.load();
+    }
+  });
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'desktop dashboard alignment and growing report panels: $brightness',
+      (tester) async {
+        final ids = List.generate(10, (_) => EntityId.generate());
+        final harness = _TagDashboardHarness(
+          [
+            for (var index = 0; index < ids.length; index++)
+              TagSpending(tagId: ids[index], amountMinor: 10000 - index * 100),
+          ],
+          brightness: brightness,
+          captureKey: const Key('dashboard-layout-capture'),
+          loadedPositionReports: true,
+        );
+        await harness.pump(tester, size: const Size(1280, 1600));
+        final heading = tester.getRect(
+          find.byKey(const Key('available-money-heading')),
+        );
+        final periodControl = tester.getRect(
+          find.byKey(const ValueKey('dashboard-range-thisMonth')),
+        );
+        final modeControl = tester.getRect(
+          find.byKey(const ValueKey('dashboard-mode-daily')),
+        );
+        expect(periodControl.left, greaterThan(heading.left));
+        expect(modeControl.left, greaterThan(periodControl.right));
+        expect(
+          periodControl.center.dy,
+          inInclusiveRange(heading.top, heading.bottom),
+        );
+        expect(periodControl.height, lessThanOrEqualTo(28));
+        expect(modeControl.height, lessThanOrEqualTo(28));
+        expect(periodControl.width, lessThan(180));
+        expect(modeControl.width, lessThan(100));
+        final summary = find.byKey(const Key('dashboard-period-summary'));
+        final periodTexts = find.descendant(
+          of: summary,
+          matching: find.byType(Text),
+        );
+        final labelRect = tester.getRect(periodTexts.at(0));
+        final dateRect = tester.getRect(periodTexts.at(1));
+        expect(dateRect.left, greaterThan(labelRect.right));
+        expect(dateRect.center.dy, closeTo(labelRect.center.dy, 2));
+        expect(
+          tester.widget<Text>(periodTexts.first).style!.fontSize,
+          lessThanOrEqualTo(14),
+        );
+        for (final summary in ['net-worth', 'portfolio']) {
+          final icon = find.byKey(Key('$summary-summary-icon'));
+          final tile = find.ancestor(
+            of: icon,
+            matching: find.byType(EquisGlassCard),
+          );
+          final textGroup = tester
+              .getRect(find.byKey(Key('$summary-summary-title')))
+              .expandToInclude(
+                tester.getRect(find.byKey(Key('$summary-summary-values'))),
+              );
+          expect(tester.getCenter(icon).dy, closeTo(textGroup.center.dy, 1));
+          expect(
+            tester.getCenter(icon).dy,
+            closeTo(tester.getCenter(tile).dy, 1),
+          );
+        }
+        final spending = find.byKey(const Key('dashboard-spending-card'));
+        final cashFlow = find.byKey(const Key('cash-flow-report-card'));
+        final baseHeight = tester.getSize(spending).height;
+        final toggleBottom = tester
+            .getRect(find.byKey(const Key('dashboard-spending-toggle')))
+            .bottom;
+        expect(tester.getRect(cashFlow).top, greaterThan(toggleBottom));
+        expect(
+          tester.getRect(cashFlow).top,
+          closeTo(tester.getRect(spending).top, .1),
+        );
+        expect(tester.getSize(cashFlow).height, closeTo(baseHeight, .1));
+        if (Platform.environment['EQUIS_CAPTURE_DASHBOARD'] == '1') {
+          await _captureDashboard(tester, '${brightness.name}-categories');
+        }
+        await _showTags(tester);
+        expect(
+          tester.getSize(spending).height,
+          greaterThanOrEqualTo(baseHeight),
+        );
+        expect(
+          tester.getSize(cashFlow).height,
+          closeTo(tester.getSize(spending).height, .1),
+        );
+        final beforeExpansion = tester.getSize(cashFlow).height;
+        await tester.ensureVisible(
+          find.byKey(const Key('tag-other-values-expansion')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('tag-other-values-expansion')));
+        await tester.pumpAndSettle();
+        expect(tester.getSize(cashFlow).height, greaterThan(beforeExpansion));
+        expect(
+          tester.getSize(cashFlow).height,
+          closeTo(tester.getSize(spending).height, .1),
+        );
+        if (Platform.environment['EQUIS_CAPTURE_DASHBOARD'] == '1') {
+          await _captureDashboard(tester, '${brightness.name}-expanded-tags');
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
+      'cash-flow hover at both edges uses theme colors: $brightness',
+      (tester) async {
+        final harness = _TagDashboardHarness(
+          const [],
+          brightness: brightness,
+          captureKey: const Key('dashboard-layout-capture'),
+        );
+        await harness.pump(tester, size: const Size(1280, 1600));
+        final chart = tester.widget<LineChart>(find.byType(LineChart));
+        final theme = Theme.of(tester.element(find.byType(LineChart)));
+        final tooltip = chart.data.lineTouchData.touchTooltipData;
+        final bar = chart.data.lineBarsData.first;
+        expect(
+          tooltip.getTooltipColor(LineBarSpot(bar, 0, bar.spots.first)),
+          theme.cardTheme.color ?? theme.colorScheme.surface,
+        );
+        expect(tooltip.fitInsideHorizontally, isTrue);
+        expect(tooltip.fitInsideVertically, isTrue);
+        await tester.ensureVisible(find.byKey(const Key('cash-flow-plot')));
+        await tester.pumpAndSettle();
+        final plotRect = tester.getRect(
+          find.byKey(const Key('cash-flow-plot')),
+        );
+        for (final label
+            in find
+                .descendant(
+                  of: find.byType(LineChart),
+                  matching: find.byType(Text),
+                )
+                .evaluate()) {
+          final labelRect = tester.getRect(find.byWidget(label.widget));
+          expect(labelRect.left, greaterThanOrEqualTo(plotRect.left - 1));
+          expect(labelRect.right, lessThanOrEqualTo(plotRect.right + 1));
+        }
+        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(
+          location: Offset(plotRect.left + 1, plotRect.center.dy),
+        );
+        for (final x in [plotRect.left + 1, plotRect.right - 1]) {
+          await mouse.moveTo(Offset(x, plotRect.center.dy));
+          await tester.pumpAndSettle();
+          final rendered = tester.widget<LineChartLeaf>(
+            find.byKey(const Key('cash-flow-plot')),
+          );
+          expect(rendered.targetData.showingTooltipIndicators, isNotEmpty);
+          expect(tester.takeException(), isNull);
+        }
+        if (Platform.environment['EQUIS_CAPTURE_DASHBOARD'] == '1') {
+          await _captureDashboard(
+            tester,
+            '${brightness.name}-hover-right-edge',
+          );
+        }
+        await mouse.removePointer();
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<LineChartLeaf>(find.byKey(const Key('cash-flow-plot')))
+              .targetData
+              .showingTooltipIndicators,
+          isEmpty,
+        );
+      },
+    );
+  }
+  for (final brightness in Brightness.values) {
+    for (final amounts in [(30000, 10000), (10000, 30000), (0, 0)]) {
+      testWidgets(
+        'three summary bars align with centered totals: $brightness $amounts',
+        (tester) async {
+          final harness = _TagDashboardHarness(
+            const [],
+            brightness: brightness,
+            incomeMinor: amounts.$1,
+            expenseMinor: amounts.$2,
+            loadedPositionReports: true,
+            incompletePositionReports: amounts.$1 < amounts.$2,
+            captureKey: const Key('dashboard-layout-capture'),
+          );
+          await harness.pump(tester, size: const Size(1280, 1600));
+          final plotFinder = find.byKey(const Key('dashboard-summary-bars'));
+          final plotRect = tester.getRect(plotFinder);
+          final rendered = tester.renderObject<RenderBarChart>(plotFinder);
+          final data = tester.widget<BarChart>(find.byType(BarChart)).data;
+          final values = [
+            amounts.$1 / 100,
+            amounts.$2 / 100,
+            (amounts.$1 - amounts.$2) / 100,
+          ];
+          const keys = [
+            'income-summary-column',
+            'expenses-summary-column',
+            'net-cash-flow-summary-column',
+          ];
+          expect(data.barGroups.length, 3);
+          for (var i = 0; i < keys.length; i++) {
+            final column = find.byKey(Key(keys[i]));
+            final columnRect = tester.getRect(column);
+            expect(
+              columnRect.center.dx,
+              closeTo(plotRect.left + plotRect.width * (i + .5) / 3, .1),
+            );
+            for (final text
+                in find
+                    .descendant(of: column, matching: find.byType(Text))
+                    .evaluate()) {
+              expect(
+                tester.getCenter(find.byWidget(text.widget)).dx,
+                closeTo(columnRect.center.dx, .1),
+              );
+              expect((text.widget as Text).textAlign, TextAlign.center);
+            }
+            expect(data.barGroups[i].barRods.single.toY, values[i]);
+            if (values[i] != 0) {
+              final barY =
+                  plotRect.height *
+                  (data.maxY - values[i] / 2) /
+                  (data.maxY - data.minY);
+              final hit = rendered.getResponseAtLocation(
+                Offset(columnRect.center.dx - plotRect.left, barY),
+              );
+              expect(hit.spot?.touchedBarGroupIndex, i);
+              expect(
+                hit.spot!.offset.dx,
+                closeTo(columnRect.center.dx - plotRect.left, .1),
+              );
+            }
+          }
+          expect(data.minY, lessThanOrEqualTo(values.reduce(math.min)));
+          expect(data.maxY, greaterThan(values.reduce(math.max)));
+          for (final summary in ['net-worth', 'portfolio']) {
+            final textRect = tester
+                .getRect(find.byKey(Key('$summary-summary-title')))
+                .expandToInclude(
+                  tester.getRect(find.byKey(Key('$summary-summary-values'))),
+                );
+            expect(
+              tester.getCenter(find.byKey(Key('$summary-summary-icon'))).dy,
+              closeTo(textRect.center.dy, 1),
+            );
+            final card = find.ancestor(
+              of: find.byKey(Key('$summary-summary-icon')),
+              matching: find.byType(EquisGlassCard),
+            );
+            expect(textRect.bottom, lessThan(tester.getRect(card).bottom));
+            expect(textRect.top, greaterThan(tester.getRect(card).top));
+          }
+          if (Platform.environment['EQUIS_CAPTURE_DASHBOARD'] == '1') {
+            await _captureDashboard(
+              tester,
+              'compact-${brightness.name}-${amounts.$1}-${amounts.$2}',
+            );
+          }
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+  for (final locale in [const Locale('en', 'US'), const Locale('pt', 'BR')]) {
+    testWidgets(
+      'loaded summaries fit narrow screens with large text: $locale',
+      (tester) async {
+        final harness = _TagDashboardHarness(
+          const [],
+          locale: locale,
+          textScale: 2,
+          loadedPositionReports: true,
+          incompletePositionReports: true,
+          incomeMinor: 123456,
+          expenseMinor: 234567,
+          captureKey: const Key('dashboard-layout-capture'),
+        );
+        await harness.pump(tester, size: const Size(320, 1600));
+        final chart = tester.widget<BarChart>(find.byType(BarChart));
+        expect(chart.data.barGroups.length, 3);
+        expect(chart.data.minY, lessThan(-1111.11));
+        expect(tester.takeException(), isNull);
+        if (Platform.environment['EQUIS_CAPTURE_DASHBOARD'] == '1') {
+          await _captureDashboard(
+            tester,
+            'compact-large-loaded-${locale.toLanguageTag()}',
+          );
+        }
+      },
+    );
+  }
+  testWidgets(
+    'compact flow menu shows its title on hover and opens by keyboard',
+    (tester) async {
+      final harness = _TagDashboardHarness(const []);
+      await harness.pump(tester, size: const Size(1280, 1600));
+      final menu = find.byKey(const ValueKey('dashboard-mode-daily'));
+      final l = AppLocalizations.of(tester.element(menu));
+      expect(find.text(l.dashboardFlowModeLabel), findsNothing);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: tester.getCenter(menu));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text(l.dashboardFlowModeLabel), findsOneWidget);
+      await mouse.removePointer();
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.byType(PopupMenuItem<CashFlowMode>), findsNWidgets(2));
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.byType(PopupMenuItem<CashFlowMode>), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  for (final locale in [const Locale('pt', 'BR'), const Locale('en', 'US')]) {
+    for (final width in [320.0, 1280.0]) {
+      testWidgets('empty reports stay usable with large text: $locale $width', (
+        tester,
+      ) async {
+        final harness = _TagDashboardHarness(
+          const [],
+          locale: locale,
+          textScale: 2,
+          brightness: Brightness.dark,
+          captureKey: const Key('dashboard-layout-capture'),
+        );
+        await harness.pump(tester, size: Size(width, 1600));
+        final l = AppLocalizations.of(
+          tester.element(find.byType(DashboardOverview)),
+        );
+        await tester.ensureVisible(find.text(l.tagsTitle));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(l.tagsTitle));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        if (width >= 900) {
+          expect(
+            tester
+                .getSize(find.byKey(const Key('cash-flow-report-card')))
+                .height,
+            closeTo(
+              tester
+                  .getSize(find.byKey(const Key('dashboard-spending-card')))
+                  .height,
+              .1,
+            ),
+          );
+        }
+        if (Platform.environment['EQUIS_CAPTURE_DASHBOARD'] == '1') {
+          await _captureDashboard(
+            tester,
+            'large-${locale.toLanguageTag()}-${width.toInt()}',
+          );
+        }
+      });
+    }
+    testWidgets(
+      'RC15–16 mode and period controls keep exact totals in narrow layout: $locale',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(360, 1400));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final vault = EntityId.generate();
+        final finance = LocalFinanceSnapshot(
+          vault: VaultProfile(
+            id: vault,
+            name: 'Local',
+            baseCurrency: CurrencyCode.brl,
+            locale: locale.toLanguageTag(),
+            timezone: 'UTC',
+            createdAt: const UtcInstant.fromEpochMicroseconds(1),
+            updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+          ),
+        );
+        final controller = DashboardController(
+          service: null,
+          vaultId: null,
+          reportingCurrency: null,
+          clock: () => DateTime(2026, 3, 10),
+          loader: (range, asOf) async => DashboardSnapshot(
+            reportingCurrency: CurrencyCode.brl,
+            periodStart: range.from,
+            periodEnd: range.through,
+            availableMoneyMinor: 999,
+            incomeMinor: 300,
+            expenseMinor: 30,
+            spendingByCategory: const [],
+            cashFlow: [
+              for (
+                var date = range.from;
+                date.compareTo(range.through) <= 0;
+                date = date.addDays(1)
+              )
+                CashFlowPoint(
+                  date: date,
+                  incomeMinor: date == range.from
+                      ? 100
+                      : date == range.from.addDays(1)
+                      ? 200
+                      : 0,
+                  expenseMinor: date == range.from
+                      ? 40
+                      : date == range.from.addDays(1)
+                      ? -10
+                      : 0,
+                ),
+            ],
+            accountBalances: const [],
+            missingRates: const {},
+            usesEstimatedRates: false,
+            upcomingCount: 0,
+          ),
+        );
+        await controller.reload();
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              dashboardControllerProvider.overrideWith((ref) => controller),
+            ],
+            child: MaterialApp(
+              locale: locale,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(1.5)),
+                child: child!,
+              ),
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  child: DashboardOverview(finance: finance),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(DashboardOverview)),
+        );
+        await tester.tap(find.byKey(const ValueKey('dashboard-mode-daily')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(l10n.dashboardCumulativeLabel).last);
+        await tester.pumpAndSettle();
+        expect(controller.state.selection.mode, CashFlowMode.cumulative);
+        await tester.ensureVisible(find.byType(LineChart));
+        await tester.pumpAndSettle();
+        final chart = tester.widget<LineChart>(find.byType(LineChart));
+        expect(chart.data.lineBarsData.first.spots.last.y, 3);
+        expect(chart.data.lineBarsData.last.spots.last.y, .3);
+        expect(controller.state.snapshot!.availableMoneyMinor, 999);
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('dashboard-range-thisMonth')),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey('dashboard-range-thisMonth')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(l10n.dashboardLastMonthLabel).last);
+        await tester.pumpAndSettle();
+        expect(controller.state.snapshot!.periodStart, LocalDate(2026, 2, 1));
+        expect(controller.state.snapshot!.periodEnd, LocalDate(2026, 2, 28));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets('renders the implemented local reports with FL Chart', (
     tester,
   ) async {
@@ -424,7 +916,7 @@ void main() {
         expect(filter.tagId, taggedId);
         expect(filter.withoutTags, isFalse);
         expect(filter.fromDate, LocalDate(2026, 8, 1));
-        expect(filter.toDate, LocalDate(2026, 8, 28));
+        expect(filter.toDate, LocalDate(2026, 8, 31));
         expect(filter.reportingExpensesOnly, isTrue);
 
         harness.router.go('/');
@@ -448,7 +940,7 @@ void main() {
         expect(filter.tagId, isNull);
         expect(filter.withoutTags, isTrue);
         expect(filter.fromDate, LocalDate(2026, 8, 1));
-        expect(filter.toDate, LocalDate(2026, 8, 28));
+        expect(filter.toDate, LocalDate(2026, 8, 31));
         expect(filter.reportingExpensesOnly, isTrue);
       } finally {
         semantics.dispose();
@@ -736,6 +1228,22 @@ void main() {
   );
 }
 
+Future<void> _captureDashboard(WidgetTester tester, String name) async {
+  final boundary = tester.renderObject<RenderRepaintBoundary>(
+    find.byKey(const Key('dashboard-layout-capture')),
+  );
+  await tester.runAsync(() async {
+    final directory = Directory('.tooling/dashboard-layout-captures');
+    await directory.create(recursive: true);
+    final image = await boundary.toImage(pixelRatio: 1);
+    final bytes = await image.toByteData(format: ImageByteFormat.png);
+    await File(
+      '${directory.path}/$name.png',
+    ).writeAsBytes(bytes!.buffer.asUint8List());
+    image.dispose();
+  });
+}
+
 Future<void> _showTags(WidgetTester tester) async {
   await tester.ensureVisible(find.text('Tags'));
   await tester.tap(find.text('Tags'));
@@ -751,6 +1259,11 @@ class _TagDashboardHarness {
     this.brightness = Brightness.light,
     this.textScale = 1,
     this.captureKey,
+    this.locale = const Locale('en', 'US'),
+    this.incomeMinor = 0,
+    this.expenseMinor = 0,
+    this.loadedPositionReports = false,
+    this.incompletePositionReports = false,
   }) : vaultId = EntityId.generate(),
        periodStart = LocalDate(2026, 8, 1),
        periodEnd = LocalDate(2026, 8, 31) {
@@ -772,6 +1285,11 @@ class _TagDashboardHarness {
   final Brightness brightness;
   final double textScale;
   final Key? captureKey;
+  final Locale locale;
+  final int incomeMinor;
+  final int expenseMinor;
+  final bool loadedPositionReports;
+  final bool incompletePositionReports;
   final EntityId vaultId;
   final LocalDate periodStart;
   final LocalDate periodEnd;
@@ -787,47 +1305,84 @@ class _TagDashboardHarness {
         GoRoute(
           path: '/',
           builder: (context, state) => Scaffold(
+            backgroundColor: Theme.of(context).canvasColor,
             body: RepaintBoundary(
               key: captureKey,
-              child: SingleChildScrollView(
-                child: DashboardOverview(
-                  finance: LocalFinanceSnapshot(
-                    vault: VaultProfile(
-                      id: vaultId,
-                      name: 'Local',
-                      baseCurrency: CurrencyCode.usd,
-                      locale: 'en-US',
-                      timezone: 'UTC',
-                      createdAt: const UtcInstant.fromEpochMicroseconds(1),
-                      updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+              child: EquisThemeBackdrop(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: DashboardOverview(
+                    investmentStateOverride: loadedPositionReports
+                        ? InvestmentState(
+                            report: PortfolioReport(
+                              currency: CurrencyCode.usd,
+                              holdings: const [],
+                              marketValueMinor: 56789,
+                              costBasisMinor: 50000,
+                              unrealizedMinor: 6789,
+                              realizedMinor: 0,
+                              incomeMinor: 0,
+                              hasIncompleteAccountSync:
+                                  incompletePositionReports,
+                            ),
+                          )
+                        : null,
+                    wealthStateOverride: loadedPositionReports
+                        ? WealthState(
+                            report: NetWorthReport(
+                              currency: CurrencyCode.usd,
+                              current: NetWorthPoint(
+                                date: periodEnd,
+                                assetsMinor: 123456,
+                                liabilitiesMinor: 0,
+                                missingRates: const {},
+                                usesEstimatedRates: false,
+                                hasIncompleteAccounts:
+                                    incompletePositionReports,
+                              ),
+                              history: const [],
+                              physicalAssets: const [],
+                            ),
+                          )
+                        : null,
+                    finance: LocalFinanceSnapshot(
+                      vault: VaultProfile(
+                        id: vaultId,
+                        name: 'Local',
+                        baseCurrency: CurrencyCode.usd,
+                        locale: 'en-US',
+                        timezone: 'UTC',
+                        createdAt: const UtcInstant.fromEpochMicroseconds(1),
+                        updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+                      ),
+                      tags: tags,
                     ),
-                    tags: tags,
-                  ),
-                  reportOverride: DashboardSnapshot(
-                    reportingCurrency: CurrencyCode.usd,
-                    periodStart: periodStart,
-                    periodEnd: periodEnd,
-                    availableMoneyMinor: 100000,
-                    incomeMinor: 0,
-                    expenseMinor: 0,
-                    spendingByCategory: const [],
-                    spendingByTag: values,
-                    cashFlow: [
-                      CashFlowPoint(
-                        date: LocalDate(2026, 8, 10),
-                        incomeMinor: 0,
-                        expenseMinor: 0,
-                      ),
-                      CashFlowPoint(
-                        date: LocalDate(2026, 8, 28),
-                        incomeMinor: 0,
-                        expenseMinor: 0,
-                      ),
-                    ],
-                    accountBalances: const [],
-                    missingRates: const {},
-                    usesEstimatedRates: false,
-                    upcomingCount: 0,
+                    reportOverride: DashboardSnapshot(
+                      reportingCurrency: CurrencyCode.usd,
+                      periodStart: periodStart,
+                      periodEnd: periodEnd,
+                      availableMoneyMinor: 100000,
+                      incomeMinor: incomeMinor,
+                      expenseMinor: expenseMinor,
+                      spendingByCategory: const [],
+                      spendingByTag: values,
+                      cashFlow: [
+                        CashFlowPoint(
+                          date: LocalDate(2026, 8, 10),
+                          incomeMinor: 0,
+                          expenseMinor: 0,
+                        ),
+                        CashFlowPoint(
+                          date: LocalDate(2026, 8, 28),
+                          incomeMinor: 0,
+                          expenseMinor: 0,
+                        ),
+                      ],
+                      accountBalances: const [],
+                      missingRates: const {},
+                      usesEstimatedRates: false,
+                      upcomingCount: 0,
+                    ),
                   ),
                 ),
               ),
@@ -848,7 +1403,7 @@ class _TagDashboardHarness {
       ProviderScope(
         child: MaterialApp.router(
           routerConfig: router,
-          locale: const Locale('en', 'US'),
+          locale: locale,
           theme: EquisTheme.forVariant(
             brightness == Brightness.dark
                 ? EquisThemeVariant.obsidian

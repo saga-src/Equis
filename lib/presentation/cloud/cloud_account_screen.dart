@@ -12,6 +12,7 @@ import '../../application/services/sync_engine.dart';
 import '../../l10n/app_localizations.dart';
 import 'cloud_account_controller.dart';
 import '../shared/equis_glass.dart';
+import '../shared/vault_required.dart';
 
 class CloudAccountScreen extends ConsumerStatefulWidget {
   const CloudAccountScreen({
@@ -226,6 +227,7 @@ class _CloudAccountScreenState extends ConsumerState<CloudAccountScreen>
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
+        const VaultRequiredNotice(),
         EquisGlassCard(
           key: const Key('restore-existing-vault-card'),
           child: Padding(
@@ -546,12 +548,16 @@ class _SyncCard extends ConsumerWidget {
                       l.syncEntityTypeLabel(conflict.entityType.wireName),
                     ),
                     subtitle: Text(
-                      l.syncConflictBody(
-                        l.syncEntityTypeLabel(conflict.entityType.wireName),
-                        _prefix(conflict.recordId),
-                        conflict.localRevision,
-                        conflict.remoteRevision,
-                      ),
+                      conflict.protectionReason == 'protected_budget_history'
+                          ? l.syncBudgetHistoryProtected
+                          : l.syncConflictBody(
+                              l.syncEntityTypeLabel(
+                                conflict.entityType.wireName,
+                              ),
+                              _prefix(conflict.recordId),
+                              conflict.localRevision,
+                              conflict.remoteRevision,
+                            ),
                     ),
                     trailing: PopupMenuButton<SyncConflictResolution>(
                       onSelected: (resolution) => controller.resolveConflict(
@@ -565,6 +571,9 @@ class _SyncCard extends ConsumerWidget {
                         ),
                         PopupMenuItem(
                           value: SyncConflictResolution.keepRemote,
+                          enabled:
+                              conflict.protectionReason !=
+                              'protected_budget_history',
                           child: Text(l.keepRemoteAction),
                         ),
                       ],

@@ -207,7 +207,7 @@ void main() {
         budget.revise(scope: BudgetScope(), deletedAt: _now, at: _now),
       );
       expect(await goals.find(goal.id), isNull);
-      expect(await budgets.find(budget.id), isNull);
+      expect((await budgets.find(budget.id))?.deletedAt, _now);
       final goalLinks = await database
           .customSelect('SELECT account_pocket_id FROM goal_accounts')
           .get();

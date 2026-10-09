@@ -12,6 +12,7 @@ final class SyncConflictSummary {
     required this.localRevision,
     required this.remoteRevision,
     required this.detectedAtMicros,
+    this.protectionReason,
   });
 
   final String id;
@@ -22,6 +23,7 @@ final class SyncConflictSummary {
   final int localRevision;
   final int remoteRevision;
   final int detectedAtMicros;
+  final String? protectionReason;
 }
 
 abstract interface class SyncConflictResolver {

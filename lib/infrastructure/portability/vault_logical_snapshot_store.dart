@@ -2,6 +2,9 @@ import 'package:drift/drift.dart';
 
 import '../../core/serialization/canonical_json.dart';
 import '../persistence/database/equis_database.dart';
+import '../persistence/database/budget_monthly_history_migration.dart';
+import '../sync/budget_sync_history.dart';
+import '../sync/recurring_sync_history.dart';
 
 final class VaultLogicalSnapshot {
   VaultLogicalSnapshot({
@@ -67,13 +70,18 @@ final class VaultLogicalSnapshot {
       tables[entry.key! as String] = rows;
     }
     final schemaVersion = json['schema_version']! as int;
-    final requiredTables = schemaVersion >= 7
-        ? _tableOrder
-        : _tableOrder.where((table) => !_v7PrivateTables.contains(table));
+    final requiredTables = _tableOrder.where(
+      (table) =>
+          !(schemaVersion <= 6 && _v7PrivateTables.contains(table)) &&
+          !(schemaVersion <= 7 && _v8Tables.contains(table)),
+    );
     if (!tables.keys.toSet().containsAll(requiredTables)) {
       throw const VaultSnapshotFormatException();
     }
-    for (final table in _v7PrivateTables) {
+    for (final table in {
+      ..._v7PrivateTables,
+      if (schemaVersion <= 7) ..._v8Tables,
+    }) {
       tables.putIfAbsent(table, () => []);
     }
     return VaultLogicalSnapshot(
@@ -130,6 +138,8 @@ final class VaultLogicalSnapshotStore {
           throw const VaultSnapshotUnresolvedSyncConflict();
         }
       }
+      await BudgetSyncHistory(database).validateStored(vaultId);
+      await RecurringSyncHistory(database).validateStored(vaultId);
       final tables = <String, List<Map<String, Object?>>>{};
       for (final table in _tableOrder) {
         final query = _captureSql(table);
@@ -179,13 +189,22 @@ final class VaultLogicalSnapshotStore {
       for (final table in _tableOrder) {
         final rows =
             snapshot.tables[table] ??
-            (snapshot.schemaVersion <= 6 && _v7PrivateTables.contains(table)
+            ((snapshot.schemaVersion <= 6 &&
+                        _v7PrivateTables.contains(table)) ||
+                    (snapshot.schemaVersion <= 7 && _v8Tables.contains(table))
                 ? const <Map<String, Object?>>[]
                 : null);
         if (rows == null) throw const VaultSnapshotFormatException();
         final actualColumns = await _columns(table);
         for (final sourceRow in rows) {
           final row = _restoreRow(table, sourceRow, attachmentLocalPaths);
+          if (snapshot.schemaVersion >= 8 &&
+              ((table == 'budgets' &&
+                      !row.containsKey('monthly_history_edited')) ||
+                  (table == 'recurring_rules' &&
+                      !row.containsKey('schedule_history_edited')))) {
+            throw const VaultSnapshotFormatException();
+          }
           if (row.isEmpty || !actualColumns.containsAll(row.keys)) {
             throw const VaultSnapshotFormatException();
           }
@@ -198,6 +217,22 @@ final class VaultLogicalSnapshotStore {
           );
         }
       }
+      if (snapshot.schemaVersion <= 7) {
+        await initializeBudgetMonthlyHistory(database);
+      }
+      final missing = await database
+          .customSelect(
+            "SELECT 1 FROM budgets b WHERE b.period_type = 'monthly' AND NOT EXISTS "
+            "(SELECT 1 FROM budget_monthly_configurations c WHERE c.budget_id = b.id AND c.kind = 'standard') LIMIT 1",
+          )
+          .get();
+      if (missing.isNotEmpty) throw const VaultSnapshotFormatException();
+      await BudgetSyncHistory(
+        database,
+      ).validateStored(vaultRows.single['id']! as String);
+      await RecurringSyncHistory(
+        database,
+      ).validateStored(vaultRows.single['id']! as String);
     });
   }
 
@@ -274,6 +309,7 @@ const _tableOrder = <String>[
   'budget_categories',
   'budget_accounts',
   'budget_tags',
+  ..._v8Tables,
   'goals',
   'goal_accounts',
   'goal_contributions',
@@ -293,6 +329,16 @@ const _tableOrder = <String>[
 ];
 
 const _filters = <String, String>{
+  'budget_monthly_configurations':
+      'budget_id IN (SELECT id FROM budgets WHERE vault_id = ?)',
+  'budget_monthly_categories':
+      'configuration_id IN (SELECT c.id FROM budget_monthly_configurations c JOIN budgets b ON b.id = c.budget_id WHERE b.vault_id = ?)',
+  'budget_monthly_accounts':
+      'configuration_id IN (SELECT c.id FROM budget_monthly_configurations c JOIN budgets b ON b.id = c.budget_id WHERE b.vault_id = ?)',
+  'budget_monthly_tags':
+      'configuration_id IN (SELECT c.id FROM budget_monthly_configurations c JOIN budgets b ON b.id = c.budget_id WHERE b.vault_id = ?)',
+  'recurring_rule_versions':
+      'recurring_rule_id IN (SELECT id FROM recurring_rules WHERE vault_id = ?)',
   'currencies': '',
   'vaults': 'id = ?',
   'accounts': 'vault_id = ?',
@@ -366,6 +412,14 @@ const _v7PrivateTables = <String>{
   'fixed_income_contracts',
   'fixed_income_manual_values',
 };
+
+const _v8Tables = <String>[
+  'budget_monthly_configurations',
+  'budget_monthly_categories',
+  'budget_monthly_accounts',
+  'budget_monthly_tags',
+  'recurring_rule_versions',
+];
 
 final class VaultSnapshotFormatException implements Exception {
   const VaultSnapshotFormatException();

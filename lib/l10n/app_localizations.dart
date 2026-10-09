@@ -355,7 +355,7 @@ abstract class AppLocalizations {
   /// No description provided for @setupRequiredMessage.
   ///
   /// In en, this message translates to:
-  /// **'Set up the local vault before adding transactions.'**
+  /// **'You need to create or open a vault before recording or editing financial data. Synchronization also needs an active vault. You can use Equis offline without signing in.'**
   String get setupRequiredMessage;
 
   /// No description provided for @transactionNotFoundMessage.
@@ -529,7 +529,7 @@ abstract class AppLocalizations {
   /// No description provided for @setupLocalVaultBody.
   ///
   /// In en, this message translates to:
-  /// **'Your data stays encrypted on this device and works offline.'**
+  /// **'Create your first vault and account below to start recording income and expenses. Your financial data stays encrypted on this device. Choose Continue offline to use Equis without signing in, or create an Equis account for optional synchronization.'**
   String get setupLocalVaultBody;
 
   /// No description provided for @profileNameLabel.
@@ -1575,6 +1575,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Limit'**
   String get budgetLimitLabel;
+
+  /// No description provided for @budgetPreviousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get budgetPreviousMonth;
+
+  /// No description provided for @budgetNextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get budgetNextMonth;
+
+  /// No description provided for @budgetCurrentMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Current month'**
+  String get budgetCurrentMonth;
+
+  /// No description provided for @budgetSelectMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Select month'**
+  String get budgetSelectMonth;
+
+  /// No description provided for @budgetYearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get budgetYearLabel;
+
+  /// No description provided for @budgetInvalidMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a year from 1 to 9999.'**
+  String get budgetInvalidMonth;
+
+  /// No description provided for @budgetMonthScopeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The month applies to monthly budgets. Other periods show their current progress.'**
+  String get budgetMonthScopeHint;
+
+  /// No description provided for @budgetShowDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Include deleted budgets'**
+  String get budgetShowDeleted;
+
+  /// No description provided for @budgetEmptyMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'No budgets for this month. Budgets appear from their creation month.'**
+  String get budgetEmptyMonth;
+
+  /// No description provided for @budgetRetryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get budgetRetryAction;
+
+  /// No description provided for @budgetDeletedReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted budget · history is read only'**
+  String get budgetDeletedReadOnly;
+
+  /// No description provided for @budgetFutureMonthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Future month: no actual spending yet.'**
+  String get budgetFutureMonthHint;
+
+  /// No description provided for @budgetPastMonthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual spending includes the full month.'**
+  String get budgetPastMonthHint;
+
+  /// No description provided for @budgetCurrentMonthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual spending through {date}.'**
+  String budgetCurrentMonthHint(String date);
+
+  /// No description provided for @budgetLimitMethodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly limit calculation'**
+  String get budgetLimitMethodLabel;
+
+  /// No description provided for @budgetFixedMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed monthly amount'**
+  String get budgetFixedMonthly;
+
+  /// No description provided for @budgetPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Per day'**
+  String get budgetPerDay;
+
+  /// No description provided for @budgetPerWeekday.
+  ///
+  /// In en, this message translates to:
+  /// **'Per weekday'**
+  String get budgetPerWeekday;
+
+  /// No description provided for @budgetDailyAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily amount'**
+  String get budgetDailyAmountLabel;
+
+  /// No description provided for @budgetEditScopeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply changes to'**
+  String get budgetEditScopeLabel;
+
+  /// No description provided for @budgetOnlyMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Only this month'**
+  String get budgetOnlyMonth;
+
+  /// No description provided for @budgetFromMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month and following months'**
+  String get budgetFromMonth;
+
+  /// No description provided for @budgetPreserveOverridesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Future months with their own settings are preserved.'**
+  String get budgetPreserveOverridesHint;
+
+  /// No description provided for @budgetGeneralNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The name is shared by all months.'**
+  String get budgetGeneralNameHint;
+
+  /// No description provided for @budgetCreationMonthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A new budget starts in the current month.'**
+  String get budgetCreationMonthHint;
+
+  /// No description provided for @budgetPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount to preview the monthly limit.'**
+  String get budgetPreviewHint;
+
+  /// No description provided for @budgetWeekdayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday to Friday. Holidays are not excluded.'**
+  String get budgetWeekdayHint;
+
+  /// No description provided for @budgetMonthlyTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly limit: {total}'**
+  String budgetMonthlyTotal(String total);
+
+  /// No description provided for @budgetLimitCalculation.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} × {days} days = {total}'**
+  String budgetLimitCalculation(String rate, int days, String total);
+
+  /// No description provided for @budgetInvalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive amount within the supported monetary range.'**
+  String get budgetInvalidAmount;
+
+  /// No description provided for @budgetInvalidForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the name, positive amount, warning percentage (up to 100%), and dates.'**
+  String get budgetInvalidForm;
+
+  /// No description provided for @budgetSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Check that the selected filters are still available and try again.'**
+  String get budgetSaveFailed;
+
+  /// No description provided for @budgetRevisionChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This budget changed on another screen or device. Close and reopen the editor to review the latest settings.'**
+  String get budgetRevisionChanged;
+
+  /// No description provided for @budgetSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get budgetSaving;
+
+  /// No description provided for @budgetUsageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Used (%)'**
+  String get budgetUsageLabel;
+
+  /// No description provided for @budgetWarningValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning at {percent}'**
+  String budgetWarningValue(String percent);
+
+  /// No description provided for @budgetUnavailableCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable category'**
+  String get budgetUnavailableCategory;
+
+  /// No description provided for @budgetCategoryWithDescendants.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} (and subcategories)'**
+  String budgetCategoryWithDescendants(String category);
+
+  /// No description provided for @budgetUnavailableAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive or unavailable account'**
+  String get budgetUnavailableAccount;
+
+  /// No description provided for @budgetUnavailableTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable tag'**
+  String get budgetUnavailableTag;
+
+  /// No description provided for @budgetAllFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get budgetAllFilters;
 
   /// No description provided for @budgetPeriodLabel.
   ///
@@ -2966,6 +3212,12 @@ abstract class AppLocalizations {
   /// **'Conflicts requiring review'**
   String get syncConflictsTitle;
 
+  /// No description provided for @syncBudgetHistoryProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Another device needs an update to support monthly budget history. Update it, then keep the current local version to preserve your settings.'**
+  String get syncBudgetHistoryProtected;
+
   /// No description provided for @syncConflictBody.
   ///
   /// In en, this message translates to:
@@ -4182,6 +4434,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Attachments'**
   String get accountReferencesAttachments;
+
+  /// No description provided for @editRecurringAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit rule'**
+  String get editRecurringAction;
+
+  /// No description provided for @deleteRecurringAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete rule'**
+  String get deleteRecurringAction;
+
+  /// No description provided for @deleteRecurringConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting this rule stops new occurrences. Existing transactions will be preserved.'**
+  String get deleteRecurringConfirmation;
+
+  /// No description provided for @recurrenceEffectiveFromLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective date (today or later)'**
+  String get recurrenceEffectiveFromLabel;
+
+  /// No description provided for @dashboardInvalidSelectionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved period is no longer valid. Showing this month; select another period to correct it.'**
+  String get dashboardInvalidSelectionMessage;
+
+  /// No description provided for @dashboardLastThreeMonthsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 3 months'**
+  String get dashboardLastThreeMonthsLabel;
+
+  /// No description provided for @dashboardDailyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get dashboardDailyLabel;
+
+  /// No description provided for @dashboardThisYearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'This year'**
+  String get dashboardThisYearLabel;
+
+  /// No description provided for @dashboardCurrentPositionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current financial position'**
+  String get dashboardCurrentPositionLabel;
+
+  /// No description provided for @dashboardPeriodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected period'**
+  String get dashboardPeriodTitle;
+
+  /// No description provided for @dashboardCumulativeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cumulative'**
+  String get dashboardCumulativeLabel;
+
+  /// No description provided for @experiencePreferenceFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your local preference could not be saved.'**
+  String get experiencePreferenceFailedMessage;
+
+  /// No description provided for @dashboardCustomRangeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get dashboardCustomRangeLabel;
+
+  /// No description provided for @dashboardLastMonthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last month'**
+  String get dashboardLastMonthLabel;
+
+  /// No description provided for @dashboardFlowModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Flow mode'**
+  String get dashboardFlowModeLabel;
+
+  /// No description provided for @checklistAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up an account'**
+  String get checklistAccountLabel;
+
+  /// No description provided for @guideBackupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Save an encrypted backup and keep its password so you can restore your vault. Validate the saved file; the checklist marks this step only after the backup is saved. JSON and CSV exports are unencrypted and do not replace a backup.'**
+  String get guideBackupBody;
+
+  /// No description provided for @guideCategoriesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use categories to organize income and expenses. Add tags when you need another way to group records. A record with several tags appears under each tag, but its value is counted once in the total.'**
+  String get guideCategoriesBody;
+
+  /// No description provided for @checklistShowAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Show checklist on home'**
+  String get checklistShowAction;
+
+  /// No description provided for @guideTransactionsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add income, expenses or transfers after creating your vault and first account. Check the date, account, amount and category before saving. Open History to find or correct a record.'**
+  String get guideTransactionsBody;
+
+  /// No description provided for @guideIntroBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Start on Home by creating your first vault and account. A vault stores your financial data; you need an active one to add or edit records and to synchronize them. The topics below explain what each feature does and open its screen.'**
+  String get guideIntroBody;
+
+  /// No description provided for @checklistTransactionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Record a transaction'**
+  String get checklistTransactionLabel;
+
+  /// No description provided for @checklistPendingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get checklistPendingLabel;
+
+  /// No description provided for @guideBudgetsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a spending limit and choose the accounts, categories or tags it covers. For monthly budgets, apply an edit to one month or that month and the following months. Months with custom settings keep them. Per-day amounts are multiplied by all days in the month. Per-weekday amounts count Monday to Friday, including public holidays.'**
+  String get guideBudgetsBody;
+
+  /// No description provided for @gettingStartedGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting started guide'**
+  String get gettingStartedGuideTitle;
+
+  /// No description provided for @guideOpenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open feature'**
+  String get guideOpenAction;
+
+  /// No description provided for @guideVaultsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first vault on Home: enter a profile name, your first account\'s name and the reporting currency. Choose Continue offline, or create an Equis account to synchronize later. To use an existing vault, open Vaults and account or restore an encrypted backup. Each vault keeps its finances separate.'**
+  String get guideVaultsBody;
+
+  /// No description provided for @checklistHideAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide checklist'**
+  String get checklistHideAction;
+
+  /// No description provided for @backupSavedChecklistFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup saved. The local checklist preference could not be updated.'**
+  String get backupSavedChecklistFailedMessage;
+
+  /// No description provided for @guideSkipAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip and start'**
+  String get guideSkipAction;
+
+  /// No description provided for @checklistBackupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and save a backup'**
+  String get checklistBackupLabel;
+
+  /// No description provided for @guideReportsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a period to see its income, expenses and cash flow. The first and last dates are included. Daily shows each day\'s flow; Cumulative adds those flows from the start of the period, without an opening balance. Balances, wealth and investments keep showing the current position.'**
+  String get guideReportsBody;
+
+  /// No description provided for @checklistCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your first steps are complete.'**
+  String get checklistCompleteMessage;
+
+  /// No description provided for @guideTransactionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions'**
+  String get guideTransactionsTitle;
+
+  /// No description provided for @checklistDoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get checklistDoneLabel;
+
+  /// No description provided for @guideSyncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional synchronization'**
+  String get guideSyncTitle;
+
+  /// No description provided for @guideSyncBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or open a vault first, then sign in to synchronize it between devices. Signing in alone does not create a vault. Update every device before editing budget or recurring-rule history; older versions may need conflict review.'**
+  String get guideSyncBody;
+
+  /// No description provided for @guideWelcomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'First, create a vault on Home. It stores your accounts and transactions, and you need one before you can enter or edit financial data. You can use Equis offline; signing in is only needed for synchronization. This guide explains each feature and stays available in Settings.'**
+  String get guideWelcomeBody;
+
+  /// No description provided for @guideVaultsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vaults and local profiles'**
+  String get guideVaultsTitle;
+
+  /// No description provided for @guideAccountsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the bank accounts, cash wallets or cards you want to track, and set their currencies. Enter an opening balance for money you already have. Archiving an account preserves its transactions.'**
+  String get guideAccountsBody;
+
+  /// No description provided for @guideWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Equis'**
+  String get guideWelcomeTitle;
+
+  /// No description provided for @gettingStartedChecklistTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting started'**
+  String get gettingStartedChecklistTitle;
+
+  /// No description provided for @guideRecurringBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a rule for a payment or income that repeats. Confirm a proposed occurrence to record its payment or income. You can skip, reschedule or adjust individual occurrences. Editing a rule changes future proposals; deleting it stops new ones and preserves existing transactions.'**
+  String get guideRecurringBody;
+
+  /// No description provided for @checklistBudgetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a budget'**
+  String get checklistBudgetLabel;
+
+  /// No description provided for @licensesOverviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Equis license and notices for fonts, data and components included in the app.'**
+  String get licensesOverviewBody;
+
+  /// No description provided for @licensesFontsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fonts'**
+  String get licensesFontsTitle;
+
+  /// No description provided for @licensesDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get licensesDataTitle;
+
+  /// No description provided for @licensesDependenciesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Libraries and components'**
+  String get licensesDependenciesTitle;
+
+  /// No description provided for @licensesDependenciesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Third-party notices used by the app, including Flutter and its components.'**
+  String get licensesDependenciesBody;
+
+  /// No description provided for @licensesSearchLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search components'**
+  String get licensesSearchLabel;
+
+  /// No description provided for @licensesNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching components.'**
+  String get licensesNoMatches;
+
+  /// No description provided for @licensesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This notice could not be loaded. Go back and try again.'**
+  String get licensesLoadFailed;
+
+  /// No description provided for @vaultRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or open a vault to continue'**
+  String get vaultRequiredTitle;
+
+  /// No description provided for @vaultOpenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open vaults or restore data'**
+  String get vaultOpenAction;
 }
 
 class _AppLocalizationsDelegate

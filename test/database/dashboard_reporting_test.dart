@@ -9,6 +9,7 @@ import 'package:equis/domain/shared/local_date.dart';
 import 'package:equis/domain/shared/money.dart';
 import 'package:equis/domain/shared/utc_instant.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
+import 'package:equis/domain/reporting/dashboard_models.dart';
 import 'package:equis/infrastructure/persistence/database/drift_local_unit_of_work.dart';
 import 'package:equis/infrastructure/persistence/database/equis_database.dart';
 import 'package:equis/infrastructure/repositories/drift_dashboard_repository.dart';
@@ -43,6 +44,141 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'RC13–14 inclusive custom interval, daily FX and signed accumulation preserve current balances',
+    () async {
+      const now = UtcInstant.fromEpochMicroseconds(1000);
+      final engine = LedgerEngine();
+      final excluded = engine.expense(
+        vaultId: fixture.vault,
+        pocket: fixture.bank,
+        amount: Money(currency: CurrencyCode.brl, minorUnits: 1000),
+        categoryId: fixture.category,
+        date: LocalDate(2026, 1, 14),
+        now: now,
+      );
+      await ledger.save(excluded);
+      for (final entry in [
+        (LocalDate(2026, 1, 15), 200, '5'),
+        (LocalDate(2026, 3, 10), 300, '6'),
+      ]) {
+        await database.customStatement(
+          'INSERT INTO fx_rate_cache (base_currency, quote_currency, rate_date, rate, provider, fetched_at) VALUES (?, ?, ?, ?, ?, 1)',
+          ['USD', 'BRL', entry.$1.toString(), entry.$3, 'fixture'],
+        );
+        await ledger.save(
+          engine.expense(
+            vaultId: fixture.vault,
+            pocket: fixture.usdWallet,
+            amount: Money(currency: CurrencyCode.usd, minorUnits: entry.$2),
+            categoryId: fixture.category,
+            date: entry.$1,
+            now: now,
+          ),
+        );
+      }
+      await ledger.save(
+        engine.refund(
+          vaultId: fixture.vault,
+          pocket: fixture.bank,
+          amount: Money(currency: CurrencyCode.brl, minorUnits: 500),
+          originalCategoryId: fixture.category,
+          originalTransactionId: excluded.id,
+          date: LocalDate(2026, 2, 1),
+          now: now,
+        ),
+      );
+      final range = DashboardDateRange(
+        from: LocalDate(2026, 1, 15),
+        through: LocalDate(2026, 3, 10),
+      );
+      final report = await service.load(
+        vaultId: fixture.vault,
+        reportingCurrency: CurrencyCode.brl,
+        asOf: LocalDate(2026, 8, 17),
+        range: range,
+      );
+      final current = await service.load(
+        vaultId: fixture.vault,
+        reportingCurrency: CurrencyCode.brl,
+        asOf: LocalDate(2026, 8, 17),
+      );
+      expect(report.periodStart, range.from);
+      expect(report.periodEnd, range.through);
+      expect(report.cashFlow, hasLength(55));
+      expect(report.expenseMinor, 2300);
+      expect(report.incomeMinor, 0);
+      expect(report.cashFlow.first.expenseMinor, 1000);
+      expect(report.cashFlow.last.expenseMinor, 1800);
+      expect(report.cashFlow[1].expenseMinor, 0);
+      expect(
+        cashFlowSeries(
+          report.cashFlow,
+          CashFlowMode.cumulative,
+        ).last.expenseMinor,
+        report.expenseMinor,
+      );
+      expect(report.availableMoneyMinor, current.availableMoneyMinor);
+      expect(
+        report.accountBalances.map((a) => a.originalMinor),
+        current.accountBalances.map((a) => a.originalMinor),
+      );
+      await expectLater(
+        service.load(
+          vaultId: fixture.vault,
+          reportingCurrency: CurrencyCode.brl,
+          asOf: LocalDate(2026, 3, 9),
+          range: range,
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test(
+    'RC14 one-day and empty intervals retain zero days and reject reversed dates',
+    () async {
+      final single = await service.load(
+        vaultId: fixture.vault,
+        reportingCurrency: CurrencyCode.brl,
+        asOf: LocalDate(2026, 8, 17),
+        range: DashboardDateRange(
+          from: LocalDate(2026, 8, 10),
+          through: LocalDate(2026, 8, 10),
+        ),
+      );
+      expect(single.cashFlow, hasLength(1));
+      expect(single.cashFlow.single.incomeMinor, single.incomeMinor);
+      expect(single.cashFlow.single.expenseMinor, single.expenseMinor);
+      final empty = await service.load(
+        vaultId: fixture.vault,
+        reportingCurrency: CurrencyCode.brl,
+        asOf: LocalDate(2026, 8, 17),
+        range: DashboardDateRange(
+          from: LocalDate(2026, 1, 1),
+          through: LocalDate(2026, 1, 3),
+        ),
+      );
+      expect(empty.cashFlow, hasLength(3));
+      expect(empty.incomeMinor, 0);
+      expect(empty.expenseMinor, 0);
+      expect(
+        cashFlowSeries(
+          empty.cashFlow,
+          CashFlowMode.cumulative,
+        ).last.expenseMinor,
+        0,
+      );
+      expect(
+        () => DashboardDateRange(
+          from: LocalDate(2026, 1, 3),
+          through: LocalDate(2026, 1, 1),
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
 
   test('quarantine and dependency pause mark only this vault incomplete', () async {
     final baseline = await service.load(

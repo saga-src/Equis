@@ -16,6 +16,11 @@ import 'package:equis/infrastructure/persistence/database/equis_database.dart'
 import 'package:equis/infrastructure/persistence/dao/ledger_balance_reader.dart';
 import 'package:equis/infrastructure/repositories/drift_ledger_repository.dart';
 import 'package:equis/infrastructure/repositories/drift_recurring_repository.dart';
+import 'package:equis/infrastructure/sync/drift_sync_aggregate_store.dart';
+import 'package:equis/infrastructure/sync/drift_sync_metadata_store.dart';
+import 'package:equis/infrastructure/sync/drift_sync_mutation_recorder.dart';
+import 'package:equis/application/sync/sync_models.dart';
+import 'package:equis/infrastructure/portability/vault_logical_snapshot_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -193,7 +198,7 @@ void main() {
   );
 
   test(
-    'modify future splits the series and end disables its successor',
+    'modify future preserves identity and end disables the same series',
     () async {
       final schedule = _monthlySchedule(fixture);
       await service.create(schedule);
@@ -208,10 +213,18 @@ void main() {
         now: fixture.now,
       );
       final predecessor = await repository.find(schedule.rule.id);
-      expect(predecessor!.rule.endsOn, LocalDate(2026, 4, 29));
-      expect(successor.rule.id, isNot(schedule.rule.id));
-      expect(successor.rule.startsOn, LocalDate(2026, 4, 30));
-      expect(successor.template.movements.single.amountMinor, -8000);
+      expect(predecessor!.versions, hasLength(2));
+      expect(successor.rule.id, schedule.rule.id);
+      expect(successor.rule.startsOn, LocalDate(2026, 1, 31));
+      expect(
+        successor
+            .configurationAt(LocalDate(2026, 4, 30))
+            .template
+            .movements
+            .single
+            .amountMinor,
+        -8000,
+      );
       await service.end(
         successor,
         lastDate: LocalDate(2026, 8, 30),
@@ -220,6 +233,61 @@ void main() {
       expect((await repository.find(successor.rule.id))!.rule.enabled, isFalse);
     },
   );
+
+  test('edit and delete enqueue the same identity atomically', () async {
+    await database.customStatement(
+      'INSERT INTO vault_cloud_bindings (vault_id, auth_user_id, sync_enabled, linked_at) VALUES (?, ?, 1, 1)',
+      [fixture.vault.value, '11111111-1111-4111-8111-111111111111'],
+    );
+    final metadata = DriftSyncMetadataStore(database);
+    final store = DriftSyncAggregateStore(
+      database: database,
+      metadata: metadata,
+    );
+    repository = DriftRecurringRepository(
+      database: database,
+      ledger: service.ledger,
+      syncRecorder: DriftSyncMutationRecorder(
+        database: database,
+        aggregates: store,
+        metadata: metadata,
+      ),
+    );
+    service = RecurringTransactionService(
+      repository: repository,
+      ledger: service.ledger,
+      unitOfWork: service.unitOfWork,
+    );
+    final original = _monthlySchedule(fixture);
+    await service.create(original);
+    final edited = await service.modifyFuture(
+      original,
+      effectiveFrom: LocalDate(2026, 4, 30),
+      now: fixture.now,
+    );
+    await service.delete(edited, now: fixture.now);
+    final pending = await metadata.pendingFor(
+      vaultId: fixture.vault.value,
+      entityType: SyncEntityType.recurringRule,
+      recordId: original.rule.id.value,
+    );
+    expect(pending!.operation, SyncOperation.delete);
+    expect(pending.newRevision, 3);
+    expect((await repository.find(original.rule.id))!.versions, hasLength(2));
+    expect(
+      (await database
+              .customSelect('SELECT COUNT(*) AS total FROM transactions')
+              .getSingle())
+          .read<int>('total'),
+      0,
+    );
+    expect(
+      await database
+          .customSelect('SELECT * FROM sync_outbox_dependencies')
+          .get(),
+      isNotEmpty,
+    );
+  });
 
   test('rules and pending overrides survive a local offline restart', () async {
     await database.close();
@@ -265,6 +333,260 @@ void main() {
     expect(restored.first.state, ScheduledOccurrenceState.pending);
     expect(restored.first.scheduledDate, LocalDate(2026, 2, 2));
   });
+
+  test(
+    'RC10–11 stable edit preserves snapshots, occupied keys and day-31 anchor',
+    () async {
+      final original = _monthlySchedule(fixture);
+      await service.create(original);
+      final occurrences = await service.upcoming(
+        vaultId: fixture.vault,
+        from: LocalDate(2026, 1, 1),
+        through: LocalDate(2026, 8, 31),
+      );
+      await service.confirm(occurrences[0], now: fixture.now);
+      await service.skip(occurrences[1], now: fixture.now);
+      await service.modifyOne(
+        occurrences[3],
+        replacement: _template(fixture, amount: 9900, title: 'Custom'),
+        now: fixture.now,
+      );
+      await service.reschedule(
+        occurrences[2],
+        newDate: LocalDate(2026, 5, 2),
+        now: fixture.now,
+      );
+      final before = await database
+          .customSelect('SELECT * FROM transactions ORDER BY id')
+          .get();
+      final latest = (await repository.find(original.rule.id))!;
+      final edited = await service.modifyFuture(
+        latest,
+        effectiveFrom: LocalDate(2026, 4, 30),
+        template: _template(fixture, amount: 8000, title: 'New'),
+        now: fixture.now,
+      );
+      expect(edited.rule.id, original.rule.id);
+      expect(
+        edited.configurationAt(LocalDate(2026, 4, 30)).anchorOn,
+        LocalDate(2026, 1, 31),
+      );
+      expect(
+        (await database
+                .customSelect('SELECT * FROM transactions ORDER BY id')
+                .get())
+            .map((r) => r.data),
+        before.map((r) => r.data),
+      );
+      final may = await service.upcoming(
+        vaultId: fixture.vault,
+        from: LocalDate(2026, 5, 1),
+        through: LocalDate(2026, 5, 31),
+      );
+      expect(may.map((o) => o.scheduledDate), [
+        LocalDate(2026, 5, 2),
+        LocalDate(2026, 5, 31),
+      ]);
+      expect(may.first.transaction!.title, 'Rent');
+      final stale = occurrences[4];
+      final confirmed = await service.confirm(stale, now: fixture.now);
+      expect(confirmed.movements.single.amountMinor, -8000);
+      final custom = await service.upcoming(
+        vaultId: fixture.vault,
+        from: LocalDate(2026, 4, 1),
+        through: LocalDate(2026, 4, 30),
+      );
+      expect(custom.single.transaction!.title, 'Custom');
+      expect(custom.single.template.title, 'Custom');
+      expect(custom.single.template.movements.single.amountMinor, -9900);
+      final after = (await repository.find(original.rule.id))!;
+      await service.modifyFuture(
+        after,
+        effectiveFrom: LocalDate(2026, 4, 30),
+        pattern: const RecurrencePattern(frequency: RecurrenceFrequency.weekly),
+        now: fixture.now,
+      );
+      final changed = await service.upcoming(
+        vaultId: fixture.vault,
+        from: LocalDate(2026, 4, 1),
+        through: LocalDate(2026, 5, 31),
+      );
+      expect(
+        changed.where((o) => o.transaction?.title == 'Custom'),
+        hasLength(1),
+      );
+      expect(
+        changed.where((o) => o.recurrenceDate == LocalDate(2026, 5, 31)),
+        hasLength(1),
+      );
+      await expectLater(
+        service.modifyOne(
+          occurrences[5],
+          replacement: _template(fixture, amount: 5555, title: 'Stale'),
+          now: fixture.now,
+        ),
+        throwsStateError,
+      );
+    },
+  );
+
+  test('repository rejects erasure of edited history atomically', () async {
+    final original = _monthlySchedule(fixture);
+    await service.create(original);
+    final edited = await service.modifyFuture(
+      original,
+      effectiveFrom: LocalDate(2026, 4, 30),
+      template: _template(fixture, amount: 8000, title: 'Future'),
+      now: fixture.now,
+    );
+    await expectLater(
+      repository.save(
+        RecurringSchedule(
+          rule: edited.rule.revise(at: fixture.now),
+          template: edited.template,
+        ),
+      ),
+      throwsStateError,
+    );
+    final saved = (await repository.find(original.rule.id))!;
+    expect(saved.rule.revision, edited.rule.revision);
+    expect(saved.versions, hasLength(2));
+  });
+
+  test('concurrent confirmations preserve a single occurrence', () async {
+    final original = _monthlySchedule(fixture);
+    await service.create(original);
+    final occurrence = (await service.upcoming(
+      vaultId: fixture.vault,
+      from: LocalDate(2026, 1, 1),
+      through: LocalDate(2026, 1, 31),
+    )).single;
+    final confirmed = await Future.wait([
+      service.confirm(occurrence, now: fixture.now),
+      service.confirm(occurrence, now: fixture.now),
+    ]);
+    expect(confirmed.first.id, confirmed.last.id);
+    expect(
+      await database.customSelect('SELECT id FROM transactions').get(),
+      hasLength(1),
+    );
+  });
+
+  test(
+    'RC12 delete retains financial rows and rejects stale/fabricated resurrection',
+    () async {
+      final schedule = _monthlySchedule(fixture);
+      await service.create(schedule);
+      final occurrence = (await service.upcoming(
+        vaultId: fixture.vault,
+        from: LocalDate(2026, 1, 1),
+        through: LocalDate(2026, 1, 31),
+      )).single;
+      await service.confirm(occurrence, now: fixture.now);
+      final latest = (await repository.find(schedule.rule.id))!;
+      await service.delete(latest, now: fixture.now);
+      expect(await service.listRules(fixture.vault), isEmpty);
+      final transactionId = EntityId.parse(
+        (await database.customSelect('SELECT id FROM transactions').getSingle())
+            .read<String>('id'),
+      );
+      expect(await service.ledger.find(transactionId), isNotNull);
+      await expectLater(
+        service.modifyFuture(
+          latest,
+          effectiveFrom: LocalDate(2026, 4, 30),
+          now: fixture.now,
+        ),
+        throwsA(anything),
+      );
+      final tombstone = (await repository.find(schedule.rule.id))!;
+      await expectLater(
+        repository.save(
+          RecurringSchedule(
+            rule: tombstone.rule.revise(enabled: true, at: fixture.now),
+            template: tombstone.template,
+          ),
+        ),
+        throwsA(anything),
+      );
+    },
+  );
+
+  test(
+    'recurring format 2 round-trips backup and guards higher-revision legacy payload',
+    () async {
+      final original = _monthlySchedule(fixture);
+      await service.create(original);
+      final store = DriftSyncAggregateStore(
+        database: database,
+        metadata: DriftSyncMetadataStore(database),
+      );
+      final legacy = (await store.loadPayload(
+        vaultId: fixture.vault.value,
+        entityType: SyncEntityType.recurringRule,
+        recordId: original.rule.id.value,
+      ))!;
+      final edited = await service.modifyFuture(
+        original,
+        effectiveFrom: LocalDate(2026, 4, 30),
+        template: _template(fixture, amount: 8000, title: 'Future'),
+        now: fixture.now,
+      );
+      final payload = (await store.loadPayload(
+        vaultId: fixture.vault.value,
+        entityType: SyncEntityType.recurringRule,
+        recordId: original.rule.id.value,
+      ))!;
+      expect(payload['format_version'], 2);
+      final snapshot = await VaultLogicalSnapshotStore(
+        database,
+      ).capture(fixture.vault.value);
+      final destination = EquisDatabase(NativeDatabase.memory());
+      addTearDown(destination.close);
+      await VaultLogicalSnapshotStore(destination).restore(snapshot);
+      final restoredRepository = DriftRecurringRepository(
+        database: destination,
+        ledger: DriftLedgerRepository(destination),
+      );
+      expect(
+        (await restoredRepository.find(original.rule.id))!.versions,
+        hasLength(2),
+      );
+      await DriftSyncAggregateStore(
+        database: destination,
+        metadata: DriftSyncMetadataStore(destination),
+      ).applyRemote(
+        vaultId: fixture.vault.value,
+        entityType: SyncEntityType.recurringRule,
+        recordId: original.rule.id.value,
+        revision: edited.rule.revision,
+        serverVersion: 1,
+        isDeleted: false,
+        payload: payload,
+      );
+      final synchronized = (await restoredRepository.find(original.rule.id))!;
+      expect(synchronized.versions, hasLength(2));
+      expect(
+        synchronized.configurationAt(LocalDate(2026, 5, 31)).template.title,
+        'Future',
+      );
+      (legacy['root'] as Map)['revision'] = 99;
+      final reconciliation = await store.reconcileRemote(
+        vaultId: fixture.vault.value,
+        entityType: SyncEntityType.recurringRule,
+        recordId: original.rule.id.value,
+        revision: 99,
+        serverVersion: 9,
+        isDeleted: false,
+        payload: legacy,
+      );
+      expect(reconciliation.conflictDetected, isTrue);
+      expect(
+        (await repository.find(original.rule.id))!.rule.revision,
+        edited.rule.revision,
+      );
+    },
+  );
 }
 
 RecurringSchedule _monthlySchedule(_Fixture fixture) => RecurringSchedule(

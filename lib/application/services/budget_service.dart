@@ -12,6 +12,34 @@ final class BudgetService {
   final BudgetRepository repository;
   final DashboardRepository reporting;
 
+  Future<BudgetDefinition> rename(
+    BudgetDefinition existing, {
+    required String name,
+    required UtcInstant now,
+  }) async {
+    final revised = existing.revise(name: name.trim(), at: now);
+    await repository.save(revised);
+    return revised;
+  }
+
+  Future<BudgetDefinition> editMonthly({
+    required BudgetDefinition existing,
+    required BudgetMonth month,
+    required BudgetMonthlyConfiguration configuration,
+    required BudgetMonthlyEditScope scope,
+    required UtcInstant now,
+    String? name,
+  }) => repository.saveMonthlyEdit(
+    budgetId: existing.id,
+    vaultId: existing.vaultId,
+    expectedRevision: existing.revision,
+    month: month,
+    configuration: configuration,
+    scope: scope,
+    now: now,
+    name: name,
+  );
+
   Future<BudgetDefinition> create({
     required EntityId vaultId,
     required String name,
@@ -23,6 +51,7 @@ final class BudgetService {
     required UtcInstant now,
     LocalDate? startsOn,
     LocalDate? endsOn,
+    BudgetMonthlyConfiguration? monthlyConfiguration,
   }) async {
     final budget = BudgetDefinition(
       id: EntityId.generate(),
@@ -37,8 +66,14 @@ final class BudgetService {
       scope: scope,
       createdAt: now,
       updatedAt: now,
+      monthlyHistoryEdited:
+          monthlyConfiguration != null &&
+          monthlyConfiguration.limitMethod != BudgetLimitMethod.fixed,
     );
-    await repository.save(budget);
+    await repository.save(
+      budget,
+      initialMonthlyConfiguration: monthlyConfiguration,
+    );
     return budget;
   }
 
@@ -75,16 +110,28 @@ final class BudgetService {
   Future<List<BudgetProgress>> loadProgress({
     required EntityId vaultId,
     required LocalDate asOf,
+    BudgetMonth? month,
+    bool includeDeleted = false,
   }) async {
-    final budgets = (await repository.listForVault(
-      vaultId,
-    )).where((budget) => budget.enabled).toList(growable: false);
+    final budgets =
+        (await repository.listForVault(vaultId, includeDeleted: includeDeleted))
+            .where(
+              (budget) =>
+                  budget.enabled ||
+                  (includeDeleted && budget.deletedAt != null),
+            )
+            .toList(growable: false);
     if (budgets.isEmpty) return const [];
     reporting.beginRead();
     final parents = await repository.loadCategoryParents(vaultId);
     final periods = {
       for (final budget in budgets)
-        budget.id: BudgetPeriod.forDate(budget, asOf),
+        budget.id: BudgetPeriod.forDate(
+          budget,
+          budget.periodType == BudgetPeriodType.monthly
+              ? (month?.start ?? asOf)
+              : asOf,
+        ),
     };
     var from = periods.values.first.start;
     var through = _through(periods.values.first, asOf);
@@ -103,13 +150,25 @@ final class BudgetService {
     final result = <BudgetProgress>[];
     for (final budget in budgets) {
       final period = periods[budget.id]!;
+      final configuration = budget.periodType == BudgetPeriodType.monthly
+          ? (await repository.loadMonthlyHistory(
+              budget.id,
+            )).resolve(BudgetMonth.fromDate(period.start))
+          : null;
+      if (budget.periodType == BudgetPeriodType.monthly &&
+          configuration == null) {
+        continue;
+      }
+      final limit =
+          configuration?.limitFor(BudgetMonth.fromDate(period.start)) ??
+          budget.limitMinor;
       var used = 0;
       var estimated = false;
       final missing = <CurrencyCode>{};
       for (final row in rows) {
         if (!period.contains(row.date) ||
             row.date.compareTo(asOf) > 0 ||
-            !_matches(budget.scope, row, parents)) {
+            !_matches(configuration?.scope ?? budget.scope, row, parents)) {
           continue;
         }
         final converted = await reporting.convertMinor(
@@ -127,7 +186,7 @@ final class BudgetService {
         estimated |= converted.estimated;
       }
       if (used < 0) used = 0;
-      final usageBps = _roundRatio(used, budget.limitMinor, 10000);
+      final usageBps = _roundRatio(used, limit, 10000);
       final elapsed = _elapsedDays(period, asOf);
       final projected = elapsed == 0
           ? 0
@@ -136,12 +195,16 @@ final class BudgetService {
         BudgetProgress(
           budget: budget,
           period: period,
+          effectiveConfiguration: configuration,
+          effectiveLimitMinor: limit,
           usedMinor: used,
           projectedMinor: projected,
           warningState: _warningState(
             used: used,
-            limit: budget.limitMinor,
-            thresholdBps: budget.warningThresholdBps,
+            limit: limit,
+            thresholdBps:
+                configuration?.warningThresholdBps ??
+                budget.warningThresholdBps,
           ),
           usageBps: usageBps,
           missingRates: missing,

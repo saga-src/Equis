@@ -42,7 +42,7 @@
   "notesLabel": "Observações",
   "requiredFieldMessage": "Campo obrigatório",
   "localVaultErrorMessage": "Não foi possível abrir o cofre local criptografado.",
-  "setupRequiredMessage": "Configure o cofre local antes de adicionar transações.",
+  "setupRequiredMessage": "Você precisa criar ou abrir um cofre antes de registrar ou editar dados financeiros. A sincronização também exige um cofre ativo. É possível usar o Equis offline, sem entrar em uma conta.",
   "transactionNotFoundMessage": "Transação não encontrada.",
   "transactionDetailTitle": "Detalhes da transação",
   "transactionDetailLoadFailedMessage": "Não foi possível carregar esta transação do cofre local.",
@@ -71,7 +71,7 @@
   "transactionDetailReversalTitle": "Estorno",
   "transactionDetailReversalOfLabel": "Estorno de",
   "setupLocalVaultTitle": "Configure seu cofre local",
-  "setupLocalVaultBody": "Seus dados ficam criptografados neste dispositivo e funcionam offline.",
+  "setupLocalVaultBody": "Crie seu primeiro cofre e sua primeira conta abaixo para começar a registrar receitas e despesas. Seus dados financeiros ficam criptografados neste dispositivo. Escolha Continuar offline para usar o Equis sem login ou crie uma conta Equis para sincronizar, se quiser.",
   "profileNameLabel": "Nome do perfil",
   "firstAccountNameLabel": "Nome da primeira conta",
   "reportingCurrencyLabel": "Moeda de relatório",
@@ -253,6 +253,88 @@
   "budgetLoadFailedMessage": "Não foi possível carregar os orçamentos do cofre local.",
   "budgetNameLabel": "Nome do orçamento",
   "budgetLimitLabel": "Limite",
+  "budgetPreviousMonth": "Mês anterior",
+  "budgetNextMonth": "Próximo mês",
+  "budgetCurrentMonth": "Mês atual",
+  "budgetSelectMonth": "Selecionar mês",
+  "budgetYearLabel": "Ano",
+  "budgetInvalidMonth": "Informe um ano de 1 a 9999.",
+  "budgetMonthScopeHint": "O mês se aplica aos orçamentos mensais. As outras modalidades mostram o progresso atual.",
+  "budgetShowDeleted": "Incluir orçamentos excluídos",
+  "budgetEmptyMonth": "Nenhum orçamento neste mês. Orçamentos aparecem a partir do mês de criação.",
+  "budgetRetryAction": "Tentar novamente",
+  "budgetDeletedReadOnly": "Orçamento excluído · histórico somente para leitura",
+  "budgetFutureMonthHint": "Mês futuro: ainda sem gasto realizado.",
+  "budgetPastMonthHint": "O gasto realizado inclui o mês inteiro.",
+  "budgetCurrentMonthHint": "Gasto realizado até {date}.",
+  "budgetLimitMethodLabel": "Cálculo do limite mensal",
+  "budgetFixedMonthly": "Valor mensal fixo",
+  "budgetPerDay": "Por dia",
+  "budgetPerWeekday": "Por dia útil",
+  "budgetDailyAmountLabel": "Valor diário",
+  "budgetEditScopeLabel": "Aplicar alterações a",
+  "budgetOnlyMonth": "Só este mês",
+  "budgetFromMonth": "Este mês e os próximos",
+  "budgetPreserveOverridesHint": "Meses futuros com configuração própria são preservados.",
+  "budgetGeneralNameHint": "O nome é compartilhado por todos os meses.",
+  "budgetCreationMonthHint": "Um novo orçamento começa no mês atual.",
+  "budgetPreviewHint": "Informe um valor para conferir o limite mensal.",
+  "budgetWeekdayHint": "Segunda a sexta. Feriados não são descontados.",
+  "budgetMonthlyTotal": "Limite mensal: {total}",
+  "budgetLimitCalculation": "{rate} × {days} dias = {total}",
+  "budgetInvalidAmount": "Informe um valor positivo dentro da faixa monetária suportada.",
+  "budgetInvalidForm": "Confira nome, valor positivo, percentual de alerta (até 100%) e datas.",
+  "budgetSaveFailed": "Não foi possível salvar. Confira se os filtros selecionados continuam disponíveis e tente novamente.",
+  "budgetRevisionChanged": "Este orçamento mudou em outra tela ou dispositivo. Feche e reabra o editor para conferir a configuração atual.",
+  "budgetSaving": "Salvando…",
+  "budgetUsageLabel": "Usado (%)",
+  "budgetWarningValue": "Alerta em {percent}",
+  "budgetUnavailableCategory": "Categoria indisponível",
+  "budgetCategoryWithDescendants": "{category} (e subcategorias)",
+  "@budgetCategoryWithDescendants": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetUnavailableAccount": "Conta inativa ou indisponível",
+  "budgetUnavailableTag": "Etiqueta indisponível",
+  "budgetAllFilters": "Todos",
+  "@budgetCurrentMonthHint": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@budgetMonthlyTotal": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@budgetLimitCalculation": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@budgetWarningValue": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "budgetPeriodLabel": "Período",
   "weeklyBudgetPeriod": "Semanal",
   "monthlyBudgetPeriod": "Mensal",
@@ -489,7 +571,16 @@
   "linkMarketAssetAction": "Vincular cotação",
   "linkMarketAssetTitle": "Vincular ativo aos dados de mercado",
   "marketRefreshSummary": "{updated} atualizados, {failed} com falha.",
-  "@marketRefreshSummary": {"placeholders": {"updated": {"type": "int"}, "failed": {"type": "int"}}},
+  "@marketRefreshSummary": {
+    "placeholders": {
+      "updated": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
   "intelligenceTitle": "Análises financeiras",
   "intelligenceSubtitle": "Estimativas locais baseadas nos seus dados registrados",
   "intelligencePrivacyMessage": "Estas análises são calculadas neste dispositivo. O histórico de transações não é enviado a um serviço externo de IA.",
@@ -673,6 +764,7 @@
   },
   "retrySyncAction": "Sincronizar agora",
   "syncConflictsTitle": "Conflitos que exigem revisão",
+  "syncBudgetHistoryProtected": "Outro dispositivo precisa ser atualizado para aceitar o histórico mensal de orçamentos. Atualize-o e mantenha a versão local atual para preservar suas configurações.",
   "syncConflictBody": "{entityType} · {recordId} · revisão local {localRevision}, revisão remota {remoteRevision}",
   "@syncConflictBody": {
     "placeholders": {
@@ -931,5 +1023,59 @@
   "accountReferencesTransactions": "Transações",
   "accountReferencesGoals": "Metas",
   "accountReferencesBudgets": "Orçamentos",
-  "accountReferencesAttachments": "Anexos"
+  "accountReferencesAttachments": "Anexos",
+  "editRecurringAction": "Editar regra",
+  "deleteRecurringAction": "Excluir regra",
+  "deleteRecurringConfirmation": "Excluir esta regra interrompe novas ocorrências. Seus lançamentos existentes serão preservados.",
+  "recurrenceEffectiveFromLabel": "Vigência (hoje ou data futura)",
+  "dashboardInvalidSelectionMessage": "O intervalo salvo ficou inválido. Usamos o mês atual; selecione outro intervalo para corrigir.",
+  "dashboardLastThreeMonthsLabel": "Últimos 3 meses",
+  "dashboardDailyLabel": "Diário",
+  "dashboardThisYearLabel": "Este ano",
+  "dashboardCurrentPositionLabel": "Posição financeira atual",
+  "dashboardPeriodTitle": "Intervalo selecionado",
+  "dashboardCumulativeLabel": "Acumulado",
+  "experiencePreferenceFailedMessage": "Não foi possível salvar sua preferência local.",
+  "dashboardCustomRangeLabel": "Personalizado",
+  "dashboardLastMonthLabel": "Mês anterior",
+  "dashboardFlowModeLabel": "Modo do fluxo",
+  "checklistAccountLabel": "Configurar uma conta",
+  "guideBackupBody": "Salve um backup criptografado e guarde sua senha para poder restaurar o cofre. Valide o arquivo salvo; o checklist só marca esse passo depois que o backup é salvo. Exportações JSON e CSV não são criptografadas e não substituem um backup.",
+  "guideCategoriesBody": "Use categorias para organizar receitas e despesas. Adicione etiquetas quando precisar de outra forma de agrupar os registros. Um lançamento com várias etiquetas aparece em cada uma, mas seu valor é contado uma única vez no total.",
+  "checklistShowAction": "Mostrar checklist na inicial",
+  "guideTransactionsBody": "Depois de criar o cofre e a primeira conta, registre receitas, despesas ou transferências. Confira data, conta, valor e categoria antes de salvar. Abra o Histórico para localizar ou corrigir um registro.",
+  "guideIntroBody": "Comece na tela Início criando seu primeiro cofre e sua primeira conta. O cofre guarda seus dados financeiros; é preciso ter um ativo para adicionar ou editar registros e sincronizá-los. Os tópicos abaixo explicam cada recurso e abrem sua tela.",
+  "checklistTransactionLabel": "Registrar um lançamento",
+  "checklistPendingLabel": "Pendente",
+  "guideBudgetsBody": "Defina um limite de gastos e escolha as contas, categorias ou etiquetas que ele cobre. No orçamento mensal, aplique a edição a um mês ou a esse mês e aos seguintes. Meses com configurações próprias as mantêm. O valor por dia é multiplicado por todos os dias do mês. Por dia útil, contam as segundas a sextas, inclusive feriados.",
+  "gettingStartedGuideTitle": "Guia de primeiros passos",
+  "guideOpenAction": "Abrir recurso",
+  "guideVaultsBody": "Crie seu primeiro cofre na tela Início: informe o nome do perfil, o nome da primeira conta e a moeda dos relatórios. Escolha Continuar offline ou crie uma conta Equis para sincronizar depois. Para usar um cofre existente, abra Cofres e conta ou restaure um backup criptografado. Cada cofre mantém suas finanças separadas.",
+  "checklistHideAction": "Ocultar checklist",
+  "backupSavedChecklistFailedMessage": "Backup salvo. Não foi possível atualizar a preferência local do checklist.",
+  "guideSkipAction": "Pular e começar",
+  "checklistBackupLabel": "Criar e salvar um backup",
+  "guideReportsBody": "Escolha um período para ver suas receitas, despesas e fluxo de caixa. A primeira e a última data entram no cálculo. Diário mostra o fluxo de cada dia; Acumulado soma esses fluxos desde o início do período, sem saldo inicial. Saldos, patrimônio e investimentos continuam mostrando a posição atual.",
+  "checklistCompleteMessage": "Seus primeiros passos estão concluídos.",
+  "guideTransactionsTitle": "Lançamentos",
+  "checklistDoneLabel": "Concluído",
+  "guideSyncTitle": "Sincronização opcional",
+  "guideSyncBody": "Primeiro crie ou abra um cofre. Depois entre em uma conta para sincronizá-lo entre dispositivos. Fazer login, por si só, não cria um cofre. Atualize todos os dispositivos antes de editar históricos de orçamentos ou regras; versões antigas podem exigir revisão de conflito.",
+  "guideWelcomeBody": "Primeiro, crie um cofre na tela Início. Ele guarda suas contas e seus lançamentos; você precisa de um para registrar ou editar dados financeiros. O Equis funciona offline. O login só é necessário para sincronizar. Este guia explica os recursos e pode ser reaberto em Configurações.",
+  "guideVaultsTitle": "Cofres e perfis locais",
+  "guideAccountsBody": "Adicione as contas bancárias, carteiras de dinheiro ou cartões que deseja acompanhar e defina suas moedas. Informe um saldo inicial para o dinheiro que você já tem. Arquivar uma conta preserva seus lançamentos.",
+  "guideWelcomeTitle": "Bem-vindo ao Equis",
+  "gettingStartedChecklistTitle": "Primeiros passos",
+  "guideRecurringBody": "Crie uma regra para uma despesa ou receita que se repete. Confirme uma ocorrência proposta para registrar sua despesa ou receita. Você pode pular, reagendar ou ajustar ocorrências individuais. Editar a regra altera propostas futuras; excluir interrompe novas propostas e preserva os lançamentos existentes.",
+  "checklistBudgetLabel": "Criar um orçamento",
+  "licensesOverviewBody": "Licença do Equis e avisos das fontes, dados e componentes incluídos no aplicativo.",
+  "licensesFontsTitle": "Fontes",
+  "licensesDataTitle": "Dados",
+  "licensesDependenciesTitle": "Bibliotecas e componentes",
+  "licensesDependenciesBody": "Avisos de terceiros usados pelo aplicativo, incluindo Flutter e seus componentes.",
+  "licensesSearchLabel": "Buscar componente",
+  "licensesNoMatches": "Nenhum componente encontrado.",
+  "licensesLoadFailed": "Não foi possível carregar este aviso. Volte e tente novamente.",
+  "vaultRequiredTitle": "Crie ou abra um cofre para continuar",
+  "vaultOpenAction": "Abrir cofres ou restaurar dados"
 }

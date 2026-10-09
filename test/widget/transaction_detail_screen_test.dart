@@ -13,12 +13,15 @@ import 'package:equis/domain/taxonomy/tag.dart';
 import 'package:equis/l10n/app_localizations.dart';
 import 'package:equis/presentation/transactions/transaction_detail_screen.dart';
 import 'package:equis/presentation/transactions/local_transaction_page.dart';
+import 'package:equis/presentation/shared/vault_required.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('details and editor remain separate routes', (tester) async {
+  testWidgets('direct details and editor links require a vault', (
+    tester,
+  ) async {
     final router = createAppRouter();
     addTearDown(router.dispose);
     await tester.pumpWidget(
@@ -33,11 +36,13 @@ void main() {
     final id = EntityId.generate();
     router.go('/transactions/${id.value}/details');
     await tester.pumpAndSettle();
-    expect(find.byType(TransactionDetailScreen), findsOneWidget);
+    expect(find.byType(VaultRequiredNotice), findsOneWidget);
+    expect(find.byType(TransactionDetailScreen), findsNothing);
     expect(find.byType(LocalTransactionPage), findsNothing);
     router.go('/transactions/${id.value}');
     await tester.pumpAndSettle();
-    expect(find.byType(LocalTransactionPage), findsOneWidget);
+    expect(find.byType(VaultRequiredNotice), findsOneWidget);
+    expect(find.byType(LocalTransactionPage), findsNothing);
   });
 
   testWidgets('all movements retain the archived account name', (tester) async {

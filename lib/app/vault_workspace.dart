@@ -119,6 +119,9 @@ final class VaultWorkspace extends ChangeNotifier {
       LocalAppDependencies.bootstrap(
         profileDirectory: _directory(entry),
         profileId: entry.legacy ? null : entry.profileId,
+        installationNamespace: Platform.isWindows
+            ? path.normalize(path.absolute(root.path)).toLowerCase()
+            : path.normalize(path.absolute(root.path)),
         storage: storage,
         cloudEnabled: cloudEnabled,
       );

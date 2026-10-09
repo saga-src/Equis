@@ -7,6 +7,123 @@ enum BudgetPeriodType { weekly, monthly, yearly, custom }
 
 enum BudgetWarningState { safe, approachingLimit, limitReached, exceeded }
 
+enum BudgetLimitMethod { fixed, calendarDay, weekday }
+
+enum BudgetMonthlyEntryKind { standard, override }
+
+enum BudgetMonthlyEditScope { onlyMonth, fromMonth }
+
+final class BudgetMonth implements Comparable<BudgetMonth> {
+  BudgetMonth(int year, int month) : start = LocalDate(year, month, 1) {
+    if (year < 1 || year > 9999) throw RangeError.range(year, 1, 9999, 'year');
+  }
+  factory BudgetMonth.fromDate(LocalDate date) =>
+      BudgetMonth(date.year, date.month);
+  factory BudgetMonth.parse(String value) {
+    final date = LocalDate.parse(value);
+    if (date.day != 1) {
+      throw FormatException('Budget month must start on day 1.');
+    }
+    return BudgetMonth.fromDate(date);
+  }
+  final LocalDate start;
+  LocalDate get end => LocalDate(
+    start.year,
+    start.month,
+    DateTime.utc(start.year, start.month + 1, 0).day,
+  );
+  int get days => end.day;
+  int get weekdays {
+    var count = 0;
+    for (var day = 1; day <= days; day++) {
+      if (DateTime.utc(start.year, start.month, day).weekday <= 5) count++;
+    }
+    return count;
+  }
+
+  @override
+  int compareTo(BudgetMonth other) => start.compareTo(other.start);
+  @override
+  bool operator ==(Object other) =>
+      other is BudgetMonth && start == other.start;
+  @override
+  int get hashCode => start.hashCode;
+  @override
+  String toString() => start.toString();
+}
+
+final class BudgetMonthlyConfiguration {
+  BudgetMonthlyConfiguration({
+    this.limitMethod = BudgetLimitMethod.fixed,
+    required this.amountMinor,
+    required this.warningThresholdBps,
+    required this.scope,
+  }) {
+    if (amountMinor <= 0 ||
+        BigInt.from(amountMinor) > BigInt.parse('9223372036854775807')) {
+      throw RangeError.value(amountMinor, 'amountMinor');
+    }
+    if (warningThresholdBps < 1 || warningThresholdBps > 10000) {
+      throw RangeError.range(
+        warningThresholdBps,
+        1,
+        10000,
+        'warningThresholdBps',
+      );
+    }
+  }
+  final BudgetLimitMethod limitMethod;
+  final int amountMinor;
+  final int warningThresholdBps;
+  final BudgetScope scope;
+  int limitFor(BudgetMonth month) {
+    final count = switch (limitMethod) {
+      BudgetLimitMethod.fixed => 1,
+      BudgetLimitMethod.calendarDay => month.days,
+      BudgetLimitMethod.weekday => month.weekdays,
+    };
+    final total = BigInt.from(amountMinor) * BigInt.from(count);
+    if (total > BigInt.parse('9223372036854775807')) {
+      throw RangeError('Monthly limit overflow.');
+    }
+    return total.toInt();
+  }
+}
+
+final class BudgetMonthlyEntry {
+  const BudgetMonthlyEntry({
+    required this.id,
+    required this.budgetId,
+    required this.kind,
+    required this.month,
+    required this.configuration,
+  });
+  final EntityId id;
+  final EntityId budgetId;
+  final BudgetMonthlyEntryKind kind;
+  final BudgetMonth month;
+  final BudgetMonthlyConfiguration configuration;
+}
+
+final class BudgetMonthlyHistory {
+  BudgetMonthlyHistory(Iterable<BudgetMonthlyEntry> entries)
+    : entries = List.unmodifiable(entries);
+  final List<BudgetMonthlyEntry> entries;
+  BudgetMonthlyConfiguration? resolve(BudgetMonth month) {
+    BudgetMonthlyEntry? standard;
+    for (final entry in entries) {
+      if (entry.month.compareTo(month) > 0) continue;
+      if (entry.kind == BudgetMonthlyEntryKind.override) {
+        if (entry.month == month) return entry.configuration;
+      } else if (standard == null ||
+          entry.month.compareTo(standard.month) > 0) {
+        standard = entry;
+      }
+    }
+    return standard?.configuration;
+  }
+}
+
 final class BudgetCategoryScope {
   const BudgetCategoryScope({
     required this.categoryId,
@@ -52,6 +169,7 @@ final class BudgetDefinition {
     this.enabled = true,
     this.revision = 1,
     this.deletedAt,
+    this.monthlyHistoryEdited = false,
   }) {
     if (name.trim().isEmpty) throw ArgumentError.value(name, 'name');
     if (limitMinor <= 0) throw RangeError.value(limitMinor, 'limitMinor');
@@ -98,6 +216,7 @@ final class BudgetDefinition {
   final UtcInstant updatedAt;
   final UtcInstant? deletedAt;
   final BudgetScope scope;
+  final bool monthlyHistoryEdited;
 
   BudgetDefinition revise({
     String? name,
@@ -127,6 +246,7 @@ final class BudgetDefinition {
     updatedAt: at,
     deletedAt: deletedAt ?? this.deletedAt,
     scope: scope ?? this.scope,
+    monthlyHistoryEdited: monthlyHistoryEdited,
   );
 }
 
@@ -197,7 +317,10 @@ final class BudgetProgress {
     required this.usageBps,
     required Set<CurrencyCode> missingRates,
     required this.usesEstimatedRates,
-  }) : missingRates = Set.unmodifiable(missingRates);
+    this.effectiveConfiguration,
+    int? effectiveLimitMinor,
+  }) : effectiveLimitMinor = effectiveLimitMinor ?? budget.limitMinor,
+       missingRates = Set.unmodifiable(missingRates);
 
   final BudgetDefinition budget;
   final BudgetPeriod period;
@@ -207,8 +330,10 @@ final class BudgetProgress {
   final int usageBps;
   final Set<CurrencyCode> missingRates;
   final bool usesEstimatedRates;
+  final BudgetMonthlyConfiguration? effectiveConfiguration;
+  final int effectiveLimitMinor;
 
-  int get remainingMinor => budget.limitMinor - usedMinor;
+  int get remainingMinor => effectiveLimitMinor - usedMinor;
   bool get isComplete => missingRates.isEmpty;
-  bool get likelyToExceed => projectedMinor > budget.limitMinor;
+  bool get likelyToExceed => projectedMinor > effectiveLimitMinor;
 }

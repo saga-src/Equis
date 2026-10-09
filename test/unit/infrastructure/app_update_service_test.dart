@@ -27,9 +27,9 @@ void main() {
         jsonEncode({
           'format': 1,
           'applicationId': 'app.saga.equis',
-          'version': '1.2.2',
-          'build': 14,
-          'tag': 'v1.2.2',
+          'version': '1.3.1',
+          'build': 15,
+          'tag': 'v1.3.1',
           'packages': [
             {
               'platform': 'android',
@@ -47,10 +47,20 @@ void main() {
       var truncate = false;
       final client = MockClient((r) async {
         requests++;
+        expect(r.url.scheme, 'https');
+        if (r.url.host == 'api.github.com') {
+          expect(r.url.path, '/repos/saga-src/equis-releases/releases/latest');
+        } else {
+          expect(r.url.host, 'github.com');
+          expect(
+            r.url.path,
+            startsWith('/saga-src/equis-releases/releases/download/v1.3.1/'),
+          );
+        }
         if (r.url.path.endsWith('/latest')) {
           return http.Response(
             jsonEncode({
-              'tag_name': 'v1.2.2',
+              'tag_name': 'v1.3.1',
               'draft': false,
               'prerelease': false,
             }),
@@ -143,6 +153,10 @@ void main() {
         platform: 'windows-portable',
         client: MockClient((r) async {
           expect(r.headers.containsKey('Authorization'), false);
+          expect(
+            r.url.toString(),
+            'https://api.github.com/repos/saga-src/equis-releases/releases/latest',
+          );
           return http.Response('', 404);
         }),
       );

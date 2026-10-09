@@ -21,6 +21,9 @@ import 'package:equis/presentation/transactions/local_transaction_page.dart';
 import 'package:equis/presentation/transactions/transaction_detail_screen.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import '../../presentation/guide/getting_started_screen.dart';
+import '../../presentation/guide/welcome_screen.dart';
+import '../../presentation/shared/vault_required.dart';
 
 GoRouter createAppRouter() {
   return GoRouter(
@@ -42,7 +45,7 @@ GoRouter createAppRouter() {
           ),
           GoRoute(
             path: '/history',
-            pageBuilder: (context, state) => _tabPage(
+            pageBuilder: (context, state) => _vaultTabPage(
               state,
               TransactionHistoryScreen(
                 initialFilter: state.extra is TransactionSearchFilter
@@ -54,11 +57,11 @@ GoRouter createAppRouter() {
           GoRoute(
             path: '/recurring',
             pageBuilder: (context, state) =>
-                _tabPage(state, const RecurringScreen()),
+                _vaultTabPage(state, const RecurringScreen()),
           ),
           GoRoute(
             path: '/cards',
-            pageBuilder: (context, state) => _tabPage(
+            pageBuilder: (context, state) => _vaultTabPage(
               state,
               CreditCardScreen(
                 onManageSelectedCard: (accountId) => context.push(
@@ -69,38 +72,41 @@ GoRouter createAppRouter() {
           ),
           GoRoute(
             path: '/accounts',
-            builder: (context, state) => AccountManagementPage(
-              initialAccountId: state.uri.queryParameters['selected'],
+            builder: (context, state) => VaultRequired(
+              child: AccountManagementPage(
+                initialAccountId: state.uri.queryParameters['selected'],
+              ),
             ),
           ),
           GoRoute(
             path: '/budgets',
             pageBuilder: (context, state) =>
-                _tabPage(state, const BudgetScreen()),
+                _vaultTabPage(state, const BudgetScreen()),
           ),
           GoRoute(
             path: '/goals',
             pageBuilder: (context, state) =>
-                _tabPage(state, const GoalScreen()),
+                _vaultTabPage(state, const GoalScreen()),
           ),
           GoRoute(
             path: '/wealth',
             pageBuilder: (context, state) =>
-                _tabPage(state, const WealthScreen()),
+                _vaultTabPage(state, const WealthScreen()),
           ),
           GoRoute(
             path: '/investments',
             pageBuilder: (context, state) =>
-                _tabPage(state, const InvestmentScreen()),
+                _vaultTabPage(state, const InvestmentScreen()),
           ),
           GoRoute(
             path: '/intelligence',
             pageBuilder: (context, state) =>
-                _tabPage(state, const FinancialIntelligenceScreen()),
+                _vaultTabPage(state, const FinancialIntelligenceScreen()),
           ),
           GoRoute(
             path: '/vault-sync',
-            builder: (context, state) => const CloudAccountScreen(),
+            builder: (context, state) =>
+                const VaultRequired(child: CloudAccountScreen()),
           ),
           GoRoute(
             path: '/cloud-account',
@@ -113,7 +119,8 @@ GoRouter createAppRouter() {
           ),
           GoRoute(
             path: '/taxonomy',
-            builder: (context, state) => const TaxonomyScreen(),
+            builder: (context, state) =>
+                const VaultRequired(child: TaxonomyScreen()),
           ),
           GoRoute(
             path: '/portability',
@@ -123,17 +130,32 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/transactions/new',
-        builder: (context, state) => const LocalTransactionPage(),
+        builder: (context, state) =>
+            const VaultRequired(child: LocalTransactionPage()),
+      ),
+      GoRoute(
+        path: '/guide',
+        builder: (context, state) => const GettingStartedScreen(),
+      ),
+      GoRoute(
+        path: '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
       ),
       GoRoute(
         path: '/transactions/:id/details',
-        builder: (context, state) =>
-            TransactionDetailScreen(transactionId: state.pathParameters['id']),
+        builder: (context, state) => VaultRequired(
+          child: TransactionDetailScreen(
+            transactionId: state.pathParameters['id'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/transactions/:id',
-        builder: (context, state) =>
-            LocalTransactionPage(transactionId: state.pathParameters['id']),
+        builder: (context, state) => VaultRequired(
+          child: LocalTransactionPage(
+            transactionId: state.pathParameters['id'],
+          ),
+        ),
       ),
     ],
   );
@@ -141,3 +163,6 @@ GoRouter createAppRouter() {
 
 NoTransitionPage<void> _tabPage(GoRouterState state, Widget child) =>
     NoTransitionPage<void>(key: state.pageKey, child: child);
+
+NoTransitionPage<void> _vaultTabPage(GoRouterState state, Widget child) =>
+    _tabPage(state, VaultRequired(child: child));

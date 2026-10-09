@@ -39,6 +39,7 @@ import 'package:equis/presentation/cloud/cloud_account_controller.dart';
 import 'local_app_dependencies.dart';
 import '../vault_workspace.dart';
 import '../../infrastructure/settings/shared_preferences_locale_store.dart';
+import '../../application/services/getting_started_service.dart';
 
 final vaultWorkspaceProvider = Provider<VaultWorkspace?>((ref) => null);
 
@@ -62,6 +63,22 @@ final themeVariantProvider =
 final localAppDependenciesProvider = Provider<LocalAppDependencies?>(
   (ref) => null,
 );
+final welcomeGuideGateProvider = Provider<WelcomeGuideGate?>(
+  (ref) => ref.watch(localAppDependenciesProvider)?.welcomeGuide,
+);
+
+final gettingStartedStatusProvider =
+    FutureProvider.autoDispose<GettingStartedStatus?>((ref) async {
+      final dependencies = ref.watch(localAppDependenciesProvider);
+      final finance = ref.watch(localFinanceControllerProvider).valueOrNull;
+      ref.watch(budgetControllerProvider.select((state) => state.currentItems));
+      final vaultId = finance?.vault?.id;
+      if (vaultId == null || dependencies?.gettingStarted == null) return null;
+      return dependencies!.gettingStarted!.load(
+        vaultId: vaultId,
+        profileId: dependencies.profileId,
+      );
+    });
 
 final localFinanceControllerProvider =
     StateNotifierProvider<
@@ -248,6 +265,8 @@ final dashboardControllerProvider =
         service: dependencies?.dashboard,
         vaultId: vault?.id,
         reportingCurrency: vault?.baseCurrency,
+        preferences: dependencies?.experience,
+        profileId: dependencies?.profileId ?? 'legacy',
       );
       unawaited(controller.reload());
       return controller;
@@ -256,14 +275,18 @@ final dashboardControllerProvider =
 final budgetControllerProvider =
     StateNotifierProvider.autoDispose<BudgetController, BudgetState>((ref) {
       final dependencies = ref.watch(localAppDependenciesProvider);
-      final vaultId = ref.watch(
+      final (vaultId, timezone) = ref.watch(
         localFinanceControllerProvider.select(
-          (state) => state.valueOrNull?.vault?.id,
+          (state) => (
+            state.valueOrNull?.vault?.id,
+            state.valueOrNull?.vault?.timezone,
+          ),
         ),
       );
       final controller = BudgetController(
         service: dependencies?.budgets,
         vaultId: vaultId,
+        timezone: timezone ?? 'UTC',
       );
       unawaited(controller.reload());
       return controller;

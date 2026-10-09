@@ -11,9 +11,10 @@ import '../../domain/shared/money.dart';
 import '../../domain/shared/utc_instant.dart';
 import '../../domain/shared/uuid_v7.dart';
 import '../persistence/database/equis_database.dart'
-    hide RecurringRule, RecurringTemplate;
+    hide RecurringRule, RecurringTemplate, RecurringRuleVersion;
 import '../../application/sync/sync_models.dart';
 import '../sync/drift_sync_mutation_recorder.dart';
+import 'recurring_template_codec.dart';
 
 final class DriftRecurringRepository implements RecurringRepository {
   const DriftRecurringRepository({
@@ -44,8 +45,43 @@ final class DriftRecurringRepository implements RecurringRepository {
     RecurringSchedule schedule,
   ) => database.transaction(() async {
     final rule = schedule.rule;
+    if (rule.scheduleHistoryEdited != schedule.versions.isNotEmpty ||
+        (schedule.versions.isNotEmpty &&
+            schedule.versions.first.effectiveFrom != rule.startsOn)) {
+      throw StateError('Recurring history must retain its base configuration.');
+    }
+    LocalDate? previous;
+    final currency = schedule.template.movements.first.pocket.currency;
+    for (final version in schedule.versions) {
+      if ((previous != null &&
+              version.effectiveFrom.compareTo(previous) <= 0) ||
+          version.anchorOn.compareTo(version.effectiveFrom) > 0 ||
+          version.name.trim().isEmpty ||
+          (version.endsOn != null &&
+              version.endsOn!.compareTo(version.effectiveFrom) < 0) ||
+          version.template.transactionType !=
+              schedule.template.transactionType ||
+          version.template.movements.any(
+            (movement) => movement.pocket.currency != currency,
+          )) {
+        throw StateError('Invalid recurring history configuration.');
+      }
+      LedgerTransaction(
+        id: EntityId.generate(),
+        vaultId: rule.vaultId,
+        type: version.template.transactionType,
+        status: LedgerTransactionStatus.pending,
+        financialDate: version.effectiveFrom,
+        movements: version.template.movements,
+        splits: version.template.splits,
+        createdAt: rule.createdAt,
+        updatedAt: rule.updatedAt,
+      ).validate();
+      previous = version.effectiveFrom;
+    }
     if (rule.enabled && rule.deletedAt == null) {
-      for (final movement in schedule.template.movements) {
+      final configurations = schedule.configurations;
+      for (final movement in configurations.last.template.movements) {
         final active = await database
             .customSelect(
               'SELECT pocket.id FROM account_pockets AS pocket '
@@ -67,7 +103,7 @@ final class DriftRecurringRepository implements RecurringRepository {
     }
     final rows = await database
         .customSelect(
-          'SELECT revision FROM recurring_rules WHERE id = ?',
+          'SELECT * FROM recurring_rules WHERE id = ?',
           variables: [Variable<String>(rule.id.value)],
           readsFrom: {database.recurringRules},
         )
@@ -97,6 +133,15 @@ final class DriftRecurringRepository implements RecurringRepository {
       );
     } else {
       final expected = rule.revision - 1;
+      final stored = rows.single;
+      if (stored.readNullable<int>('deleted_at') != null ||
+          stored.read<String>('vault_id') != rule.vaultId.value ||
+          stored.read<String>('starts_on') != rule.startsOn.toString() ||
+          stored.read<String>('timezone') != rule.timezone ||
+          (stored.read<int>('schedule_history_edited') == 1 &&
+              !rule.scheduleHistoryEdited)) {
+        throw RecurringRevisionConflict(rule.id);
+      }
       if (rows.single.read<int>('revision') != expected) {
         throw RecurringRevisionConflict(rule.id);
       }
@@ -136,6 +181,61 @@ final class DriftRecurringRepository implements RecurringRepository {
       );
     }
     await _insertTemplate(schedule);
+    await database.customStatement(
+      'UPDATE recurring_rules SET schedule_history_edited = ? WHERE id = ?',
+      [rule.scheduleHistoryEdited ? 1 : 0, rule.id.value],
+    );
+    await database.customStatement(
+      'DELETE FROM recurring_rule_versions WHERE recurring_rule_id = ?',
+      [rule.id.value],
+    );
+    for (final version in schedule.versions) {
+      for (final movement in version.template.movements) {
+        final owner = await database
+            .customSelect(
+              'SELECT p.id FROM account_pockets p JOIN accounts a ON a.id = p.account_id '
+              'WHERE p.id = ? AND a.vault_id = ? AND p.currency_code = ? AND a.nature = ?',
+              variables: _variables([
+                movement.pocket.id.value,
+                rule.vaultId.value,
+                movement.pocket.currency.value,
+                movement.pocket.nature.name,
+              ]),
+            )
+            .getSingleOrNull();
+        if (owner == null) {
+          throw StateError('A template pocket must belong to the vault.');
+        }
+      }
+      for (final split in version.template.splits) {
+        final category = await database
+            .customSelect(
+              'SELECT id FROM categories WHERE id = ? AND vault_id = ? AND category_type = ?',
+              variables: _variables([
+                split.categoryId.value,
+                rule.vaultId.value,
+                version.template.transactionType.stored,
+              ]),
+            )
+            .getSingleOrNull();
+        if (category == null) {
+          throw StateError('Category is incompatible with recurrence.');
+        }
+      }
+      await database.customStatement(
+        'INSERT INTO recurring_rule_versions '
+        '(recurring_rule_id, effective_from, anchor_on, name, rrule, ends_on, template_json) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          rule.id.value,
+          version.effectiveFrom.toString(),
+          version.anchorOn.toString(),
+          version.name,
+          version.pattern.serialize(version.anchorOn),
+          version.endsOn?.toString(),
+          encodeRecurringTemplate(version.template),
+        ],
+      );
+    }
   });
 
   Future<void> _insertTemplate(RecurringSchedule schedule) async {
@@ -234,7 +334,42 @@ final class DriftRecurringRepository implements RecurringRepository {
     );
     final template = templates.single;
     final startsOn = LocalDate.parse(root['starts_on']! as String);
+    final versions = <RecurringRuleVersion>[];
+    for (final row in await _rows(
+      'SELECT * FROM recurring_rule_versions WHERE recurring_rule_id = ? ORDER BY effective_from',
+      [id],
+      readsFrom: {database.recurringRuleVersions},
+    )) {
+      final decoded = await decodeRecurringTemplate(
+        row['template_json'] as String,
+        (pocketId) async {
+          final pocket = (await _rows(
+            'SELECT pocket.currency_code, account.nature FROM account_pockets pocket '
+            'JOIN accounts account ON account.id = pocket.account_id WHERE pocket.id = ? AND account.vault_id = ?',
+            [pocketId.value, root['vault_id']],
+          )).single;
+          return LedgerPocket(
+            id: pocketId,
+            currency: CurrencyCode(pocket['currency_code'] as String),
+            nature: AccountNature.values.byName(pocket['nature'] as String),
+          );
+        },
+      );
+      versions.add(
+        RecurringRuleVersion(
+          effectiveFrom: LocalDate.parse(row['effective_from'] as String),
+          anchorOn: LocalDate.parse(row['anchor_on'] as String),
+          name: row['name'] as String,
+          pattern: RecurrencePattern.parse(row['rrule'] as String),
+          endsOn: row['ends_on'] == null
+              ? null
+              : LocalDate.parse(row['ends_on'] as String),
+          template: decoded,
+        ),
+      );
+    }
     return RecurringSchedule(
+      versions: versions,
       rule: RecurringRule(
         id: EntityId.parse(id),
         vaultId: EntityId.parse(root['vault_id']! as String),
@@ -250,6 +385,7 @@ final class DriftRecurringRepository implements RecurringRepository {
             ? null
             : LocalDate.parse(root['next_occurrence']! as String),
         revision: root['revision']! as int,
+        scheduleHistoryEdited: root['schedule_history_edited'] == 1,
         createdAt: UtcInstant.fromEpochMicroseconds(root['created_at']! as int),
         updatedAt: UtcInstant.fromEpochMicroseconds(root['updated_at']! as int),
         deletedAt: root['deleted_at'] == null
@@ -319,9 +455,11 @@ final class DriftRecurringRepository implements RecurringRepository {
         .customSelect(
           'SELECT id, recurring_rule_id, recurrence_date FROM transactions '
           'WHERE recurring_rule_id IN ($placeholders) '
-          'AND recurrence_date >= ? AND recurrence_date <= ?',
+          'AND ((recurrence_date >= ? AND recurrence_date <= ?) OR (financial_date >= ? AND financial_date <= ?))',
           variables: _variables([
             ...ruleIds.map((id) => id.value),
+            from.toString(),
+            through.toString(),
             from.toString(),
             through.toString(),
           ]),

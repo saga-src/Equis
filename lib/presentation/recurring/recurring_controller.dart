@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/services/recurring_transaction_service.dart';
 import '../../domain/ledger/ledger_models.dart';
+import '../../domain/ledger/ledger_engine.dart';
 import '../../domain/recurring/recurrence_models.dart';
 import '../../domain/shared/currency.dart';
 import '../../domain/shared/decimal_value.dart';
@@ -119,7 +120,7 @@ final class RecurringController extends StateNotifier<RecurringState> {
     required String title,
   }) {
     final replacement = _replacement(
-      occurrence.schedule.template,
+      occurrence.template,
       amountText: amountText,
       title: title,
     );
@@ -162,6 +163,71 @@ final class RecurringController extends StateNotifier<RecurringState> {
     ),
   );
 
+  Future<void> delete(RecurringSchedule schedule) =>
+      _mutate(() => _requiredService.delete(schedule, now: UtcInstant.now()));
+
+  Future<bool> edit(
+    RecurringSchedule schedule, {
+    required String name,
+    required LedgerPocket source,
+    LedgerPocket? destination,
+    required String amountText,
+    EntityId? categoryId,
+    required LocalDate effectiveFrom,
+    required RecurrencePattern pattern,
+    LocalDate? endsOn,
+    String? title,
+    String? notes,
+  }) => _mutate(() {
+    final now = UtcInstant.now();
+    final amount = _money(amountText, source.currency);
+    final type = schedule.template.transactionType;
+    final engine = LedgerEngine();
+    final prototype = switch (type) {
+      LedgerTransactionType.expense => engine.expense(
+        vaultId: _requiredVault,
+        pocket: source,
+        amount: amount,
+        categoryId: categoryId!,
+        date: effectiveFrom,
+        now: now,
+      ),
+      LedgerTransactionType.income => engine.income(
+        vaultId: _requiredVault,
+        pocket: source,
+        amount: amount,
+        categoryId: categoryId!,
+        date: effectiveFrom,
+        now: now,
+      ),
+      LedgerTransactionType.transfer => engine.transfer(
+        vaultId: _requiredVault,
+        source: source,
+        destination: destination!,
+        amount: amount,
+        date: effectiveFrom,
+        now: now,
+      ),
+      _ => throw StateError('Unsupported recurrence type.'),
+    };
+    return _requiredService.modifyFuture(
+      schedule,
+      effectiveFrom: effectiveFrom,
+      name: name,
+      pattern: pattern,
+      endsOn: endsOn,
+      clearEndsOn: endsOn == null,
+      now: now,
+      template: RecurringTemplate(
+        transactionType: type,
+        movements: prototype.movements,
+        splits: prototype.splits,
+        title: title,
+        notes: notes,
+      ),
+    );
+  });
+
   RecurringTemplate _replacement(
     RecurringTemplate current, {
     required String amountText,
@@ -171,7 +237,7 @@ final class RecurringController extends StateNotifier<RecurringState> {
     final amount = _money(amountText, currency).minorUnits;
     return RecurringTemplate(
       transactionType: current.transactionType,
-      title: title.trim().isEmpty ? current.title : title.trim(),
+      title: title.trim().isEmpty ? null : title.trim(),
       notes: current.notes,
       movements: current.movements
           .map(
@@ -201,8 +267,8 @@ final class RecurringController extends StateNotifier<RecurringState> {
     );
   }
 
-  Future<void> _mutate(Future<Object?> Function() action) async {
-    if (state.loading) return;
+  Future<bool> _mutate(Future<Object?> Function() action) async {
+    if (state.loading) return false;
     state = RecurringState(
       rules: state.rules,
       upcoming: state.upcoming,
@@ -211,12 +277,14 @@ final class RecurringController extends StateNotifier<RecurringState> {
     try {
       await action();
       await reload();
+      return state.error == null;
     } catch (error) {
       state = RecurringState(
         rules: state.rules,
         upcoming: state.upcoming,
         error: error,
       );
+      return false;
     }
   }
 

@@ -8558,6 +8558,18 @@ class RecurringRules extends Table
     $customConstraints: 'NOT NULL DEFAULT 1',
     defaultValue: const CustomExpression('1'),
   );
+  static const VerificationMeta _scheduleHistoryEditedMeta =
+      const VerificationMeta('scheduleHistoryEdited');
+  late final GeneratedColumn<int> scheduleHistoryEdited = GeneratedColumn<int>(
+    'schedule_history_edited',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints:
+        'NOT NULL DEFAULT 0 CHECK (schedule_history_edited IN (0, 1))',
+    defaultValue: const CustomExpression('0'),
+  );
   static const VerificationMeta _nextOccurrenceMeta = const VerificationMeta(
     'nextOccurrence',
   );
@@ -8624,6 +8636,7 @@ class RecurringRules extends Table
     startsOn,
     endsOn,
     enabled,
+    scheduleHistoryEdited,
     nextOccurrence,
     revision,
     createdAt,
@@ -8695,6 +8708,15 @@ class RecurringRules extends Table
       context.handle(
         _enabledMeta,
         enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('schedule_history_edited')) {
+      context.handle(
+        _scheduleHistoryEditedMeta,
+        scheduleHistoryEdited.isAcceptableOrUnknown(
+          data['schedule_history_edited']!,
+          _scheduleHistoryEditedMeta,
+        ),
       );
     }
     if (data.containsKey('next_occurrence')) {
@@ -8775,6 +8797,10 @@ class RecurringRules extends Table
         DriftSqlType.int,
         data['${effectivePrefix}enabled'],
       )!,
+      scheduleHistoryEdited: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schedule_history_edited'],
+      )!,
       nextOccurrence: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}next_occurrence'],
@@ -8820,6 +8846,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
   final String startsOn;
   final String? endsOn;
   final int enabled;
+  final int scheduleHistoryEdited;
   final String? nextOccurrence;
   final int revision;
   final int createdAt;
@@ -8834,6 +8861,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
     required this.startsOn,
     this.endsOn,
     required this.enabled,
+    required this.scheduleHistoryEdited,
     this.nextOccurrence,
     required this.revision,
     required this.createdAt,
@@ -8855,6 +8883,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
       map['ends_on'] = Variable<String>(endsOn);
     }
     map['enabled'] = Variable<int>(enabled);
+    map['schedule_history_edited'] = Variable<int>(scheduleHistoryEdited);
     if (!nullToAbsent || nextOccurrence != null) {
       map['next_occurrence'] = Variable<String>(nextOccurrence);
     }
@@ -8879,6 +8908,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
           ? const Value.absent()
           : Value(endsOn),
       enabled: Value(enabled),
+      scheduleHistoryEdited: Value(scheduleHistoryEdited),
       nextOccurrence: nextOccurrence == null && nullToAbsent
           ? const Value.absent()
           : Value(nextOccurrence),
@@ -8905,6 +8935,9 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
       startsOn: serializer.fromJson<String>(json['starts_on']),
       endsOn: serializer.fromJson<String?>(json['ends_on']),
       enabled: serializer.fromJson<int>(json['enabled']),
+      scheduleHistoryEdited: serializer.fromJson<int>(
+        json['schedule_history_edited'],
+      ),
       nextOccurrence: serializer.fromJson<String?>(json['next_occurrence']),
       revision: serializer.fromJson<int>(json['revision']),
       createdAt: serializer.fromJson<int>(json['created_at']),
@@ -8924,6 +8957,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
       'starts_on': serializer.toJson<String>(startsOn),
       'ends_on': serializer.toJson<String?>(endsOn),
       'enabled': serializer.toJson<int>(enabled),
+      'schedule_history_edited': serializer.toJson<int>(scheduleHistoryEdited),
       'next_occurrence': serializer.toJson<String?>(nextOccurrence),
       'revision': serializer.toJson<int>(revision),
       'created_at': serializer.toJson<int>(createdAt),
@@ -8941,6 +8975,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
     String? startsOn,
     Value<String?> endsOn = const Value.absent(),
     int? enabled,
+    int? scheduleHistoryEdited,
     Value<String?> nextOccurrence = const Value.absent(),
     int? revision,
     int? createdAt,
@@ -8955,6 +8990,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
     startsOn: startsOn ?? this.startsOn,
     endsOn: endsOn.present ? endsOn.value : this.endsOn,
     enabled: enabled ?? this.enabled,
+    scheduleHistoryEdited: scheduleHistoryEdited ?? this.scheduleHistoryEdited,
     nextOccurrence: nextOccurrence.present
         ? nextOccurrence.value
         : this.nextOccurrence,
@@ -8973,6 +9009,9 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
       startsOn: data.startsOn.present ? data.startsOn.value : this.startsOn,
       endsOn: data.endsOn.present ? data.endsOn.value : this.endsOn,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      scheduleHistoryEdited: data.scheduleHistoryEdited.present
+          ? data.scheduleHistoryEdited.value
+          : this.scheduleHistoryEdited,
       nextOccurrence: data.nextOccurrence.present
           ? data.nextOccurrence.value
           : this.nextOccurrence,
@@ -8994,6 +9033,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
           ..write('startsOn: $startsOn, ')
           ..write('endsOn: $endsOn, ')
           ..write('enabled: $enabled, ')
+          ..write('scheduleHistoryEdited: $scheduleHistoryEdited, ')
           ..write('nextOccurrence: $nextOccurrence, ')
           ..write('revision: $revision, ')
           ..write('createdAt: $createdAt, ')
@@ -9013,6 +9053,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
     startsOn,
     endsOn,
     enabled,
+    scheduleHistoryEdited,
     nextOccurrence,
     revision,
     createdAt,
@@ -9031,6 +9072,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
           other.startsOn == this.startsOn &&
           other.endsOn == this.endsOn &&
           other.enabled == this.enabled &&
+          other.scheduleHistoryEdited == this.scheduleHistoryEdited &&
           other.nextOccurrence == this.nextOccurrence &&
           other.revision == this.revision &&
           other.createdAt == this.createdAt &&
@@ -9047,6 +9089,7 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
   final Value<String> startsOn;
   final Value<String?> endsOn;
   final Value<int> enabled;
+  final Value<int> scheduleHistoryEdited;
   final Value<String?> nextOccurrence;
   final Value<int> revision;
   final Value<int> createdAt;
@@ -9062,6 +9105,7 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
     this.startsOn = const Value.absent(),
     this.endsOn = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.scheduleHistoryEdited = const Value.absent(),
     this.nextOccurrence = const Value.absent(),
     this.revision = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -9078,6 +9122,7 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
     required String startsOn,
     this.endsOn = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.scheduleHistoryEdited = const Value.absent(),
     this.nextOccurrence = const Value.absent(),
     this.revision = const Value.absent(),
     required int createdAt,
@@ -9100,6 +9145,7 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
     Expression<String>? startsOn,
     Expression<String>? endsOn,
     Expression<int>? enabled,
+    Expression<int>? scheduleHistoryEdited,
     Expression<String>? nextOccurrence,
     Expression<int>? revision,
     Expression<int>? createdAt,
@@ -9116,6 +9162,8 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
       if (startsOn != null) 'starts_on': startsOn,
       if (endsOn != null) 'ends_on': endsOn,
       if (enabled != null) 'enabled': enabled,
+      if (scheduleHistoryEdited != null)
+        'schedule_history_edited': scheduleHistoryEdited,
       if (nextOccurrence != null) 'next_occurrence': nextOccurrence,
       if (revision != null) 'revision': revision,
       if (createdAt != null) 'created_at': createdAt,
@@ -9134,6 +9182,7 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
     Value<String>? startsOn,
     Value<String?>? endsOn,
     Value<int>? enabled,
+    Value<int>? scheduleHistoryEdited,
     Value<String?>? nextOccurrence,
     Value<int>? revision,
     Value<int>? createdAt,
@@ -9150,6 +9199,8 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
       startsOn: startsOn ?? this.startsOn,
       endsOn: endsOn ?? this.endsOn,
       enabled: enabled ?? this.enabled,
+      scheduleHistoryEdited:
+          scheduleHistoryEdited ?? this.scheduleHistoryEdited,
       nextOccurrence: nextOccurrence ?? this.nextOccurrence,
       revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
@@ -9186,6 +9237,11 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
     if (enabled.present) {
       map['enabled'] = Variable<int>(enabled.value);
     }
+    if (scheduleHistoryEdited.present) {
+      map['schedule_history_edited'] = Variable<int>(
+        scheduleHistoryEdited.value,
+      );
+    }
     if (nextOccurrence.present) {
       map['next_occurrence'] = Variable<String>(nextOccurrence.value);
     }
@@ -9218,6 +9274,7 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
           ..write('startsOn: $startsOn, ')
           ..write('endsOn: $endsOn, ')
           ..write('enabled: $enabled, ')
+          ..write('scheduleHistoryEdited: $scheduleHistoryEdited, ')
           ..write('nextOccurrence: $nextOccurrence, ')
           ..write('revision: $revision, ')
           ..write('createdAt: $createdAt, ')
@@ -13397,6 +13454,18 @@ class Budgets extends Table with TableInfo<Budgets, Budget> {
     $customConstraints: 'NOT NULL DEFAULT 1',
     defaultValue: const CustomExpression('1'),
   );
+  static const VerificationMeta _monthlyHistoryEditedMeta =
+      const VerificationMeta('monthlyHistoryEdited');
+  late final GeneratedColumn<int> monthlyHistoryEdited = GeneratedColumn<int>(
+    'monthly_history_edited',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints:
+        'NOT NULL DEFAULT 0 CHECK (monthly_history_edited IN (0, 1))',
+    defaultValue: const CustomExpression('0'),
+  );
   static const VerificationMeta _revisionMeta = const VerificationMeta(
     'revision',
   );
@@ -13455,6 +13524,7 @@ class Budgets extends Table with TableInfo<Budgets, Budget> {
     warningThresholdBps,
     rolloverPolicy,
     enabled,
+    monthlyHistoryEdited,
     revision,
     createdAt,
     updatedAt,
@@ -13554,6 +13624,15 @@ class Budgets extends Table with TableInfo<Budgets, Budget> {
         enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
       );
     }
+    if (data.containsKey('monthly_history_edited')) {
+      context.handle(
+        _monthlyHistoryEditedMeta,
+        monthlyHistoryEdited.isAcceptableOrUnknown(
+          data['monthly_history_edited']!,
+          _monthlyHistoryEditedMeta,
+        ),
+      );
+    }
     if (data.containsKey('revision')) {
       context.handle(
         _revisionMeta,
@@ -13635,6 +13714,10 @@ class Budgets extends Table with TableInfo<Budgets, Budget> {
         DriftSqlType.int,
         data['${effectivePrefix}enabled'],
       )!,
+      monthlyHistoryEdited: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}monthly_history_edited'],
+      )!,
       revision: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}revision'],
@@ -13675,6 +13758,7 @@ class Budget extends DataClass implements Insertable<Budget> {
   final int warningThresholdBps;
   final String rolloverPolicy;
   final int enabled;
+  final int monthlyHistoryEdited;
   final int revision;
   final int createdAt;
   final int updatedAt;
@@ -13691,6 +13775,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     required this.warningThresholdBps,
     required this.rolloverPolicy,
     required this.enabled,
+    required this.monthlyHistoryEdited,
     required this.revision,
     required this.createdAt,
     required this.updatedAt,
@@ -13716,6 +13801,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     map['warning_threshold_bps'] = Variable<int>(warningThresholdBps);
     map['rollover_policy'] = Variable<String>(rolloverPolicy);
     map['enabled'] = Variable<int>(enabled);
+    map['monthly_history_edited'] = Variable<int>(monthlyHistoryEdited);
     map['revision'] = Variable<int>(revision);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -13742,6 +13828,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       warningThresholdBps: Value(warningThresholdBps),
       rolloverPolicy: Value(rolloverPolicy),
       enabled: Value(enabled),
+      monthlyHistoryEdited: Value(monthlyHistoryEdited),
       revision: Value(revision),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -13770,6 +13857,9 @@ class Budget extends DataClass implements Insertable<Budget> {
       ),
       rolloverPolicy: serializer.fromJson<String>(json['rollover_policy']),
       enabled: serializer.fromJson<int>(json['enabled']),
+      monthlyHistoryEdited: serializer.fromJson<int>(
+        json['monthly_history_edited'],
+      ),
       revision: serializer.fromJson<int>(json['revision']),
       createdAt: serializer.fromJson<int>(json['created_at']),
       updatedAt: serializer.fromJson<int>(json['updated_at']),
@@ -13791,6 +13881,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       'warning_threshold_bps': serializer.toJson<int>(warningThresholdBps),
       'rollover_policy': serializer.toJson<String>(rolloverPolicy),
       'enabled': serializer.toJson<int>(enabled),
+      'monthly_history_edited': serializer.toJson<int>(monthlyHistoryEdited),
       'revision': serializer.toJson<int>(revision),
       'created_at': serializer.toJson<int>(createdAt),
       'updated_at': serializer.toJson<int>(updatedAt),
@@ -13810,6 +13901,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     int? warningThresholdBps,
     String? rolloverPolicy,
     int? enabled,
+    int? monthlyHistoryEdited,
     int? revision,
     int? createdAt,
     int? updatedAt,
@@ -13826,6 +13918,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     warningThresholdBps: warningThresholdBps ?? this.warningThresholdBps,
     rolloverPolicy: rolloverPolicy ?? this.rolloverPolicy,
     enabled: enabled ?? this.enabled,
+    monthlyHistoryEdited: monthlyHistoryEdited ?? this.monthlyHistoryEdited,
     revision: revision ?? this.revision,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -13854,6 +13947,9 @@ class Budget extends DataClass implements Insertable<Budget> {
           ? data.rolloverPolicy.value
           : this.rolloverPolicy,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      monthlyHistoryEdited: data.monthlyHistoryEdited.present
+          ? data.monthlyHistoryEdited.value
+          : this.monthlyHistoryEdited,
       revision: data.revision.present ? data.revision.value : this.revision,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -13875,6 +13971,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           ..write('warningThresholdBps: $warningThresholdBps, ')
           ..write('rolloverPolicy: $rolloverPolicy, ')
           ..write('enabled: $enabled, ')
+          ..write('monthlyHistoryEdited: $monthlyHistoryEdited, ')
           ..write('revision: $revision, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -13896,6 +13993,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     warningThresholdBps,
     rolloverPolicy,
     enabled,
+    monthlyHistoryEdited,
     revision,
     createdAt,
     updatedAt,
@@ -13916,6 +14014,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           other.warningThresholdBps == this.warningThresholdBps &&
           other.rolloverPolicy == this.rolloverPolicy &&
           other.enabled == this.enabled &&
+          other.monthlyHistoryEdited == this.monthlyHistoryEdited &&
           other.revision == this.revision &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -13934,6 +14033,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   final Value<int> warningThresholdBps;
   final Value<String> rolloverPolicy;
   final Value<int> enabled;
+  final Value<int> monthlyHistoryEdited;
   final Value<int> revision;
   final Value<int> createdAt;
   final Value<int> updatedAt;
@@ -13951,6 +14051,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     this.warningThresholdBps = const Value.absent(),
     this.rolloverPolicy = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.monthlyHistoryEdited = const Value.absent(),
     this.revision = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -13969,6 +14070,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     this.warningThresholdBps = const Value.absent(),
     this.rolloverPolicy = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.monthlyHistoryEdited = const Value.absent(),
     this.revision = const Value.absent(),
     required int createdAt,
     required int updatedAt,
@@ -13993,6 +14095,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Expression<int>? warningThresholdBps,
     Expression<String>? rolloverPolicy,
     Expression<int>? enabled,
+    Expression<int>? monthlyHistoryEdited,
     Expression<int>? revision,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
@@ -14012,6 +14115,8 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
         'warning_threshold_bps': warningThresholdBps,
       if (rolloverPolicy != null) 'rollover_policy': rolloverPolicy,
       if (enabled != null) 'enabled': enabled,
+      if (monthlyHistoryEdited != null)
+        'monthly_history_edited': monthlyHistoryEdited,
       if (revision != null) 'revision': revision,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -14032,6 +14137,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Value<int>? warningThresholdBps,
     Value<String>? rolloverPolicy,
     Value<int>? enabled,
+    Value<int>? monthlyHistoryEdited,
     Value<int>? revision,
     Value<int>? createdAt,
     Value<int>? updatedAt,
@@ -14050,6 +14156,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       warningThresholdBps: warningThresholdBps ?? this.warningThresholdBps,
       rolloverPolicy: rolloverPolicy ?? this.rolloverPolicy,
       enabled: enabled ?? this.enabled,
+      monthlyHistoryEdited: monthlyHistoryEdited ?? this.monthlyHistoryEdited,
       revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -14094,6 +14201,9 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     if (enabled.present) {
       map['enabled'] = Variable<int>(enabled.value);
     }
+    if (monthlyHistoryEdited.present) {
+      map['monthly_history_edited'] = Variable<int>(monthlyHistoryEdited.value);
+    }
     if (revision.present) {
       map['revision'] = Variable<int>(revision.value);
     }
@@ -14126,6 +14236,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
           ..write('warningThresholdBps: $warningThresholdBps, ')
           ..write('rolloverPolicy: $rolloverPolicy, ')
           ..write('enabled: $enabled, ')
+          ..write('monthlyHistoryEdited: $monthlyHistoryEdited, ')
           ..write('revision: $revision, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -14857,6 +14968,1757 @@ class BudgetTagsCompanion extends UpdateCompanion<BudgetTag> {
     return (StringBuffer('BudgetTagsCompanion(')
           ..write('budgetId: $budgetId, ')
           ..write('tagId: $tagId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class BudgetMonthlyConfigurations extends Table
+    with TableInfo<BudgetMonthlyConfigurations, BudgetMonthlyConfiguration> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  BudgetMonthlyConfigurations(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _budgetIdMeta = const VerificationMeta(
+    'budgetId',
+  );
+  late final GeneratedColumn<String> budgetId = GeneratedColumn<String>(
+    'budget_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES budgets(id)',
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (kind IN (\'standard\', \'override\'))',
+  );
+  static const VerificationMeta _monthStartMeta = const VerificationMeta(
+    'monthStart',
+  );
+  late final GeneratedColumn<String> monthStart = GeneratedColumn<String>(
+    'month_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _limitMethodMeta = const VerificationMeta(
+    'limitMethod',
+  );
+  late final GeneratedColumn<String> limitMethod = GeneratedColumn<String>(
+    'limit_method',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL CHECK (limit_method IN (\'fixed\', \'calendar_day\', \'weekday\'))',
+  );
+  static const VerificationMeta _amountMinorMeta = const VerificationMeta(
+    'amountMinor',
+  );
+  late final GeneratedColumn<int> amountMinor = GeneratedColumn<int>(
+    'amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (amount_minor > 0)',
+  );
+  static const VerificationMeta _warningThresholdBpsMeta =
+      const VerificationMeta('warningThresholdBps');
+  late final GeneratedColumn<int> warningThresholdBps = GeneratedColumn<int>(
+    'warning_threshold_bps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL CHECK (warning_threshold_bps BETWEEN 1 AND 10000)',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    budgetId,
+    kind,
+    monthStart,
+    limitMethod,
+    amountMinor,
+    warningThresholdBps,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'budget_monthly_configurations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BudgetMonthlyConfiguration> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('budget_id')) {
+      context.handle(
+        _budgetIdMeta,
+        budgetId.isAcceptableOrUnknown(data['budget_id']!, _budgetIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_budgetIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('month_start')) {
+      context.handle(
+        _monthStartMeta,
+        monthStart.isAcceptableOrUnknown(data['month_start']!, _monthStartMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_monthStartMeta);
+    }
+    if (data.containsKey('limit_method')) {
+      context.handle(
+        _limitMethodMeta,
+        limitMethod.isAcceptableOrUnknown(
+          data['limit_method']!,
+          _limitMethodMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_limitMethodMeta);
+    }
+    if (data.containsKey('amount_minor')) {
+      context.handle(
+        _amountMinorMeta,
+        amountMinor.isAcceptableOrUnknown(
+          data['amount_minor']!,
+          _amountMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMinorMeta);
+    }
+    if (data.containsKey('warning_threshold_bps')) {
+      context.handle(
+        _warningThresholdBpsMeta,
+        warningThresholdBps.isAcceptableOrUnknown(
+          data['warning_threshold_bps']!,
+          _warningThresholdBpsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_warningThresholdBpsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {budgetId, kind, monthStart},
+  ];
+  @override
+  BudgetMonthlyConfiguration map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BudgetMonthlyConfiguration(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      budgetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}budget_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      monthStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}month_start'],
+      )!,
+      limitMethod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}limit_method'],
+      )!,
+      amountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_minor'],
+      )!,
+      warningThresholdBps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}warning_threshold_bps'],
+      )!,
+    );
+  }
+
+  @override
+  BudgetMonthlyConfigurations createAlias(String alias) {
+    return BudgetMonthlyConfigurations(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'UNIQUE(budget_id, kind, month_start)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class BudgetMonthlyConfiguration extends DataClass
+    implements Insertable<BudgetMonthlyConfiguration> {
+  final String id;
+  final String budgetId;
+  final String kind;
+  final String monthStart;
+  final String limitMethod;
+  final int amountMinor;
+  final int warningThresholdBps;
+  const BudgetMonthlyConfiguration({
+    required this.id,
+    required this.budgetId,
+    required this.kind,
+    required this.monthStart,
+    required this.limitMethod,
+    required this.amountMinor,
+    required this.warningThresholdBps,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['budget_id'] = Variable<String>(budgetId);
+    map['kind'] = Variable<String>(kind);
+    map['month_start'] = Variable<String>(monthStart);
+    map['limit_method'] = Variable<String>(limitMethod);
+    map['amount_minor'] = Variable<int>(amountMinor);
+    map['warning_threshold_bps'] = Variable<int>(warningThresholdBps);
+    return map;
+  }
+
+  BudgetMonthlyConfigurationsCompanion toCompanion(bool nullToAbsent) {
+    return BudgetMonthlyConfigurationsCompanion(
+      id: Value(id),
+      budgetId: Value(budgetId),
+      kind: Value(kind),
+      monthStart: Value(monthStart),
+      limitMethod: Value(limitMethod),
+      amountMinor: Value(amountMinor),
+      warningThresholdBps: Value(warningThresholdBps),
+    );
+  }
+
+  factory BudgetMonthlyConfiguration.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BudgetMonthlyConfiguration(
+      id: serializer.fromJson<String>(json['id']),
+      budgetId: serializer.fromJson<String>(json['budget_id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      monthStart: serializer.fromJson<String>(json['month_start']),
+      limitMethod: serializer.fromJson<String>(json['limit_method']),
+      amountMinor: serializer.fromJson<int>(json['amount_minor']),
+      warningThresholdBps: serializer.fromJson<int>(
+        json['warning_threshold_bps'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'budget_id': serializer.toJson<String>(budgetId),
+      'kind': serializer.toJson<String>(kind),
+      'month_start': serializer.toJson<String>(monthStart),
+      'limit_method': serializer.toJson<String>(limitMethod),
+      'amount_minor': serializer.toJson<int>(amountMinor),
+      'warning_threshold_bps': serializer.toJson<int>(warningThresholdBps),
+    };
+  }
+
+  BudgetMonthlyConfiguration copyWith({
+    String? id,
+    String? budgetId,
+    String? kind,
+    String? monthStart,
+    String? limitMethod,
+    int? amountMinor,
+    int? warningThresholdBps,
+  }) => BudgetMonthlyConfiguration(
+    id: id ?? this.id,
+    budgetId: budgetId ?? this.budgetId,
+    kind: kind ?? this.kind,
+    monthStart: monthStart ?? this.monthStart,
+    limitMethod: limitMethod ?? this.limitMethod,
+    amountMinor: amountMinor ?? this.amountMinor,
+    warningThresholdBps: warningThresholdBps ?? this.warningThresholdBps,
+  );
+  BudgetMonthlyConfiguration copyWithCompanion(
+    BudgetMonthlyConfigurationsCompanion data,
+  ) {
+    return BudgetMonthlyConfiguration(
+      id: data.id.present ? data.id.value : this.id,
+      budgetId: data.budgetId.present ? data.budgetId.value : this.budgetId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      monthStart: data.monthStart.present
+          ? data.monthStart.value
+          : this.monthStart,
+      limitMethod: data.limitMethod.present
+          ? data.limitMethod.value
+          : this.limitMethod,
+      amountMinor: data.amountMinor.present
+          ? data.amountMinor.value
+          : this.amountMinor,
+      warningThresholdBps: data.warningThresholdBps.present
+          ? data.warningThresholdBps.value
+          : this.warningThresholdBps,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetMonthlyConfiguration(')
+          ..write('id: $id, ')
+          ..write('budgetId: $budgetId, ')
+          ..write('kind: $kind, ')
+          ..write('monthStart: $monthStart, ')
+          ..write('limitMethod: $limitMethod, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('warningThresholdBps: $warningThresholdBps')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    budgetId,
+    kind,
+    monthStart,
+    limitMethod,
+    amountMinor,
+    warningThresholdBps,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BudgetMonthlyConfiguration &&
+          other.id == this.id &&
+          other.budgetId == this.budgetId &&
+          other.kind == this.kind &&
+          other.monthStart == this.monthStart &&
+          other.limitMethod == this.limitMethod &&
+          other.amountMinor == this.amountMinor &&
+          other.warningThresholdBps == this.warningThresholdBps);
+}
+
+class BudgetMonthlyConfigurationsCompanion
+    extends UpdateCompanion<BudgetMonthlyConfiguration> {
+  final Value<String> id;
+  final Value<String> budgetId;
+  final Value<String> kind;
+  final Value<String> monthStart;
+  final Value<String> limitMethod;
+  final Value<int> amountMinor;
+  final Value<int> warningThresholdBps;
+  final Value<int> rowid;
+  const BudgetMonthlyConfigurationsCompanion({
+    this.id = const Value.absent(),
+    this.budgetId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.monthStart = const Value.absent(),
+    this.limitMethod = const Value.absent(),
+    this.amountMinor = const Value.absent(),
+    this.warningThresholdBps = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BudgetMonthlyConfigurationsCompanion.insert({
+    required String id,
+    required String budgetId,
+    required String kind,
+    required String monthStart,
+    required String limitMethod,
+    required int amountMinor,
+    required int warningThresholdBps,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       budgetId = Value(budgetId),
+       kind = Value(kind),
+       monthStart = Value(monthStart),
+       limitMethod = Value(limitMethod),
+       amountMinor = Value(amountMinor),
+       warningThresholdBps = Value(warningThresholdBps);
+  static Insertable<BudgetMonthlyConfiguration> custom({
+    Expression<String>? id,
+    Expression<String>? budgetId,
+    Expression<String>? kind,
+    Expression<String>? monthStart,
+    Expression<String>? limitMethod,
+    Expression<int>? amountMinor,
+    Expression<int>? warningThresholdBps,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (budgetId != null) 'budget_id': budgetId,
+      if (kind != null) 'kind': kind,
+      if (monthStart != null) 'month_start': monthStart,
+      if (limitMethod != null) 'limit_method': limitMethod,
+      if (amountMinor != null) 'amount_minor': amountMinor,
+      if (warningThresholdBps != null)
+        'warning_threshold_bps': warningThresholdBps,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BudgetMonthlyConfigurationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? budgetId,
+    Value<String>? kind,
+    Value<String>? monthStart,
+    Value<String>? limitMethod,
+    Value<int>? amountMinor,
+    Value<int>? warningThresholdBps,
+    Value<int>? rowid,
+  }) {
+    return BudgetMonthlyConfigurationsCompanion(
+      id: id ?? this.id,
+      budgetId: budgetId ?? this.budgetId,
+      kind: kind ?? this.kind,
+      monthStart: monthStart ?? this.monthStart,
+      limitMethod: limitMethod ?? this.limitMethod,
+      amountMinor: amountMinor ?? this.amountMinor,
+      warningThresholdBps: warningThresholdBps ?? this.warningThresholdBps,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (budgetId.present) {
+      map['budget_id'] = Variable<String>(budgetId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (monthStart.present) {
+      map['month_start'] = Variable<String>(monthStart.value);
+    }
+    if (limitMethod.present) {
+      map['limit_method'] = Variable<String>(limitMethod.value);
+    }
+    if (amountMinor.present) {
+      map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (warningThresholdBps.present) {
+      map['warning_threshold_bps'] = Variable<int>(warningThresholdBps.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetMonthlyConfigurationsCompanion(')
+          ..write('id: $id, ')
+          ..write('budgetId: $budgetId, ')
+          ..write('kind: $kind, ')
+          ..write('monthStart: $monthStart, ')
+          ..write('limitMethod: $limitMethod, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('warningThresholdBps: $warningThresholdBps, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class BudgetMonthlyCategories extends Table
+    with TableInfo<BudgetMonthlyCategories, BudgetMonthlyCategory> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  BudgetMonthlyCategories(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _configurationIdMeta = const VerificationMeta(
+    'configurationId',
+  );
+  late final GeneratedColumn<String> configurationId = GeneratedColumn<String>(
+    'configuration_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES budget_monthly_configurations(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES categories(id)',
+  );
+  static const VerificationMeta _includeDescendantsMeta =
+      const VerificationMeta('includeDescendants');
+  late final GeneratedColumn<int> includeDescendants = GeneratedColumn<int>(
+    'include_descendants',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints:
+        'NOT NULL DEFAULT 1 CHECK (include_descendants IN (0, 1))',
+    defaultValue: const CustomExpression('1'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    configurationId,
+    categoryId,
+    includeDescendants,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'budget_monthly_categories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BudgetMonthlyCategory> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('configuration_id')) {
+      context.handle(
+        _configurationIdMeta,
+        configurationId.isAcceptableOrUnknown(
+          data['configuration_id']!,
+          _configurationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_configurationIdMeta);
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryIdMeta);
+    }
+    if (data.containsKey('include_descendants')) {
+      context.handle(
+        _includeDescendantsMeta,
+        includeDescendants.isAcceptableOrUnknown(
+          data['include_descendants']!,
+          _includeDescendantsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {configurationId, categoryId};
+  @override
+  BudgetMonthlyCategory map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BudgetMonthlyCategory(
+      configurationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}configuration_id'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      )!,
+      includeDescendants: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}include_descendants'],
+      )!,
+    );
+  }
+
+  @override
+  BudgetMonthlyCategories createAlias(String alias) {
+    return BudgetMonthlyCategories(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(configuration_id, category_id)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class BudgetMonthlyCategory extends DataClass
+    implements Insertable<BudgetMonthlyCategory> {
+  final String configurationId;
+  final String categoryId;
+  final int includeDescendants;
+  const BudgetMonthlyCategory({
+    required this.configurationId,
+    required this.categoryId,
+    required this.includeDescendants,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['configuration_id'] = Variable<String>(configurationId);
+    map['category_id'] = Variable<String>(categoryId);
+    map['include_descendants'] = Variable<int>(includeDescendants);
+    return map;
+  }
+
+  BudgetMonthlyCategoriesCompanion toCompanion(bool nullToAbsent) {
+    return BudgetMonthlyCategoriesCompanion(
+      configurationId: Value(configurationId),
+      categoryId: Value(categoryId),
+      includeDescendants: Value(includeDescendants),
+    );
+  }
+
+  factory BudgetMonthlyCategory.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BudgetMonthlyCategory(
+      configurationId: serializer.fromJson<String>(json['configuration_id']),
+      categoryId: serializer.fromJson<String>(json['category_id']),
+      includeDescendants: serializer.fromJson<int>(json['include_descendants']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'configuration_id': serializer.toJson<String>(configurationId),
+      'category_id': serializer.toJson<String>(categoryId),
+      'include_descendants': serializer.toJson<int>(includeDescendants),
+    };
+  }
+
+  BudgetMonthlyCategory copyWith({
+    String? configurationId,
+    String? categoryId,
+    int? includeDescendants,
+  }) => BudgetMonthlyCategory(
+    configurationId: configurationId ?? this.configurationId,
+    categoryId: categoryId ?? this.categoryId,
+    includeDescendants: includeDescendants ?? this.includeDescendants,
+  );
+  BudgetMonthlyCategory copyWithCompanion(
+    BudgetMonthlyCategoriesCompanion data,
+  ) {
+    return BudgetMonthlyCategory(
+      configurationId: data.configurationId.present
+          ? data.configurationId.value
+          : this.configurationId,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      includeDescendants: data.includeDescendants.present
+          ? data.includeDescendants.value
+          : this.includeDescendants,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetMonthlyCategory(')
+          ..write('configurationId: $configurationId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('includeDescendants: $includeDescendants')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(configurationId, categoryId, includeDescendants);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BudgetMonthlyCategory &&
+          other.configurationId == this.configurationId &&
+          other.categoryId == this.categoryId &&
+          other.includeDescendants == this.includeDescendants);
+}
+
+class BudgetMonthlyCategoriesCompanion
+    extends UpdateCompanion<BudgetMonthlyCategory> {
+  final Value<String> configurationId;
+  final Value<String> categoryId;
+  final Value<int> includeDescendants;
+  final Value<int> rowid;
+  const BudgetMonthlyCategoriesCompanion({
+    this.configurationId = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.includeDescendants = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BudgetMonthlyCategoriesCompanion.insert({
+    required String configurationId,
+    required String categoryId,
+    this.includeDescendants = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : configurationId = Value(configurationId),
+       categoryId = Value(categoryId);
+  static Insertable<BudgetMonthlyCategory> custom({
+    Expression<String>? configurationId,
+    Expression<String>? categoryId,
+    Expression<int>? includeDescendants,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (configurationId != null) 'configuration_id': configurationId,
+      if (categoryId != null) 'category_id': categoryId,
+      if (includeDescendants != null) 'include_descendants': includeDescendants,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BudgetMonthlyCategoriesCompanion copyWith({
+    Value<String>? configurationId,
+    Value<String>? categoryId,
+    Value<int>? includeDescendants,
+    Value<int>? rowid,
+  }) {
+    return BudgetMonthlyCategoriesCompanion(
+      configurationId: configurationId ?? this.configurationId,
+      categoryId: categoryId ?? this.categoryId,
+      includeDescendants: includeDescendants ?? this.includeDescendants,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (configurationId.present) {
+      map['configuration_id'] = Variable<String>(configurationId.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (includeDescendants.present) {
+      map['include_descendants'] = Variable<int>(includeDescendants.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetMonthlyCategoriesCompanion(')
+          ..write('configurationId: $configurationId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('includeDescendants: $includeDescendants, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class BudgetMonthlyAccounts extends Table
+    with TableInfo<BudgetMonthlyAccounts, BudgetMonthlyAccount> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  BudgetMonthlyAccounts(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _configurationIdMeta = const VerificationMeta(
+    'configurationId',
+  );
+  late final GeneratedColumn<String> configurationId = GeneratedColumn<String>(
+    'configuration_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES budget_monthly_configurations(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES accounts(id)',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [configurationId, accountId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'budget_monthly_accounts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BudgetMonthlyAccount> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('configuration_id')) {
+      context.handle(
+        _configurationIdMeta,
+        configurationId.isAcceptableOrUnknown(
+          data['configuration_id']!,
+          _configurationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_configurationIdMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {configurationId, accountId};
+  @override
+  BudgetMonthlyAccount map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BudgetMonthlyAccount(
+      configurationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}configuration_id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+    );
+  }
+
+  @override
+  BudgetMonthlyAccounts createAlias(String alias) {
+    return BudgetMonthlyAccounts(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(configuration_id, account_id)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class BudgetMonthlyAccount extends DataClass
+    implements Insertable<BudgetMonthlyAccount> {
+  final String configurationId;
+  final String accountId;
+  const BudgetMonthlyAccount({
+    required this.configurationId,
+    required this.accountId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['configuration_id'] = Variable<String>(configurationId);
+    map['account_id'] = Variable<String>(accountId);
+    return map;
+  }
+
+  BudgetMonthlyAccountsCompanion toCompanion(bool nullToAbsent) {
+    return BudgetMonthlyAccountsCompanion(
+      configurationId: Value(configurationId),
+      accountId: Value(accountId),
+    );
+  }
+
+  factory BudgetMonthlyAccount.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BudgetMonthlyAccount(
+      configurationId: serializer.fromJson<String>(json['configuration_id']),
+      accountId: serializer.fromJson<String>(json['account_id']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'configuration_id': serializer.toJson<String>(configurationId),
+      'account_id': serializer.toJson<String>(accountId),
+    };
+  }
+
+  BudgetMonthlyAccount copyWith({String? configurationId, String? accountId}) =>
+      BudgetMonthlyAccount(
+        configurationId: configurationId ?? this.configurationId,
+        accountId: accountId ?? this.accountId,
+      );
+  BudgetMonthlyAccount copyWithCompanion(BudgetMonthlyAccountsCompanion data) {
+    return BudgetMonthlyAccount(
+      configurationId: data.configurationId.present
+          ? data.configurationId.value
+          : this.configurationId,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetMonthlyAccount(')
+          ..write('configurationId: $configurationId, ')
+          ..write('accountId: $accountId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(configurationId, accountId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BudgetMonthlyAccount &&
+          other.configurationId == this.configurationId &&
+          other.accountId == this.accountId);
+}
+
+class BudgetMonthlyAccountsCompanion
+    extends UpdateCompanion<BudgetMonthlyAccount> {
+  final Value<String> configurationId;
+  final Value<String> accountId;
+  final Value<int> rowid;
+  const BudgetMonthlyAccountsCompanion({
+    this.configurationId = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BudgetMonthlyAccountsCompanion.insert({
+    required String configurationId,
+    required String accountId,
+    this.rowid = const Value.absent(),
+  }) : configurationId = Value(configurationId),
+       accountId = Value(accountId);
+  static Insertable<BudgetMonthlyAccount> custom({
+    Expression<String>? configurationId,
+    Expression<String>? accountId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (configurationId != null) 'configuration_id': configurationId,
+      if (accountId != null) 'account_id': accountId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BudgetMonthlyAccountsCompanion copyWith({
+    Value<String>? configurationId,
+    Value<String>? accountId,
+    Value<int>? rowid,
+  }) {
+    return BudgetMonthlyAccountsCompanion(
+      configurationId: configurationId ?? this.configurationId,
+      accountId: accountId ?? this.accountId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (configurationId.present) {
+      map['configuration_id'] = Variable<String>(configurationId.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetMonthlyAccountsCompanion(')
+          ..write('configurationId: $configurationId, ')
+          ..write('accountId: $accountId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class BudgetMonthlyTags extends Table
+    with TableInfo<BudgetMonthlyTags, BudgetMonthlyTag> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  BudgetMonthlyTags(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _configurationIdMeta = const VerificationMeta(
+    'configurationId',
+  );
+  late final GeneratedColumn<String> configurationId = GeneratedColumn<String>(
+    'configuration_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES budget_monthly_configurations(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _tagIdMeta = const VerificationMeta('tagId');
+  late final GeneratedColumn<String> tagId = GeneratedColumn<String>(
+    'tag_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES tags(id)',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [configurationId, tagId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'budget_monthly_tags';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BudgetMonthlyTag> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('configuration_id')) {
+      context.handle(
+        _configurationIdMeta,
+        configurationId.isAcceptableOrUnknown(
+          data['configuration_id']!,
+          _configurationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_configurationIdMeta);
+    }
+    if (data.containsKey('tag_id')) {
+      context.handle(
+        _tagIdMeta,
+        tagId.isAcceptableOrUnknown(data['tag_id']!, _tagIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tagIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {configurationId, tagId};
+  @override
+  BudgetMonthlyTag map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BudgetMonthlyTag(
+      configurationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}configuration_id'],
+      )!,
+      tagId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tag_id'],
+      )!,
+    );
+  }
+
+  @override
+  BudgetMonthlyTags createAlias(String alias) {
+    return BudgetMonthlyTags(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(configuration_id, tag_id)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class BudgetMonthlyTag extends DataClass
+    implements Insertable<BudgetMonthlyTag> {
+  final String configurationId;
+  final String tagId;
+  const BudgetMonthlyTag({required this.configurationId, required this.tagId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['configuration_id'] = Variable<String>(configurationId);
+    map['tag_id'] = Variable<String>(tagId);
+    return map;
+  }
+
+  BudgetMonthlyTagsCompanion toCompanion(bool nullToAbsent) {
+    return BudgetMonthlyTagsCompanion(
+      configurationId: Value(configurationId),
+      tagId: Value(tagId),
+    );
+  }
+
+  factory BudgetMonthlyTag.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BudgetMonthlyTag(
+      configurationId: serializer.fromJson<String>(json['configuration_id']),
+      tagId: serializer.fromJson<String>(json['tag_id']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'configuration_id': serializer.toJson<String>(configurationId),
+      'tag_id': serializer.toJson<String>(tagId),
+    };
+  }
+
+  BudgetMonthlyTag copyWith({String? configurationId, String? tagId}) =>
+      BudgetMonthlyTag(
+        configurationId: configurationId ?? this.configurationId,
+        tagId: tagId ?? this.tagId,
+      );
+  BudgetMonthlyTag copyWithCompanion(BudgetMonthlyTagsCompanion data) {
+    return BudgetMonthlyTag(
+      configurationId: data.configurationId.present
+          ? data.configurationId.value
+          : this.configurationId,
+      tagId: data.tagId.present ? data.tagId.value : this.tagId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetMonthlyTag(')
+          ..write('configurationId: $configurationId, ')
+          ..write('tagId: $tagId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(configurationId, tagId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BudgetMonthlyTag &&
+          other.configurationId == this.configurationId &&
+          other.tagId == this.tagId);
+}
+
+class BudgetMonthlyTagsCompanion extends UpdateCompanion<BudgetMonthlyTag> {
+  final Value<String> configurationId;
+  final Value<String> tagId;
+  final Value<int> rowid;
+  const BudgetMonthlyTagsCompanion({
+    this.configurationId = const Value.absent(),
+    this.tagId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BudgetMonthlyTagsCompanion.insert({
+    required String configurationId,
+    required String tagId,
+    this.rowid = const Value.absent(),
+  }) : configurationId = Value(configurationId),
+       tagId = Value(tagId);
+  static Insertable<BudgetMonthlyTag> custom({
+    Expression<String>? configurationId,
+    Expression<String>? tagId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (configurationId != null) 'configuration_id': configurationId,
+      if (tagId != null) 'tag_id': tagId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BudgetMonthlyTagsCompanion copyWith({
+    Value<String>? configurationId,
+    Value<String>? tagId,
+    Value<int>? rowid,
+  }) {
+    return BudgetMonthlyTagsCompanion(
+      configurationId: configurationId ?? this.configurationId,
+      tagId: tagId ?? this.tagId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (configurationId.present) {
+      map['configuration_id'] = Variable<String>(configurationId.value);
+    }
+    if (tagId.present) {
+      map['tag_id'] = Variable<String>(tagId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetMonthlyTagsCompanion(')
+          ..write('configurationId: $configurationId, ')
+          ..write('tagId: $tagId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class RecurringRuleVersions extends Table
+    with TableInfo<RecurringRuleVersions, RecurringRuleVersion> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  RecurringRuleVersions(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _recurringRuleIdMeta = const VerificationMeta(
+    'recurringRuleId',
+  );
+  late final GeneratedColumn<String> recurringRuleId = GeneratedColumn<String>(
+    'recurring_rule_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES recurring_rules(id)',
+  );
+  static const VerificationMeta _effectiveFromMeta = const VerificationMeta(
+    'effectiveFrom',
+  );
+  late final GeneratedColumn<String> effectiveFrom = GeneratedColumn<String>(
+    'effective_from',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _anchorOnMeta = const VerificationMeta(
+    'anchorOn',
+  );
+  late final GeneratedColumn<String> anchorOn = GeneratedColumn<String>(
+    'anchor_on',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _rruleMeta = const VerificationMeta('rrule');
+  late final GeneratedColumn<String> rrule = GeneratedColumn<String>(
+    'rrule',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _endsOnMeta = const VerificationMeta('endsOn');
+  late final GeneratedColumn<String> endsOn = GeneratedColumn<String>(
+    'ends_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _templateJsonMeta = const VerificationMeta(
+    'templateJson',
+  );
+  late final GeneratedColumn<String> templateJson = GeneratedColumn<String>(
+    'template_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    recurringRuleId,
+    effectiveFrom,
+    anchorOn,
+    name,
+    rrule,
+    endsOn,
+    templateJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recurring_rule_versions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecurringRuleVersion> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('recurring_rule_id')) {
+      context.handle(
+        _recurringRuleIdMeta,
+        recurringRuleId.isAcceptableOrUnknown(
+          data['recurring_rule_id']!,
+          _recurringRuleIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recurringRuleIdMeta);
+    }
+    if (data.containsKey('effective_from')) {
+      context.handle(
+        _effectiveFromMeta,
+        effectiveFrom.isAcceptableOrUnknown(
+          data['effective_from']!,
+          _effectiveFromMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_effectiveFromMeta);
+    }
+    if (data.containsKey('anchor_on')) {
+      context.handle(
+        _anchorOnMeta,
+        anchorOn.isAcceptableOrUnknown(data['anchor_on']!, _anchorOnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_anchorOnMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('rrule')) {
+      context.handle(
+        _rruleMeta,
+        rrule.isAcceptableOrUnknown(data['rrule']!, _rruleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rruleMeta);
+    }
+    if (data.containsKey('ends_on')) {
+      context.handle(
+        _endsOnMeta,
+        endsOn.isAcceptableOrUnknown(data['ends_on']!, _endsOnMeta),
+      );
+    }
+    if (data.containsKey('template_json')) {
+      context.handle(
+        _templateJsonMeta,
+        templateJson.isAcceptableOrUnknown(
+          data['template_json']!,
+          _templateJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_templateJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {recurringRuleId, effectiveFrom};
+  @override
+  RecurringRuleVersion map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecurringRuleVersion(
+      recurringRuleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recurring_rule_id'],
+      )!,
+      effectiveFrom: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}effective_from'],
+      )!,
+      anchorOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}anchor_on'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      rrule: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rrule'],
+      )!,
+      endsOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ends_on'],
+      ),
+      templateJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_json'],
+      )!,
+    );
+  }
+
+  @override
+  RecurringRuleVersions createAlias(String alias) {
+    return RecurringRuleVersions(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(recurring_rule_id, effective_from)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class RecurringRuleVersion extends DataClass
+    implements Insertable<RecurringRuleVersion> {
+  final String recurringRuleId;
+  final String effectiveFrom;
+  final String anchorOn;
+  final String name;
+  final String rrule;
+  final String? endsOn;
+  final String templateJson;
+  const RecurringRuleVersion({
+    required this.recurringRuleId,
+    required this.effectiveFrom,
+    required this.anchorOn,
+    required this.name,
+    required this.rrule,
+    this.endsOn,
+    required this.templateJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['recurring_rule_id'] = Variable<String>(recurringRuleId);
+    map['effective_from'] = Variable<String>(effectiveFrom);
+    map['anchor_on'] = Variable<String>(anchorOn);
+    map['name'] = Variable<String>(name);
+    map['rrule'] = Variable<String>(rrule);
+    if (!nullToAbsent || endsOn != null) {
+      map['ends_on'] = Variable<String>(endsOn);
+    }
+    map['template_json'] = Variable<String>(templateJson);
+    return map;
+  }
+
+  RecurringRuleVersionsCompanion toCompanion(bool nullToAbsent) {
+    return RecurringRuleVersionsCompanion(
+      recurringRuleId: Value(recurringRuleId),
+      effectiveFrom: Value(effectiveFrom),
+      anchorOn: Value(anchorOn),
+      name: Value(name),
+      rrule: Value(rrule),
+      endsOn: endsOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endsOn),
+      templateJson: Value(templateJson),
+    );
+  }
+
+  factory RecurringRuleVersion.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecurringRuleVersion(
+      recurringRuleId: serializer.fromJson<String>(json['recurring_rule_id']),
+      effectiveFrom: serializer.fromJson<String>(json['effective_from']),
+      anchorOn: serializer.fromJson<String>(json['anchor_on']),
+      name: serializer.fromJson<String>(json['name']),
+      rrule: serializer.fromJson<String>(json['rrule']),
+      endsOn: serializer.fromJson<String?>(json['ends_on']),
+      templateJson: serializer.fromJson<String>(json['template_json']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'recurring_rule_id': serializer.toJson<String>(recurringRuleId),
+      'effective_from': serializer.toJson<String>(effectiveFrom),
+      'anchor_on': serializer.toJson<String>(anchorOn),
+      'name': serializer.toJson<String>(name),
+      'rrule': serializer.toJson<String>(rrule),
+      'ends_on': serializer.toJson<String?>(endsOn),
+      'template_json': serializer.toJson<String>(templateJson),
+    };
+  }
+
+  RecurringRuleVersion copyWith({
+    String? recurringRuleId,
+    String? effectiveFrom,
+    String? anchorOn,
+    String? name,
+    String? rrule,
+    Value<String?> endsOn = const Value.absent(),
+    String? templateJson,
+  }) => RecurringRuleVersion(
+    recurringRuleId: recurringRuleId ?? this.recurringRuleId,
+    effectiveFrom: effectiveFrom ?? this.effectiveFrom,
+    anchorOn: anchorOn ?? this.anchorOn,
+    name: name ?? this.name,
+    rrule: rrule ?? this.rrule,
+    endsOn: endsOn.present ? endsOn.value : this.endsOn,
+    templateJson: templateJson ?? this.templateJson,
+  );
+  RecurringRuleVersion copyWithCompanion(RecurringRuleVersionsCompanion data) {
+    return RecurringRuleVersion(
+      recurringRuleId: data.recurringRuleId.present
+          ? data.recurringRuleId.value
+          : this.recurringRuleId,
+      effectiveFrom: data.effectiveFrom.present
+          ? data.effectiveFrom.value
+          : this.effectiveFrom,
+      anchorOn: data.anchorOn.present ? data.anchorOn.value : this.anchorOn,
+      name: data.name.present ? data.name.value : this.name,
+      rrule: data.rrule.present ? data.rrule.value : this.rrule,
+      endsOn: data.endsOn.present ? data.endsOn.value : this.endsOn,
+      templateJson: data.templateJson.present
+          ? data.templateJson.value
+          : this.templateJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringRuleVersion(')
+          ..write('recurringRuleId: $recurringRuleId, ')
+          ..write('effectiveFrom: $effectiveFrom, ')
+          ..write('anchorOn: $anchorOn, ')
+          ..write('name: $name, ')
+          ..write('rrule: $rrule, ')
+          ..write('endsOn: $endsOn, ')
+          ..write('templateJson: $templateJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    recurringRuleId,
+    effectiveFrom,
+    anchorOn,
+    name,
+    rrule,
+    endsOn,
+    templateJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecurringRuleVersion &&
+          other.recurringRuleId == this.recurringRuleId &&
+          other.effectiveFrom == this.effectiveFrom &&
+          other.anchorOn == this.anchorOn &&
+          other.name == this.name &&
+          other.rrule == this.rrule &&
+          other.endsOn == this.endsOn &&
+          other.templateJson == this.templateJson);
+}
+
+class RecurringRuleVersionsCompanion
+    extends UpdateCompanion<RecurringRuleVersion> {
+  final Value<String> recurringRuleId;
+  final Value<String> effectiveFrom;
+  final Value<String> anchorOn;
+  final Value<String> name;
+  final Value<String> rrule;
+  final Value<String?> endsOn;
+  final Value<String> templateJson;
+  final Value<int> rowid;
+  const RecurringRuleVersionsCompanion({
+    this.recurringRuleId = const Value.absent(),
+    this.effectiveFrom = const Value.absent(),
+    this.anchorOn = const Value.absent(),
+    this.name = const Value.absent(),
+    this.rrule = const Value.absent(),
+    this.endsOn = const Value.absent(),
+    this.templateJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecurringRuleVersionsCompanion.insert({
+    required String recurringRuleId,
+    required String effectiveFrom,
+    required String anchorOn,
+    required String name,
+    required String rrule,
+    this.endsOn = const Value.absent(),
+    required String templateJson,
+    this.rowid = const Value.absent(),
+  }) : recurringRuleId = Value(recurringRuleId),
+       effectiveFrom = Value(effectiveFrom),
+       anchorOn = Value(anchorOn),
+       name = Value(name),
+       rrule = Value(rrule),
+       templateJson = Value(templateJson);
+  static Insertable<RecurringRuleVersion> custom({
+    Expression<String>? recurringRuleId,
+    Expression<String>? effectiveFrom,
+    Expression<String>? anchorOn,
+    Expression<String>? name,
+    Expression<String>? rrule,
+    Expression<String>? endsOn,
+    Expression<String>? templateJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (recurringRuleId != null) 'recurring_rule_id': recurringRuleId,
+      if (effectiveFrom != null) 'effective_from': effectiveFrom,
+      if (anchorOn != null) 'anchor_on': anchorOn,
+      if (name != null) 'name': name,
+      if (rrule != null) 'rrule': rrule,
+      if (endsOn != null) 'ends_on': endsOn,
+      if (templateJson != null) 'template_json': templateJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecurringRuleVersionsCompanion copyWith({
+    Value<String>? recurringRuleId,
+    Value<String>? effectiveFrom,
+    Value<String>? anchorOn,
+    Value<String>? name,
+    Value<String>? rrule,
+    Value<String?>? endsOn,
+    Value<String>? templateJson,
+    Value<int>? rowid,
+  }) {
+    return RecurringRuleVersionsCompanion(
+      recurringRuleId: recurringRuleId ?? this.recurringRuleId,
+      effectiveFrom: effectiveFrom ?? this.effectiveFrom,
+      anchorOn: anchorOn ?? this.anchorOn,
+      name: name ?? this.name,
+      rrule: rrule ?? this.rrule,
+      endsOn: endsOn ?? this.endsOn,
+      templateJson: templateJson ?? this.templateJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (recurringRuleId.present) {
+      map['recurring_rule_id'] = Variable<String>(recurringRuleId.value);
+    }
+    if (effectiveFrom.present) {
+      map['effective_from'] = Variable<String>(effectiveFrom.value);
+    }
+    if (anchorOn.present) {
+      map['anchor_on'] = Variable<String>(anchorOn.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (rrule.present) {
+      map['rrule'] = Variable<String>(rrule.value);
+    }
+    if (endsOn.present) {
+      map['ends_on'] = Variable<String>(endsOn.value);
+    }
+    if (templateJson.present) {
+      map['template_json'] = Variable<String>(templateJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringRuleVersionsCompanion(')
+          ..write('recurringRuleId: $recurringRuleId, ')
+          ..write('effectiveFrom: $effectiveFrom, ')
+          ..write('anchorOn: $anchorOn, ')
+          ..write('name: $name, ')
+          ..write('rrule: $rrule, ')
+          ..write('endsOn: $endsOn, ')
+          ..write('templateJson: $templateJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -31263,6 +33125,19 @@ abstract class _$EquisDatabase extends GeneratedDatabase {
   late final BudgetCategories budgetCategories = BudgetCategories(this);
   late final BudgetAccounts budgetAccounts = BudgetAccounts(this);
   late final BudgetTags budgetTags = BudgetTags(this);
+  late final BudgetMonthlyConfigurations budgetMonthlyConfigurations =
+      BudgetMonthlyConfigurations(this);
+  late final BudgetMonthlyCategories budgetMonthlyCategories =
+      BudgetMonthlyCategories(this);
+  late final BudgetMonthlyAccounts budgetMonthlyAccounts =
+      BudgetMonthlyAccounts(this);
+  late final Index idxBudgetMonthlyAccountsAccount = Index(
+    'idx_budget_monthly_accounts_account',
+    'CREATE INDEX idx_budget_monthly_accounts_account ON budget_monthly_accounts (account_id)',
+  );
+  late final BudgetMonthlyTags budgetMonthlyTags = BudgetMonthlyTags(this);
+  late final RecurringRuleVersions recurringRuleVersions =
+      RecurringRuleVersions(this);
   late final Goals goals = Goals(this);
   late final GoalAccounts goalAccounts = GoalAccounts(this);
   late final GoalContributions goalContributions = GoalContributions(this);
@@ -31404,6 +33279,12 @@ abstract class _$EquisDatabase extends GeneratedDatabase {
     budgetCategories,
     budgetAccounts,
     budgetTags,
+    budgetMonthlyConfigurations,
+    budgetMonthlyCategories,
+    budgetMonthlyAccounts,
+    idxBudgetMonthlyAccountsAccount,
+    budgetMonthlyTags,
+    recurringRuleVersions,
     goals,
     goalAccounts,
     goalContributions,
@@ -31540,6 +33421,29 @@ abstract class _$EquisDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('installments', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'budget_monthly_configurations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('budget_monthly_categories', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'budget_monthly_configurations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('budget_monthly_accounts', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'budget_monthly_configurations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('budget_monthly_tags', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -32486,6 +34390,32 @@ typedef $AccountsUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
+final class $AccountsReferences
+    extends BaseReferences<_$EquisDatabase, Accounts, Account> {
+  $AccountsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<BudgetMonthlyAccounts, List<BudgetMonthlyAccount>>
+  _budgetMonthlyAccountsRefsTable(_$EquisDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.budgetMonthlyAccounts,
+        aliasName: 'accounts__id__budget_monthly_accounts__account_id',
+      );
+
+  $BudgetMonthlyAccountsProcessedTableManager get budgetMonthlyAccountsRefs {
+    final manager = $BudgetMonthlyAccountsTableManager(
+      $_db,
+      $_db.budgetMonthlyAccounts,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')));
+
+    final cache = $_typedResult.readTableOrNull(
+      _budgetMonthlyAccountsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
 class $AccountsFilterComposer extends Composer<_$EquisDatabase, Accounts> {
   $AccountsFilterComposer({
     required super.$db,
@@ -32583,6 +34513,31 @@ class $AccountsFilterComposer extends Composer<_$EquisDatabase, Accounts> {
     column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> budgetMonthlyAccountsRefs(
+    Expression<bool> Function($BudgetMonthlyAccountsFilterComposer f) f,
+  ) {
+    final $BudgetMonthlyAccountsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyAccounts,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyAccountsFilterComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $AccountsOrderingComposer extends Composer<_$EquisDatabase, Accounts> {
@@ -32751,6 +34706,31 @@ class $AccountsAnnotationComposer extends Composer<_$EquisDatabase, Accounts> {
 
   GeneratedColumn<int> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> budgetMonthlyAccountsRefs<T extends Object>(
+    Expression<T> Function($BudgetMonthlyAccountsAnnotationComposer a) f,
+  ) {
+    final $BudgetMonthlyAccountsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyAccounts,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyAccountsAnnotationComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $AccountsTableManager
@@ -32764,9 +34744,9 @@ class $AccountsTableManager
           $AccountsAnnotationComposer,
           $AccountsCreateCompanionBuilder,
           $AccountsUpdateCompanionBuilder,
-          (Account, BaseReferences<_$EquisDatabase, Accounts, Account>),
+          (Account, $AccountsReferences),
           Account,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool budgetMonthlyAccountsRefs})
         > {
   $AccountsTableManager(_$EquisDatabase db, Accounts table)
     : super(
@@ -32864,9 +34844,41 @@ class $AccountsTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (e.readTable(table), $AccountsReferences(db, table, e)),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({budgetMonthlyAccountsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (budgetMonthlyAccountsRefs) db.budgetMonthlyAccounts,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (budgetMonthlyAccountsRefs)
+                    await $_getPrefetchedData<
+                      Account,
+                      Accounts,
+                      BudgetMonthlyAccount
+                    >(
+                      currentTable: table,
+                      referencedTable: $AccountsReferences
+                          ._budgetMonthlyAccountsRefsTable(db),
+                      managerFromTypedResult: (p0) => $AccountsReferences(
+                        db,
+                        table,
+                        p0,
+                      ).budgetMonthlyAccountsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.accountId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -32881,9 +34893,9 @@ typedef $AccountsProcessedTableManager =
       $AccountsAnnotationComposer,
       $AccountsCreateCompanionBuilder,
       $AccountsUpdateCompanionBuilder,
-      (Account, BaseReferences<_$EquisDatabase, Accounts, Account>),
+      (Account, $AccountsReferences),
       Account,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool budgetMonthlyAccountsRefs})
     >;
 typedef $AccountPocketsCreateCompanionBuilder =
     AccountPocketsCompanion Function({
@@ -33147,6 +35159,36 @@ typedef $CategoriesUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
+final class $CategoriesReferences
+    extends BaseReferences<_$EquisDatabase, Categories, Category> {
+  $CategoriesReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<
+    BudgetMonthlyCategories,
+    List<BudgetMonthlyCategory>
+  >
+  _budgetMonthlyCategoriesRefsTable(_$EquisDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.budgetMonthlyCategories,
+        aliasName: 'categories__id__budget_monthly_categories__category_id',
+      );
+
+  $BudgetMonthlyCategoriesProcessedTableManager
+  get budgetMonthlyCategoriesRefs {
+    final manager = $BudgetMonthlyCategoriesTableManager(
+      $_db,
+      $_db.budgetMonthlyCategories,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<String>('id')));
+
+    final cache = $_typedResult.readTableOrNull(
+      _budgetMonthlyCategoriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
 class $CategoriesFilterComposer extends Composer<_$EquisDatabase, Categories> {
   $CategoriesFilterComposer({
     required super.$db,
@@ -33234,6 +35276,31 @@ class $CategoriesFilterComposer extends Composer<_$EquisDatabase, Categories> {
     column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> budgetMonthlyCategoriesRefs(
+    Expression<bool> Function($BudgetMonthlyCategoriesFilterComposer f) f,
+  ) {
+    final $BudgetMonthlyCategoriesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyCategories,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyCategoriesFilterComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $CategoriesOrderingComposer
@@ -33390,6 +35457,32 @@ class $CategoriesAnnotationComposer
 
   GeneratedColumn<int> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> budgetMonthlyCategoriesRefs<T extends Object>(
+    Expression<T> Function($BudgetMonthlyCategoriesAnnotationComposer a) f,
+  ) {
+    final $BudgetMonthlyCategoriesAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.budgetMonthlyCategories,
+          getReferencedColumn: (t) => t.categoryId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyCategoriesAnnotationComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyCategories,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $CategoriesTableManager
@@ -33403,9 +35496,9 @@ class $CategoriesTableManager
           $CategoriesAnnotationComposer,
           $CategoriesCreateCompanionBuilder,
           $CategoriesUpdateCompanionBuilder,
-          (Category, BaseReferences<_$EquisDatabase, Categories, Category>),
+          (Category, $CategoriesReferences),
           Category,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool budgetMonthlyCategoriesRefs})
         > {
   $CategoriesTableManager(_$EquisDatabase db, Categories table)
     : super(
@@ -33495,9 +35588,42 @@ class $CategoriesTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) =>
+                    (e.readTable(table), $CategoriesReferences(db, table, e)),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({budgetMonthlyCategoriesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (budgetMonthlyCategoriesRefs) db.budgetMonthlyCategories,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (budgetMonthlyCategoriesRefs)
+                    await $_getPrefetchedData<
+                      Category,
+                      Categories,
+                      BudgetMonthlyCategory
+                    >(
+                      currentTable: table,
+                      referencedTable: $CategoriesReferences
+                          ._budgetMonthlyCategoriesRefsTable(db),
+                      managerFromTypedResult: (p0) => $CategoriesReferences(
+                        db,
+                        table,
+                        p0,
+                      ).budgetMonthlyCategoriesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.categoryId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -33512,9 +35638,9 @@ typedef $CategoriesProcessedTableManager =
       $CategoriesAnnotationComposer,
       $CategoriesCreateCompanionBuilder,
       $CategoriesUpdateCompanionBuilder,
-      (Category, BaseReferences<_$EquisDatabase, Categories, Category>),
+      (Category, $CategoriesReferences),
       Category,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool budgetMonthlyCategoriesRefs})
     >;
 typedef $TagsCreateCompanionBuilder =
     TagsCompanion Function({
@@ -33544,6 +35670,31 @@ typedef $TagsUpdateCompanionBuilder =
       Value<int?> deletedAt,
       Value<int> rowid,
     });
+
+final class $TagsReferences extends BaseReferences<_$EquisDatabase, Tags, Tag> {
+  $TagsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<BudgetMonthlyTags, List<BudgetMonthlyTag>>
+  _budgetMonthlyTagsRefsTable(_$EquisDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.budgetMonthlyTags,
+        aliasName: 'tags__id__budget_monthly_tags__tag_id',
+      );
+
+  $BudgetMonthlyTagsProcessedTableManager get budgetMonthlyTagsRefs {
+    final manager = $BudgetMonthlyTagsTableManager(
+      $_db,
+      $_db.budgetMonthlyTags,
+    ).filter((f) => f.tagId.id.sqlEquals($_itemColumn<String>('id')));
+
+    final cache = $_typedResult.readTableOrNull(
+      _budgetMonthlyTagsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $TagsFilterComposer extends Composer<_$EquisDatabase, Tags> {
   $TagsFilterComposer({
@@ -33602,6 +35753,31 @@ class $TagsFilterComposer extends Composer<_$EquisDatabase, Tags> {
     column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> budgetMonthlyTagsRefs(
+    Expression<bool> Function($BudgetMonthlyTagsFilterComposer f) f,
+  ) {
+    final $BudgetMonthlyTagsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyTagsFilterComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $TagsOrderingComposer extends Composer<_$EquisDatabase, Tags> {
@@ -33700,6 +35876,31 @@ class $TagsAnnotationComposer extends Composer<_$EquisDatabase, Tags> {
 
   GeneratedColumn<int> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> budgetMonthlyTagsRefs<T extends Object>(
+    Expression<T> Function($BudgetMonthlyTagsAnnotationComposer a) f,
+  ) {
+    final $BudgetMonthlyTagsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyTagsAnnotationComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $TagsTableManager
@@ -33713,9 +35914,9 @@ class $TagsTableManager
           $TagsAnnotationComposer,
           $TagsCreateCompanionBuilder,
           $TagsUpdateCompanionBuilder,
-          (Tag, BaseReferences<_$EquisDatabase, Tags, Tag>),
+          (Tag, $TagsReferences),
           Tag,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool budgetMonthlyTagsRefs})
         > {
   $TagsTableManager(_$EquisDatabase db, Tags table)
     : super(
@@ -33781,9 +35982,32 @@ class $TagsTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (e.readTable(table), $TagsReferences(db, table, e)))
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({budgetMonthlyTagsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (budgetMonthlyTagsRefs) db.budgetMonthlyTags,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (budgetMonthlyTagsRefs)
+                    await $_getPrefetchedData<Tag, Tags, BudgetMonthlyTag>(
+                      currentTable: table,
+                      referencedTable: $TagsReferences
+                          ._budgetMonthlyTagsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $TagsReferences(db, table, p0).budgetMonthlyTagsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.tagId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -33798,9 +36022,9 @@ typedef $TagsProcessedTableManager =
       $TagsAnnotationComposer,
       $TagsCreateCompanionBuilder,
       $TagsUpdateCompanionBuilder,
-      (Tag, BaseReferences<_$EquisDatabase, Tags, Tag>),
+      (Tag, $TagsReferences),
       Tag,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool budgetMonthlyTagsRefs})
     >;
 typedef $CounterpartiesCreateCompanionBuilder =
     CounterpartiesCompanion Function({
@@ -35712,6 +37936,7 @@ typedef $RecurringRulesCreateCompanionBuilder =
       required String startsOn,
       Value<String?> endsOn,
       Value<int> enabled,
+      Value<int> scheduleHistoryEdited,
       Value<String?> nextOccurrence,
       Value<int> revision,
       required int createdAt,
@@ -35729,6 +37954,7 @@ typedef $RecurringRulesUpdateCompanionBuilder =
       Value<String> startsOn,
       Value<String?> endsOn,
       Value<int> enabled,
+      Value<int> scheduleHistoryEdited,
       Value<String?> nextOccurrence,
       Value<int> revision,
       Value<int> createdAt,
@@ -35736,6 +37962,33 @@ typedef $RecurringRulesUpdateCompanionBuilder =
       Value<int?> deletedAt,
       Value<int> rowid,
     });
+
+final class $RecurringRulesReferences
+    extends BaseReferences<_$EquisDatabase, RecurringRules, RecurringRule> {
+  $RecurringRulesReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<RecurringRuleVersions, List<RecurringRuleVersion>>
+  _recurringRuleVersionsRefsTable(_$EquisDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.recurringRuleVersions,
+        aliasName:
+            'recurring_rules__id__recurring_rule_versions__recurring_rule_id',
+      );
+
+  $RecurringRuleVersionsProcessedTableManager get recurringRuleVersionsRefs {
+    final manager = $RecurringRuleVersionsTableManager(
+      $_db,
+      $_db.recurringRuleVersions,
+    ).filter((f) => f.recurringRuleId.id.sqlEquals($_itemColumn<String>('id')));
+
+    final cache = $_typedResult.readTableOrNull(
+      _recurringRuleVersionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $RecurringRulesFilterComposer
     extends Composer<_$EquisDatabase, RecurringRules> {
@@ -35786,6 +38039,11 @@ class $RecurringRulesFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get scheduleHistoryEdited => $composableBuilder(
+    column: $table.scheduleHistoryEdited,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get nextOccurrence => $composableBuilder(
     column: $table.nextOccurrence,
     builder: (column) => ColumnFilters(column),
@@ -35810,6 +38068,31 @@ class $RecurringRulesFilterComposer
     column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> recurringRuleVersionsRefs(
+    Expression<bool> Function($RecurringRuleVersionsFilterComposer f) f,
+  ) {
+    final $RecurringRuleVersionsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringRuleVersions,
+      getReferencedColumn: (t) => t.recurringRuleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $RecurringRuleVersionsFilterComposer(
+            $db: $db,
+            $table: $db.recurringRuleVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $RecurringRulesOrderingComposer
@@ -35858,6 +38141,11 @@ class $RecurringRulesOrderingComposer
 
   ColumnOrderings<int> get enabled => $composableBuilder(
     column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get scheduleHistoryEdited => $composableBuilder(
+    column: $table.scheduleHistoryEdited,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -35920,6 +38208,11 @@ class $RecurringRulesAnnotationComposer
   GeneratedColumn<int> get enabled =>
       $composableBuilder(column: $table.enabled, builder: (column) => column);
 
+  GeneratedColumn<int> get scheduleHistoryEdited => $composableBuilder(
+    column: $table.scheduleHistoryEdited,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get nextOccurrence => $composableBuilder(
     column: $table.nextOccurrence,
     builder: (column) => column,
@@ -35936,6 +38229,31 @@ class $RecurringRulesAnnotationComposer
 
   GeneratedColumn<int> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> recurringRuleVersionsRefs<T extends Object>(
+    Expression<T> Function($RecurringRuleVersionsAnnotationComposer a) f,
+  ) {
+    final $RecurringRuleVersionsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringRuleVersions,
+      getReferencedColumn: (t) => t.recurringRuleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $RecurringRuleVersionsAnnotationComposer(
+            $db: $db,
+            $table: $db.recurringRuleVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $RecurringRulesTableManager
@@ -35949,12 +38267,9 @@ class $RecurringRulesTableManager
           $RecurringRulesAnnotationComposer,
           $RecurringRulesCreateCompanionBuilder,
           $RecurringRulesUpdateCompanionBuilder,
-          (
-            RecurringRule,
-            BaseReferences<_$EquisDatabase, RecurringRules, RecurringRule>,
-          ),
+          (RecurringRule, $RecurringRulesReferences),
           RecurringRule,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool recurringRuleVersionsRefs})
         > {
   $RecurringRulesTableManager(_$EquisDatabase db, RecurringRules table)
     : super(
@@ -35977,6 +38292,7 @@ class $RecurringRulesTableManager
                 Value<String> startsOn = const Value.absent(),
                 Value<String?> endsOn = const Value.absent(),
                 Value<int> enabled = const Value.absent(),
+                Value<int> scheduleHistoryEdited = const Value.absent(),
                 Value<String?> nextOccurrence = const Value.absent(),
                 Value<int> revision = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -35992,6 +38308,7 @@ class $RecurringRulesTableManager
                 startsOn: startsOn,
                 endsOn: endsOn,
                 enabled: enabled,
+                scheduleHistoryEdited: scheduleHistoryEdited,
                 nextOccurrence: nextOccurrence,
                 revision: revision,
                 createdAt: createdAt,
@@ -36009,6 +38326,7 @@ class $RecurringRulesTableManager
                 required String startsOn,
                 Value<String?> endsOn = const Value.absent(),
                 Value<int> enabled = const Value.absent(),
+                Value<int> scheduleHistoryEdited = const Value.absent(),
                 Value<String?> nextOccurrence = const Value.absent(),
                 Value<int> revision = const Value.absent(),
                 required int createdAt,
@@ -36024,6 +38342,7 @@ class $RecurringRulesTableManager
                 startsOn: startsOn,
                 endsOn: endsOn,
                 enabled: enabled,
+                scheduleHistoryEdited: scheduleHistoryEdited,
                 nextOccurrence: nextOccurrence,
                 revision: revision,
                 createdAt: createdAt,
@@ -36032,9 +38351,46 @@ class $RecurringRulesTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $RecurringRulesReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({recurringRuleVersionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (recurringRuleVersionsRefs) db.recurringRuleVersions,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (recurringRuleVersionsRefs)
+                    await $_getPrefetchedData<
+                      RecurringRule,
+                      RecurringRules,
+                      RecurringRuleVersion
+                    >(
+                      currentTable: table,
+                      referencedTable: $RecurringRulesReferences
+                          ._recurringRuleVersionsRefsTable(db),
+                      managerFromTypedResult: (p0) => $RecurringRulesReferences(
+                        db,
+                        table,
+                        p0,
+                      ).recurringRuleVersionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.recurringRuleId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -36049,12 +38405,9 @@ typedef $RecurringRulesProcessedTableManager =
       $RecurringRulesAnnotationComposer,
       $RecurringRulesCreateCompanionBuilder,
       $RecurringRulesUpdateCompanionBuilder,
-      (
-        RecurringRule,
-        BaseReferences<_$EquisDatabase, RecurringRules, RecurringRule>,
-      ),
+      (RecurringRule, $RecurringRulesReferences),
       RecurringRule,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool recurringRuleVersionsRefs})
     >;
 typedef $RecurringTemplatesCreateCompanionBuilder =
     RecurringTemplatesCompanion Function({
@@ -38125,6 +40478,7 @@ typedef $BudgetsCreateCompanionBuilder =
       Value<int> warningThresholdBps,
       Value<String> rolloverPolicy,
       Value<int> enabled,
+      Value<int> monthlyHistoryEdited,
       Value<int> revision,
       required int createdAt,
       required int updatedAt,
@@ -38144,12 +40498,43 @@ typedef $BudgetsUpdateCompanionBuilder =
       Value<int> warningThresholdBps,
       Value<String> rolloverPolicy,
       Value<int> enabled,
+      Value<int> monthlyHistoryEdited,
       Value<int> revision,
       Value<int> createdAt,
       Value<int> updatedAt,
       Value<int?> deletedAt,
       Value<int> rowid,
     });
+
+final class $BudgetsReferences
+    extends BaseReferences<_$EquisDatabase, Budgets, Budget> {
+  $BudgetsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<
+    BudgetMonthlyConfigurations,
+    List<BudgetMonthlyConfiguration>
+  >
+  _budgetMonthlyConfigurationsRefsTable(_$EquisDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.budgetMonthlyConfigurations,
+        aliasName: 'budgets__id__budget_monthly_configurations__budget_id',
+      );
+
+  $BudgetMonthlyConfigurationsProcessedTableManager
+  get budgetMonthlyConfigurationsRefs {
+    final manager = $BudgetMonthlyConfigurationsTableManager(
+      $_db,
+      $_db.budgetMonthlyConfigurations,
+    ).filter((f) => f.budgetId.id.sqlEquals($_itemColumn<String>('id')));
+
+    final cache = $_typedResult.readTableOrNull(
+      _budgetMonthlyConfigurationsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $BudgetsFilterComposer extends Composer<_$EquisDatabase, Budgets> {
   $BudgetsFilterComposer({
@@ -38214,6 +40599,11 @@ class $BudgetsFilterComposer extends Composer<_$EquisDatabase, Budgets> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get monthlyHistoryEdited => $composableBuilder(
+    column: $table.monthlyHistoryEdited,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get revision => $composableBuilder(
     column: $table.revision,
     builder: (column) => ColumnFilters(column),
@@ -38233,6 +40623,32 @@ class $BudgetsFilterComposer extends Composer<_$EquisDatabase, Budgets> {
     column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> budgetMonthlyConfigurationsRefs(
+    Expression<bool> Function($BudgetMonthlyConfigurationsFilterComposer f) f,
+  ) {
+    final $BudgetMonthlyConfigurationsFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.budgetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsFilterComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $BudgetsOrderingComposer extends Composer<_$EquisDatabase, Budgets> {
@@ -38295,6 +40711,11 @@ class $BudgetsOrderingComposer extends Composer<_$EquisDatabase, Budgets> {
 
   ColumnOrderings<int> get enabled => $composableBuilder(
     column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get monthlyHistoryEdited => $composableBuilder(
+    column: $table.monthlyHistoryEdited,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -38370,6 +40791,11 @@ class $BudgetsAnnotationComposer extends Composer<_$EquisDatabase, Budgets> {
   GeneratedColumn<int> get enabled =>
       $composableBuilder(column: $table.enabled, builder: (column) => column);
 
+  GeneratedColumn<int> get monthlyHistoryEdited => $composableBuilder(
+    column: $table.monthlyHistoryEdited,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get revision =>
       $composableBuilder(column: $table.revision, builder: (column) => column);
 
@@ -38381,6 +40807,32 @@ class $BudgetsAnnotationComposer extends Composer<_$EquisDatabase, Budgets> {
 
   GeneratedColumn<int> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> budgetMonthlyConfigurationsRefs<T extends Object>(
+    Expression<T> Function($BudgetMonthlyConfigurationsAnnotationComposer a) f,
+  ) {
+    final $BudgetMonthlyConfigurationsAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.budgetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsAnnotationComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $BudgetsTableManager
@@ -38394,9 +40846,9 @@ class $BudgetsTableManager
           $BudgetsAnnotationComposer,
           $BudgetsCreateCompanionBuilder,
           $BudgetsUpdateCompanionBuilder,
-          (Budget, BaseReferences<_$EquisDatabase, Budgets, Budget>),
+          (Budget, $BudgetsReferences),
           Budget,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool budgetMonthlyConfigurationsRefs})
         > {
   $BudgetsTableManager(_$EquisDatabase db, Budgets table)
     : super(
@@ -38422,6 +40874,7 @@ class $BudgetsTableManager
                 Value<int> warningThresholdBps = const Value.absent(),
                 Value<String> rolloverPolicy = const Value.absent(),
                 Value<int> enabled = const Value.absent(),
+                Value<int> monthlyHistoryEdited = const Value.absent(),
                 Value<int> revision = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
@@ -38439,6 +40892,7 @@ class $BudgetsTableManager
                 warningThresholdBps: warningThresholdBps,
                 rolloverPolicy: rolloverPolicy,
                 enabled: enabled,
+                monthlyHistoryEdited: monthlyHistoryEdited,
                 revision: revision,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -38458,6 +40912,7 @@ class $BudgetsTableManager
                 Value<int> warningThresholdBps = const Value.absent(),
                 Value<String> rolloverPolicy = const Value.absent(),
                 Value<int> enabled = const Value.absent(),
+                Value<int> monthlyHistoryEdited = const Value.absent(),
                 Value<int> revision = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
@@ -38475,6 +40930,7 @@ class $BudgetsTableManager
                 warningThresholdBps: warningThresholdBps,
                 rolloverPolicy: rolloverPolicy,
                 enabled: enabled,
+                monthlyHistoryEdited: monthlyHistoryEdited,
                 revision: revision,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -38482,9 +40938,42 @@ class $BudgetsTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (e.readTable(table), $BudgetsReferences(db, table, e)),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({budgetMonthlyConfigurationsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (budgetMonthlyConfigurationsRefs)
+                  db.budgetMonthlyConfigurations,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (budgetMonthlyConfigurationsRefs)
+                    await $_getPrefetchedData<
+                      Budget,
+                      Budgets,
+                      BudgetMonthlyConfiguration
+                    >(
+                      currentTable: table,
+                      referencedTable: $BudgetsReferences
+                          ._budgetMonthlyConfigurationsRefsTable(db),
+                      managerFromTypedResult: (p0) => $BudgetsReferences(
+                        db,
+                        table,
+                        p0,
+                      ).budgetMonthlyConfigurationsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.budgetId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -38499,9 +40988,9 @@ typedef $BudgetsProcessedTableManager =
       $BudgetsAnnotationComposer,
       $BudgetsCreateCompanionBuilder,
       $BudgetsUpdateCompanionBuilder,
-      (Budget, BaseReferences<_$EquisDatabase, Budgets, Budget>),
+      (Budget, $BudgetsReferences),
       Budget,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool budgetMonthlyConfigurationsRefs})
     >;
 typedef $BudgetCategoriesCreateCompanionBuilder =
     BudgetCategoriesCompanion Function({
@@ -38947,6 +41436,2196 @@ typedef $BudgetTagsProcessedTableManager =
       (BudgetTag, BaseReferences<_$EquisDatabase, BudgetTags, BudgetTag>),
       BudgetTag,
       PrefetchHooks Function()
+    >;
+typedef $BudgetMonthlyConfigurationsCreateCompanionBuilder =
+    BudgetMonthlyConfigurationsCompanion Function({
+      required String id,
+      required String budgetId,
+      required String kind,
+      required String monthStart,
+      required String limitMethod,
+      required int amountMinor,
+      required int warningThresholdBps,
+      Value<int> rowid,
+    });
+typedef $BudgetMonthlyConfigurationsUpdateCompanionBuilder =
+    BudgetMonthlyConfigurationsCompanion Function({
+      Value<String> id,
+      Value<String> budgetId,
+      Value<String> kind,
+      Value<String> monthStart,
+      Value<String> limitMethod,
+      Value<int> amountMinor,
+      Value<int> warningThresholdBps,
+      Value<int> rowid,
+    });
+
+final class $BudgetMonthlyConfigurationsReferences
+    extends
+        BaseReferences<
+          _$EquisDatabase,
+          BudgetMonthlyConfigurations,
+          BudgetMonthlyConfiguration
+        > {
+  $BudgetMonthlyConfigurationsReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static Budgets _budgetIdTable(_$EquisDatabase db) => db.budgets.createAlias(
+    'budget_monthly_configurations__budget_id__budgets__id',
+  );
+
+  $BudgetsProcessedTableManager get budgetId {
+    final $_column = $_itemColumn<String>('budget_id')!;
+
+    final manager = $BudgetsTableManager(
+      $_db,
+      $_db.budgets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_budgetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    BudgetMonthlyCategories,
+    List<BudgetMonthlyCategory>
+  >
+  _budgetMonthlyCategoriesRefsTable(
+    _$EquisDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.budgetMonthlyCategories,
+    aliasName:
+        'budget_monthly_configurations__id__budget_monthly_categories__configuration_id',
+  );
+
+  $BudgetMonthlyCategoriesProcessedTableManager
+  get budgetMonthlyCategoriesRefs {
+    final manager =
+        $BudgetMonthlyCategoriesTableManager(
+          $_db,
+          $_db.budgetMonthlyCategories,
+        ).filter(
+          (f) => f.configurationId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _budgetMonthlyCategoriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<BudgetMonthlyAccounts, List<BudgetMonthlyAccount>>
+  _budgetMonthlyAccountsRefsTable(
+    _$EquisDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.budgetMonthlyAccounts,
+    aliasName:
+        'budget_monthly_configurations__id__budget_monthly_accounts__configuration_id',
+  );
+
+  $BudgetMonthlyAccountsProcessedTableManager get budgetMonthlyAccountsRefs {
+    final manager =
+        $BudgetMonthlyAccountsTableManager(
+          $_db,
+          $_db.budgetMonthlyAccounts,
+        ).filter(
+          (f) => f.configurationId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _budgetMonthlyAccountsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<BudgetMonthlyTags, List<BudgetMonthlyTag>>
+  _budgetMonthlyTagsRefsTable(
+    _$EquisDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.budgetMonthlyTags,
+    aliasName:
+        'budget_monthly_configurations__id__budget_monthly_tags__configuration_id',
+  );
+
+  $BudgetMonthlyTagsProcessedTableManager get budgetMonthlyTagsRefs {
+    final manager = $BudgetMonthlyTagsTableManager($_db, $_db.budgetMonthlyTags)
+        .filter(
+          (f) => f.configurationId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _budgetMonthlyTagsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $BudgetMonthlyConfigurationsFilterComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyConfigurations> {
+  $BudgetMonthlyConfigurationsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get monthStart => $composableBuilder(
+    column: $table.monthStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get limitMethod => $composableBuilder(
+    column: $table.limitMethod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get warningThresholdBps => $composableBuilder(
+    column: $table.warningThresholdBps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $BudgetsFilterComposer get budgetId {
+    final $BudgetsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.budgetId,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetsFilterComposer(
+            $db: $db,
+            $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> budgetMonthlyCategoriesRefs(
+    Expression<bool> Function($BudgetMonthlyCategoriesFilterComposer f) f,
+  ) {
+    final $BudgetMonthlyCategoriesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyCategories,
+      getReferencedColumn: (t) => t.configurationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyCategoriesFilterComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> budgetMonthlyAccountsRefs(
+    Expression<bool> Function($BudgetMonthlyAccountsFilterComposer f) f,
+  ) {
+    final $BudgetMonthlyAccountsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyAccounts,
+      getReferencedColumn: (t) => t.configurationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyAccountsFilterComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> budgetMonthlyTagsRefs(
+    Expression<bool> Function($BudgetMonthlyTagsFilterComposer f) f,
+  ) {
+    final $BudgetMonthlyTagsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyTags,
+      getReferencedColumn: (t) => t.configurationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyTagsFilterComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $BudgetMonthlyConfigurationsOrderingComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyConfigurations> {
+  $BudgetMonthlyConfigurationsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get monthStart => $composableBuilder(
+    column: $table.monthStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get limitMethod => $composableBuilder(
+    column: $table.limitMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get warningThresholdBps => $composableBuilder(
+    column: $table.warningThresholdBps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $BudgetsOrderingComposer get budgetId {
+    final $BudgetsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.budgetId,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetsOrderingComposer(
+            $db: $db,
+            $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyConfigurationsAnnotationComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyConfigurations> {
+  $BudgetMonthlyConfigurationsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get monthStart => $composableBuilder(
+    column: $table.monthStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get limitMethod => $composableBuilder(
+    column: $table.limitMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get warningThresholdBps => $composableBuilder(
+    column: $table.warningThresholdBps,
+    builder: (column) => column,
+  );
+
+  $BudgetsAnnotationComposer get budgetId {
+    final $BudgetsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.budgetId,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetsAnnotationComposer(
+            $db: $db,
+            $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> budgetMonthlyCategoriesRefs<T extends Object>(
+    Expression<T> Function($BudgetMonthlyCategoriesAnnotationComposer a) f,
+  ) {
+    final $BudgetMonthlyCategoriesAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.budgetMonthlyCategories,
+          getReferencedColumn: (t) => t.configurationId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyCategoriesAnnotationComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyCategories,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> budgetMonthlyAccountsRefs<T extends Object>(
+    Expression<T> Function($BudgetMonthlyAccountsAnnotationComposer a) f,
+  ) {
+    final $BudgetMonthlyAccountsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyAccounts,
+      getReferencedColumn: (t) => t.configurationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyAccountsAnnotationComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> budgetMonthlyTagsRefs<T extends Object>(
+    Expression<T> Function($BudgetMonthlyTagsAnnotationComposer a) f,
+  ) {
+    final $BudgetMonthlyTagsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetMonthlyTags,
+      getReferencedColumn: (t) => t.configurationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetMonthlyTagsAnnotationComposer(
+            $db: $db,
+            $table: $db.budgetMonthlyTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $BudgetMonthlyConfigurationsTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          BudgetMonthlyConfigurations,
+          BudgetMonthlyConfiguration,
+          $BudgetMonthlyConfigurationsFilterComposer,
+          $BudgetMonthlyConfigurationsOrderingComposer,
+          $BudgetMonthlyConfigurationsAnnotationComposer,
+          $BudgetMonthlyConfigurationsCreateCompanionBuilder,
+          $BudgetMonthlyConfigurationsUpdateCompanionBuilder,
+          (BudgetMonthlyConfiguration, $BudgetMonthlyConfigurationsReferences),
+          BudgetMonthlyConfiguration,
+          PrefetchHooks Function({
+            bool budgetId,
+            bool budgetMonthlyCategoriesRefs,
+            bool budgetMonthlyAccountsRefs,
+            bool budgetMonthlyTagsRefs,
+          })
+        > {
+  $BudgetMonthlyConfigurationsTableManager(
+    _$EquisDatabase db,
+    BudgetMonthlyConfigurations table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $BudgetMonthlyConfigurationsFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $BudgetMonthlyConfigurationsOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $BudgetMonthlyConfigurationsAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> budgetId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> monthStart = const Value.absent(),
+                Value<String> limitMethod = const Value.absent(),
+                Value<int> amountMinor = const Value.absent(),
+                Value<int> warningThresholdBps = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetMonthlyConfigurationsCompanion(
+                id: id,
+                budgetId: budgetId,
+                kind: kind,
+                monthStart: monthStart,
+                limitMethod: limitMethod,
+                amountMinor: amountMinor,
+                warningThresholdBps: warningThresholdBps,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String budgetId,
+                required String kind,
+                required String monthStart,
+                required String limitMethod,
+                required int amountMinor,
+                required int warningThresholdBps,
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetMonthlyConfigurationsCompanion.insert(
+                id: id,
+                budgetId: budgetId,
+                kind: kind,
+                monthStart: monthStart,
+                limitMethod: limitMethod,
+                amountMinor: amountMinor,
+                warningThresholdBps: warningThresholdBps,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $BudgetMonthlyConfigurationsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                budgetId = false,
+                budgetMonthlyCategoriesRefs = false,
+                budgetMonthlyAccountsRefs = false,
+                budgetMonthlyTagsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (budgetMonthlyCategoriesRefs) db.budgetMonthlyCategories,
+                    if (budgetMonthlyAccountsRefs) db.budgetMonthlyAccounts,
+                    if (budgetMonthlyTagsRefs) db.budgetMonthlyTags,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (budgetId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.budgetId,
+                                    referencedTable:
+                                        $BudgetMonthlyConfigurationsReferences
+                                            ._budgetIdTable(db),
+                                    referencedColumn:
+                                        $BudgetMonthlyConfigurationsReferences
+                                            ._budgetIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (budgetMonthlyCategoriesRefs)
+                        await $_getPrefetchedData<
+                          BudgetMonthlyConfiguration,
+                          BudgetMonthlyConfigurations,
+                          BudgetMonthlyCategory
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $BudgetMonthlyConfigurationsReferences
+                                  ._budgetMonthlyCategoriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $BudgetMonthlyConfigurationsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).budgetMonthlyCategoriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.configurationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (budgetMonthlyAccountsRefs)
+                        await $_getPrefetchedData<
+                          BudgetMonthlyConfiguration,
+                          BudgetMonthlyConfigurations,
+                          BudgetMonthlyAccount
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $BudgetMonthlyConfigurationsReferences
+                                  ._budgetMonthlyAccountsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $BudgetMonthlyConfigurationsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).budgetMonthlyAccountsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.configurationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (budgetMonthlyTagsRefs)
+                        await $_getPrefetchedData<
+                          BudgetMonthlyConfiguration,
+                          BudgetMonthlyConfigurations,
+                          BudgetMonthlyTag
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $BudgetMonthlyConfigurationsReferences
+                                  ._budgetMonthlyTagsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $BudgetMonthlyConfigurationsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).budgetMonthlyTagsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.configurationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $BudgetMonthlyConfigurationsProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      BudgetMonthlyConfigurations,
+      BudgetMonthlyConfiguration,
+      $BudgetMonthlyConfigurationsFilterComposer,
+      $BudgetMonthlyConfigurationsOrderingComposer,
+      $BudgetMonthlyConfigurationsAnnotationComposer,
+      $BudgetMonthlyConfigurationsCreateCompanionBuilder,
+      $BudgetMonthlyConfigurationsUpdateCompanionBuilder,
+      (BudgetMonthlyConfiguration, $BudgetMonthlyConfigurationsReferences),
+      BudgetMonthlyConfiguration,
+      PrefetchHooks Function({
+        bool budgetId,
+        bool budgetMonthlyCategoriesRefs,
+        bool budgetMonthlyAccountsRefs,
+        bool budgetMonthlyTagsRefs,
+      })
+    >;
+typedef $BudgetMonthlyCategoriesCreateCompanionBuilder =
+    BudgetMonthlyCategoriesCompanion Function({
+      required String configurationId,
+      required String categoryId,
+      Value<int> includeDescendants,
+      Value<int> rowid,
+    });
+typedef $BudgetMonthlyCategoriesUpdateCompanionBuilder =
+    BudgetMonthlyCategoriesCompanion Function({
+      Value<String> configurationId,
+      Value<String> categoryId,
+      Value<int> includeDescendants,
+      Value<int> rowid,
+    });
+
+final class $BudgetMonthlyCategoriesReferences
+    extends
+        BaseReferences<
+          _$EquisDatabase,
+          BudgetMonthlyCategories,
+          BudgetMonthlyCategory
+        > {
+  $BudgetMonthlyCategoriesReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static BudgetMonthlyConfigurations _configurationIdTable(
+    _$EquisDatabase db,
+  ) => db.budgetMonthlyConfigurations.createAlias(
+    'budget_monthly_categories__configuration_id__budget_monthly_configurations__id',
+  );
+
+  $BudgetMonthlyConfigurationsProcessedTableManager get configurationId {
+    final $_column = $_itemColumn<String>('configuration_id')!;
+
+    final manager = $BudgetMonthlyConfigurationsTableManager(
+      $_db,
+      $_db.budgetMonthlyConfigurations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_configurationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Categories _categoryIdTable(_$EquisDatabase db) => db.categories
+      .createAlias('budget_monthly_categories__category_id__categories__id');
+
+  $CategoriesProcessedTableManager get categoryId {
+    final $_column = $_itemColumn<String>('category_id')!;
+
+    final manager = $CategoriesTableManager(
+      $_db,
+      $_db.categories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $BudgetMonthlyCategoriesFilterComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyCategories> {
+  $BudgetMonthlyCategoriesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get includeDescendants => $composableBuilder(
+    column: $table.includeDescendants,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $BudgetMonthlyConfigurationsFilterComposer get configurationId {
+    final $BudgetMonthlyConfigurationsFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsFilterComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $CategoriesFilterComposer get categoryId {
+    final $CategoriesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CategoriesFilterComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyCategoriesOrderingComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyCategories> {
+  $BudgetMonthlyCategoriesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get includeDescendants => $composableBuilder(
+    column: $table.includeDescendants,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $BudgetMonthlyConfigurationsOrderingComposer get configurationId {
+    final $BudgetMonthlyConfigurationsOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsOrderingComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $CategoriesOrderingComposer get categoryId {
+    final $CategoriesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CategoriesOrderingComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyCategoriesAnnotationComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyCategories> {
+  $BudgetMonthlyCategoriesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get includeDescendants => $composableBuilder(
+    column: $table.includeDescendants,
+    builder: (column) => column,
+  );
+
+  $BudgetMonthlyConfigurationsAnnotationComposer get configurationId {
+    final $BudgetMonthlyConfigurationsAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsAnnotationComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $CategoriesAnnotationComposer get categoryId {
+    final $CategoriesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CategoriesAnnotationComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyCategoriesTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          BudgetMonthlyCategories,
+          BudgetMonthlyCategory,
+          $BudgetMonthlyCategoriesFilterComposer,
+          $BudgetMonthlyCategoriesOrderingComposer,
+          $BudgetMonthlyCategoriesAnnotationComposer,
+          $BudgetMonthlyCategoriesCreateCompanionBuilder,
+          $BudgetMonthlyCategoriesUpdateCompanionBuilder,
+          (BudgetMonthlyCategory, $BudgetMonthlyCategoriesReferences),
+          BudgetMonthlyCategory,
+          PrefetchHooks Function({bool configurationId, bool categoryId})
+        > {
+  $BudgetMonthlyCategoriesTableManager(
+    _$EquisDatabase db,
+    BudgetMonthlyCategories table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $BudgetMonthlyCategoriesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $BudgetMonthlyCategoriesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $BudgetMonthlyCategoriesAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> configurationId = const Value.absent(),
+                Value<String> categoryId = const Value.absent(),
+                Value<int> includeDescendants = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetMonthlyCategoriesCompanion(
+                configurationId: configurationId,
+                categoryId: categoryId,
+                includeDescendants: includeDescendants,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String configurationId,
+                required String categoryId,
+                Value<int> includeDescendants = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetMonthlyCategoriesCompanion.insert(
+                configurationId: configurationId,
+                categoryId: categoryId,
+                includeDescendants: includeDescendants,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $BudgetMonthlyCategoriesReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({configurationId = false, categoryId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (configurationId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.configurationId,
+                                    referencedTable:
+                                        $BudgetMonthlyCategoriesReferences
+                                            ._configurationIdTable(db),
+                                    referencedColumn:
+                                        $BudgetMonthlyCategoriesReferences
+                                            ._configurationIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (categoryId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.categoryId,
+                                    referencedTable:
+                                        $BudgetMonthlyCategoriesReferences
+                                            ._categoryIdTable(db),
+                                    referencedColumn:
+                                        $BudgetMonthlyCategoriesReferences
+                                            ._categoryIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $BudgetMonthlyCategoriesProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      BudgetMonthlyCategories,
+      BudgetMonthlyCategory,
+      $BudgetMonthlyCategoriesFilterComposer,
+      $BudgetMonthlyCategoriesOrderingComposer,
+      $BudgetMonthlyCategoriesAnnotationComposer,
+      $BudgetMonthlyCategoriesCreateCompanionBuilder,
+      $BudgetMonthlyCategoriesUpdateCompanionBuilder,
+      (BudgetMonthlyCategory, $BudgetMonthlyCategoriesReferences),
+      BudgetMonthlyCategory,
+      PrefetchHooks Function({bool configurationId, bool categoryId})
+    >;
+typedef $BudgetMonthlyAccountsCreateCompanionBuilder =
+    BudgetMonthlyAccountsCompanion Function({
+      required String configurationId,
+      required String accountId,
+      Value<int> rowid,
+    });
+typedef $BudgetMonthlyAccountsUpdateCompanionBuilder =
+    BudgetMonthlyAccountsCompanion Function({
+      Value<String> configurationId,
+      Value<String> accountId,
+      Value<int> rowid,
+    });
+
+final class $BudgetMonthlyAccountsReferences
+    extends
+        BaseReferences<
+          _$EquisDatabase,
+          BudgetMonthlyAccounts,
+          BudgetMonthlyAccount
+        > {
+  $BudgetMonthlyAccountsReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static BudgetMonthlyConfigurations _configurationIdTable(
+    _$EquisDatabase db,
+  ) => db.budgetMonthlyConfigurations.createAlias(
+    'budget_monthly_accounts__configuration_id__budget_monthly_configurations__id',
+  );
+
+  $BudgetMonthlyConfigurationsProcessedTableManager get configurationId {
+    final $_column = $_itemColumn<String>('configuration_id')!;
+
+    final manager = $BudgetMonthlyConfigurationsTableManager(
+      $_db,
+      $_db.budgetMonthlyConfigurations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_configurationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Accounts _accountIdTable(_$EquisDatabase db) => db.accounts
+      .createAlias('budget_monthly_accounts__account_id__accounts__id');
+
+  $AccountsProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $AccountsTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $BudgetMonthlyAccountsFilterComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyAccounts> {
+  $BudgetMonthlyAccountsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $BudgetMonthlyConfigurationsFilterComposer get configurationId {
+    final $BudgetMonthlyConfigurationsFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsFilterComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $AccountsFilterComposer get accountId {
+    final $AccountsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $AccountsFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyAccountsOrderingComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyAccounts> {
+  $BudgetMonthlyAccountsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $BudgetMonthlyConfigurationsOrderingComposer get configurationId {
+    final $BudgetMonthlyConfigurationsOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsOrderingComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $AccountsOrderingComposer get accountId {
+    final $AccountsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $AccountsOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyAccountsAnnotationComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyAccounts> {
+  $BudgetMonthlyAccountsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $BudgetMonthlyConfigurationsAnnotationComposer get configurationId {
+    final $BudgetMonthlyConfigurationsAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsAnnotationComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $AccountsAnnotationComposer get accountId {
+    final $AccountsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $AccountsAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyAccountsTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          BudgetMonthlyAccounts,
+          BudgetMonthlyAccount,
+          $BudgetMonthlyAccountsFilterComposer,
+          $BudgetMonthlyAccountsOrderingComposer,
+          $BudgetMonthlyAccountsAnnotationComposer,
+          $BudgetMonthlyAccountsCreateCompanionBuilder,
+          $BudgetMonthlyAccountsUpdateCompanionBuilder,
+          (BudgetMonthlyAccount, $BudgetMonthlyAccountsReferences),
+          BudgetMonthlyAccount,
+          PrefetchHooks Function({bool configurationId, bool accountId})
+        > {
+  $BudgetMonthlyAccountsTableManager(
+    _$EquisDatabase db,
+    BudgetMonthlyAccounts table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $BudgetMonthlyAccountsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $BudgetMonthlyAccountsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $BudgetMonthlyAccountsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> configurationId = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetMonthlyAccountsCompanion(
+                configurationId: configurationId,
+                accountId: accountId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String configurationId,
+                required String accountId,
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetMonthlyAccountsCompanion.insert(
+                configurationId: configurationId,
+                accountId: accountId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $BudgetMonthlyAccountsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({configurationId = false, accountId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (configurationId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.configurationId,
+                                    referencedTable:
+                                        $BudgetMonthlyAccountsReferences
+                                            ._configurationIdTable(db),
+                                    referencedColumn:
+                                        $BudgetMonthlyAccountsReferences
+                                            ._configurationIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (accountId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.accountId,
+                                    referencedTable:
+                                        $BudgetMonthlyAccountsReferences
+                                            ._accountIdTable(db),
+                                    referencedColumn:
+                                        $BudgetMonthlyAccountsReferences
+                                            ._accountIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $BudgetMonthlyAccountsProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      BudgetMonthlyAccounts,
+      BudgetMonthlyAccount,
+      $BudgetMonthlyAccountsFilterComposer,
+      $BudgetMonthlyAccountsOrderingComposer,
+      $BudgetMonthlyAccountsAnnotationComposer,
+      $BudgetMonthlyAccountsCreateCompanionBuilder,
+      $BudgetMonthlyAccountsUpdateCompanionBuilder,
+      (BudgetMonthlyAccount, $BudgetMonthlyAccountsReferences),
+      BudgetMonthlyAccount,
+      PrefetchHooks Function({bool configurationId, bool accountId})
+    >;
+typedef $BudgetMonthlyTagsCreateCompanionBuilder =
+    BudgetMonthlyTagsCompanion Function({
+      required String configurationId,
+      required String tagId,
+      Value<int> rowid,
+    });
+typedef $BudgetMonthlyTagsUpdateCompanionBuilder =
+    BudgetMonthlyTagsCompanion Function({
+      Value<String> configurationId,
+      Value<String> tagId,
+      Value<int> rowid,
+    });
+
+final class $BudgetMonthlyTagsReferences
+    extends
+        BaseReferences<_$EquisDatabase, BudgetMonthlyTags, BudgetMonthlyTag> {
+  $BudgetMonthlyTagsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static BudgetMonthlyConfigurations _configurationIdTable(
+    _$EquisDatabase db,
+  ) => db.budgetMonthlyConfigurations.createAlias(
+    'budget_monthly_tags__configuration_id__budget_monthly_configurations__id',
+  );
+
+  $BudgetMonthlyConfigurationsProcessedTableManager get configurationId {
+    final $_column = $_itemColumn<String>('configuration_id')!;
+
+    final manager = $BudgetMonthlyConfigurationsTableManager(
+      $_db,
+      $_db.budgetMonthlyConfigurations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_configurationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Tags _tagIdTable(_$EquisDatabase db) =>
+      db.tags.createAlias('budget_monthly_tags__tag_id__tags__id');
+
+  $TagsProcessedTableManager get tagId {
+    final $_column = $_itemColumn<String>('tag_id')!;
+
+    final manager = $TagsTableManager(
+      $_db,
+      $_db.tags,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tagIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $BudgetMonthlyTagsFilterComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyTags> {
+  $BudgetMonthlyTagsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $BudgetMonthlyConfigurationsFilterComposer get configurationId {
+    final $BudgetMonthlyConfigurationsFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsFilterComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $TagsFilterComposer get tagId {
+    final $TagsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $TagsFilterComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyTagsOrderingComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyTags> {
+  $BudgetMonthlyTagsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $BudgetMonthlyConfigurationsOrderingComposer get configurationId {
+    final $BudgetMonthlyConfigurationsOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsOrderingComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $TagsOrderingComposer get tagId {
+    final $TagsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $TagsOrderingComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyTagsAnnotationComposer
+    extends Composer<_$EquisDatabase, BudgetMonthlyTags> {
+  $BudgetMonthlyTagsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $BudgetMonthlyConfigurationsAnnotationComposer get configurationId {
+    final $BudgetMonthlyConfigurationsAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.configurationId,
+          referencedTable: $db.budgetMonthlyConfigurations,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $BudgetMonthlyConfigurationsAnnotationComposer(
+                $db: $db,
+                $table: $db.budgetMonthlyConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $TagsAnnotationComposer get tagId {
+    final $TagsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $TagsAnnotationComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetMonthlyTagsTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          BudgetMonthlyTags,
+          BudgetMonthlyTag,
+          $BudgetMonthlyTagsFilterComposer,
+          $BudgetMonthlyTagsOrderingComposer,
+          $BudgetMonthlyTagsAnnotationComposer,
+          $BudgetMonthlyTagsCreateCompanionBuilder,
+          $BudgetMonthlyTagsUpdateCompanionBuilder,
+          (BudgetMonthlyTag, $BudgetMonthlyTagsReferences),
+          BudgetMonthlyTag,
+          PrefetchHooks Function({bool configurationId, bool tagId})
+        > {
+  $BudgetMonthlyTagsTableManager(_$EquisDatabase db, BudgetMonthlyTags table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $BudgetMonthlyTagsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $BudgetMonthlyTagsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $BudgetMonthlyTagsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> configurationId = const Value.absent(),
+                Value<String> tagId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetMonthlyTagsCompanion(
+                configurationId: configurationId,
+                tagId: tagId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String configurationId,
+                required String tagId,
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetMonthlyTagsCompanion.insert(
+                configurationId: configurationId,
+                tagId: tagId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $BudgetMonthlyTagsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({configurationId = false, tagId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (configurationId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.configurationId,
+                                referencedTable: $BudgetMonthlyTagsReferences
+                                    ._configurationIdTable(db),
+                                referencedColumn: $BudgetMonthlyTagsReferences
+                                    ._configurationIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (tagId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tagId,
+                                referencedTable: $BudgetMonthlyTagsReferences
+                                    ._tagIdTable(db),
+                                referencedColumn: $BudgetMonthlyTagsReferences
+                                    ._tagIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $BudgetMonthlyTagsProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      BudgetMonthlyTags,
+      BudgetMonthlyTag,
+      $BudgetMonthlyTagsFilterComposer,
+      $BudgetMonthlyTagsOrderingComposer,
+      $BudgetMonthlyTagsAnnotationComposer,
+      $BudgetMonthlyTagsCreateCompanionBuilder,
+      $BudgetMonthlyTagsUpdateCompanionBuilder,
+      (BudgetMonthlyTag, $BudgetMonthlyTagsReferences),
+      BudgetMonthlyTag,
+      PrefetchHooks Function({bool configurationId, bool tagId})
+    >;
+typedef $RecurringRuleVersionsCreateCompanionBuilder =
+    RecurringRuleVersionsCompanion Function({
+      required String recurringRuleId,
+      required String effectiveFrom,
+      required String anchorOn,
+      required String name,
+      required String rrule,
+      Value<String?> endsOn,
+      required String templateJson,
+      Value<int> rowid,
+    });
+typedef $RecurringRuleVersionsUpdateCompanionBuilder =
+    RecurringRuleVersionsCompanion Function({
+      Value<String> recurringRuleId,
+      Value<String> effectiveFrom,
+      Value<String> anchorOn,
+      Value<String> name,
+      Value<String> rrule,
+      Value<String?> endsOn,
+      Value<String> templateJson,
+      Value<int> rowid,
+    });
+
+final class $RecurringRuleVersionsReferences
+    extends
+        BaseReferences<
+          _$EquisDatabase,
+          RecurringRuleVersions,
+          RecurringRuleVersion
+        > {
+  $RecurringRuleVersionsReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static RecurringRules _recurringRuleIdTable(_$EquisDatabase db) =>
+      db.recurringRules.createAlias(
+        'recurring_rule_versions__recurring_rule_id__recurring_rules__id',
+      );
+
+  $RecurringRulesProcessedTableManager get recurringRuleId {
+    final $_column = $_itemColumn<String>('recurring_rule_id')!;
+
+    final manager = $RecurringRulesTableManager(
+      $_db,
+      $_db.recurringRules,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_recurringRuleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $RecurringRuleVersionsFilterComposer
+    extends Composer<_$EquisDatabase, RecurringRuleVersions> {
+  $RecurringRuleVersionsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get effectiveFrom => $composableBuilder(
+    column: $table.effectiveFrom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get anchorOn => $composableBuilder(
+    column: $table.anchorOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rrule => $composableBuilder(
+    column: $table.rrule,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endsOn => $composableBuilder(
+    column: $table.endsOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get templateJson => $composableBuilder(
+    column: $table.templateJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $RecurringRulesFilterComposer get recurringRuleId {
+    final $RecurringRulesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recurringRuleId,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $RecurringRulesFilterComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $RecurringRuleVersionsOrderingComposer
+    extends Composer<_$EquisDatabase, RecurringRuleVersions> {
+  $RecurringRuleVersionsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get effectiveFrom => $composableBuilder(
+    column: $table.effectiveFrom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get anchorOn => $composableBuilder(
+    column: $table.anchorOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rrule => $composableBuilder(
+    column: $table.rrule,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endsOn => $composableBuilder(
+    column: $table.endsOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get templateJson => $composableBuilder(
+    column: $table.templateJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $RecurringRulesOrderingComposer get recurringRuleId {
+    final $RecurringRulesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recurringRuleId,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $RecurringRulesOrderingComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $RecurringRuleVersionsAnnotationComposer
+    extends Composer<_$EquisDatabase, RecurringRuleVersions> {
+  $RecurringRuleVersionsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get effectiveFrom => $composableBuilder(
+    column: $table.effectiveFrom,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get anchorOn =>
+      $composableBuilder(column: $table.anchorOn, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get rrule =>
+      $composableBuilder(column: $table.rrule, builder: (column) => column);
+
+  GeneratedColumn<String> get endsOn =>
+      $composableBuilder(column: $table.endsOn, builder: (column) => column);
+
+  GeneratedColumn<String> get templateJson => $composableBuilder(
+    column: $table.templateJson,
+    builder: (column) => column,
+  );
+
+  $RecurringRulesAnnotationComposer get recurringRuleId {
+    final $RecurringRulesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recurringRuleId,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $RecurringRulesAnnotationComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $RecurringRuleVersionsTableManager
+    extends
+        RootTableManager<
+          _$EquisDatabase,
+          RecurringRuleVersions,
+          RecurringRuleVersion,
+          $RecurringRuleVersionsFilterComposer,
+          $RecurringRuleVersionsOrderingComposer,
+          $RecurringRuleVersionsAnnotationComposer,
+          $RecurringRuleVersionsCreateCompanionBuilder,
+          $RecurringRuleVersionsUpdateCompanionBuilder,
+          (RecurringRuleVersion, $RecurringRuleVersionsReferences),
+          RecurringRuleVersion,
+          PrefetchHooks Function({bool recurringRuleId})
+        > {
+  $RecurringRuleVersionsTableManager(
+    _$EquisDatabase db,
+    RecurringRuleVersions table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $RecurringRuleVersionsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $RecurringRuleVersionsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $RecurringRuleVersionsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> recurringRuleId = const Value.absent(),
+                Value<String> effectiveFrom = const Value.absent(),
+                Value<String> anchorOn = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> rrule = const Value.absent(),
+                Value<String?> endsOn = const Value.absent(),
+                Value<String> templateJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringRuleVersionsCompanion(
+                recurringRuleId: recurringRuleId,
+                effectiveFrom: effectiveFrom,
+                anchorOn: anchorOn,
+                name: name,
+                rrule: rrule,
+                endsOn: endsOn,
+                templateJson: templateJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String recurringRuleId,
+                required String effectiveFrom,
+                required String anchorOn,
+                required String name,
+                required String rrule,
+                Value<String?> endsOn = const Value.absent(),
+                required String templateJson,
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringRuleVersionsCompanion.insert(
+                recurringRuleId: recurringRuleId,
+                effectiveFrom: effectiveFrom,
+                anchorOn: anchorOn,
+                name: name,
+                rrule: rrule,
+                endsOn: endsOn,
+                templateJson: templateJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $RecurringRuleVersionsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({recurringRuleId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (recurringRuleId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.recurringRuleId,
+                                referencedTable:
+                                    $RecurringRuleVersionsReferences
+                                        ._recurringRuleIdTable(db),
+                                referencedColumn:
+                                    $RecurringRuleVersionsReferences
+                                        ._recurringRuleIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $RecurringRuleVersionsProcessedTableManager =
+    ProcessedTableManager<
+      _$EquisDatabase,
+      RecurringRuleVersions,
+      RecurringRuleVersion,
+      $RecurringRuleVersionsFilterComposer,
+      $RecurringRuleVersionsOrderingComposer,
+      $RecurringRuleVersionsAnnotationComposer,
+      $RecurringRuleVersionsCreateCompanionBuilder,
+      $RecurringRuleVersionsUpdateCompanionBuilder,
+      (RecurringRuleVersion, $RecurringRuleVersionsReferences),
+      RecurringRuleVersion,
+      PrefetchHooks Function({bool recurringRuleId})
     >;
 typedef $GoalsCreateCompanionBuilder =
     GoalsCompanion Function({
@@ -47064,6 +51743,19 @@ class $EquisDatabaseManager {
       $BudgetAccountsTableManager(_db, _db.budgetAccounts);
   $BudgetTagsTableManager get budgetTags =>
       $BudgetTagsTableManager(_db, _db.budgetTags);
+  $BudgetMonthlyConfigurationsTableManager get budgetMonthlyConfigurations =>
+      $BudgetMonthlyConfigurationsTableManager(
+        _db,
+        _db.budgetMonthlyConfigurations,
+      );
+  $BudgetMonthlyCategoriesTableManager get budgetMonthlyCategories =>
+      $BudgetMonthlyCategoriesTableManager(_db, _db.budgetMonthlyCategories);
+  $BudgetMonthlyAccountsTableManager get budgetMonthlyAccounts =>
+      $BudgetMonthlyAccountsTableManager(_db, _db.budgetMonthlyAccounts);
+  $BudgetMonthlyTagsTableManager get budgetMonthlyTags =>
+      $BudgetMonthlyTagsTableManager(_db, _db.budgetMonthlyTags);
+  $RecurringRuleVersionsTableManager get recurringRuleVersions =>
+      $RecurringRuleVersionsTableManager(_db, _db.recurringRuleVersions);
   $GoalsTableManager get goals => $GoalsTableManager(_db, _db.goals);
   $GoalAccountsTableManager get goalAccounts =>
       $GoalAccountsTableManager(_db, _db.goalAccounts);

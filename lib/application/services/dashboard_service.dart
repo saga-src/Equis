@@ -17,14 +17,18 @@ final class DashboardService {
     required EntityId vaultId,
     required CurrencyCode reportingCurrency,
     required LocalDate asOf,
+    DashboardDateRange? range,
   }) async {
     repository.beginRead();
-    final periodStart = LocalDate(asOf.year, asOf.month, 1);
-    final periodEnd = LocalDate(
-      asOf.year,
-      asOf.month,
-      DateTime.utc(asOf.year, asOf.month + 1, 0).day,
-    );
+    range?.validateAsOf(asOf);
+    final periodStart = range?.from ?? LocalDate(asOf.year, asOf.month, 1);
+    final periodEnd =
+        range?.through ??
+        LocalDate(
+          asOf.year,
+          asOf.month,
+          DateTime.utc(asOf.year, asOf.month + 1, 0).day,
+        );
     final splits = await repository.loadSplits(
       vaultId: vaultId,
       from: periodStart,
@@ -149,7 +153,7 @@ final class DashboardService {
     final trend = <CashFlowPoint>[];
     for (
       var date = periodStart;
-      date.compareTo(asOf) <= 0;
+      date.compareTo(range?.through ?? asOf) <= 0;
       date = date.addDays(1)
     ) {
       trend.add(

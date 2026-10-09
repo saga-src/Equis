@@ -34,9 +34,10 @@ final class AppUpdateService extends ChangeNotifier
   }) : directory = Directory(p.normalize(directory.path)),
        _client = client ?? http.Client();
   static const current = UpdateVersion(
-    String.fromEnvironment('EQUIS_VERSION', defaultValue: '1.2.1'),
-    int.fromEnvironment('EQUIS_BUILD', defaultValue: 13),
+    String.fromEnvironment('EQUIS_VERSION', defaultValue: '1.3.0'),
+    int.fromEnvironment('EQUIS_BUILD', defaultValue: 14),
   );
+  static const releaseRepository = 'saga-src/equis-releases';
   final Directory directory;
   final SharedPreferences preferences;
   final String platform;
@@ -159,8 +160,10 @@ final class AppUpdateService extends ChangeNotifier
     return bytes;
   }
 
-  Uri _asset(String tag, String name) =>
-      Uri.https('github.com', '/saga-src/Equis/releases/download/$tag/$name');
+  Uri _asset(String tag, String name) => Uri.https(
+    'github.com',
+    '/$releaseRepository/releases/download/$tag/$name',
+  );
   Future<void> check({bool manual = false}) async {
     if (_busy || status == UpdateStatus.installing) return;
     if (windowsUpdateTestMode) {
@@ -197,7 +200,10 @@ final class AppUpdateService extends ChangeNotifier
     _set(UpdateStatus.checking);
     try {
       final bytes = await _get(
-        Uri.https('api.github.com', '/repos/saga-src/Equis/releases/latest'),
+        Uri.https(
+          'api.github.com',
+          '/repos/$releaseRepository/releases/latest',
+        ),
         1048576,
       );
       final release = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;

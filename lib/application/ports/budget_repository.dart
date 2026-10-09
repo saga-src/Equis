@@ -1,11 +1,29 @@
 import '../../domain/budgeting/budget_models.dart';
 import '../../domain/shared/local_date.dart';
 import '../../domain/shared/uuid_v7.dart';
+import '../../domain/shared/utc_instant.dart';
 
 abstract interface class BudgetRepository {
-  Future<void> save(BudgetDefinition budget);
+  Future<void> save(
+    BudgetDefinition budget, {
+    BudgetMonthlyConfiguration? initialMonthlyConfiguration,
+  });
   Future<BudgetDefinition?> find(EntityId id);
-  Future<List<BudgetDefinition>> listForVault(EntityId vaultId);
+  Future<List<BudgetDefinition>> listForVault(
+    EntityId vaultId, {
+    bool includeDeleted = false,
+  });
+  Future<BudgetMonthlyHistory> loadMonthlyHistory(EntityId budgetId);
+  Future<BudgetDefinition> saveMonthlyEdit({
+    required EntityId budgetId,
+    required EntityId vaultId,
+    required int expectedRevision,
+    required BudgetMonth month,
+    required BudgetMonthlyConfiguration configuration,
+    required BudgetMonthlyEditScope scope,
+    required UtcInstant now,
+    String? name,
+  });
 
   Future<List<BudgetUsageRow>> loadUsageRows({
     required EntityId vaultId,

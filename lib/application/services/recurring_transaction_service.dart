@@ -8,6 +8,8 @@ import '../../domain/recurring/recurrence_models.dart';
 import '../../domain/shared/local_date.dart';
 import '../../domain/shared/utc_instant.dart';
 import '../../domain/shared/uuid_v7.dart';
+import '../../domain/shared/zoned_recurrence.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 final class RecurringTransactionService {
   const RecurringTransactionService({
@@ -125,25 +127,33 @@ final class RecurringTransactionService {
     final result = <ScheduledOccurrence>[];
     for (final schedule in schedules) {
       final rule = schedule.rule;
-      final effectiveThrough =
-          rule.endsOn != null && rule.endsOn!.compareTo(through) < 0
-          ? rule.endsOn!
-          : through;
-      if (effectiveThrough.compareTo(rule.startsOn) < 0) continue;
-      final occurrences = rule.pattern.between(
-        anchor: rule.startsOn,
-        from: from.compareTo(rule.startsOn) < 0 ? rule.startsOn : from,
-        through: effectiveThrough,
-        limit: limit,
-      );
+      final occurrences = schedule.datesBetween(from, through);
       for (final recurrenceDate in occurrences) {
         final transaction =
             materialized[occurrenceKey(rule.id, recurrenceDate)];
+        if (transaction != null) continue;
         result.add(
           ScheduledOccurrence(
-            schedule: schedule,
+            schedule: schedule.at(recurrenceDate),
             recurrenceDate: recurrenceDate,
             scheduledDate: transaction?.financialDate ?? recurrenceDate,
+            state: _state(transaction),
+            transaction: transaction,
+          ),
+        );
+      }
+      for (final transaction in materialized.values.where(
+        (tx) => tx.recurringRuleId == rule.id,
+      )) {
+        if (transaction.financialDate.compareTo(from) < 0 ||
+            transaction.financialDate.compareTo(through) > 0) {
+          continue;
+        }
+        result.add(
+          ScheduledOccurrence(
+            schedule: schedule.at(transaction.recurrenceDate!),
+            recurrenceDate: transaction.recurrenceDate!,
+            scheduledDate: transaction.financialDate,
             state: _state(transaction),
             transaction: transaction,
           ),
@@ -165,15 +175,19 @@ final class RecurringTransactionService {
     required UtcInstant now,
   }) => unitOfWork.run(() async {
     final existing = await _existing(occurrence);
+    final current = await _active(occurrence.schedule);
     late final LedgerTransaction confirmed;
     if (existing == null) {
+      _requireProposed(current, occurrence.recurrenceDate);
       confirmed = _materialize(
-        occurrence.schedule,
+        current.at(occurrence.recurrenceDate),
         recurrenceDate: occurrence.recurrenceDate,
         financialDate: occurrence.scheduledDate,
         status: LedgerTransactionStatus.cleared,
         now: now,
       );
+    } else if (existing.deletedAt != null) {
+      throw StateError('A deleted occurrence cannot be confirmed.');
     } else if (existing.status == LedgerTransactionStatus.pending) {
       confirmed = existing.transitionTo(
         LedgerTransactionStatus.cleared,
@@ -186,7 +200,7 @@ final class RecurringTransactionService {
       throw StateError('A skipped occurrence cannot be confirmed.');
     }
     await ledger.save(confirmed);
-    await _advance(occurrence.schedule, occurrence.recurrenceDate, now);
+    await _advance(current, occurrence.recurrenceDate, now);
     return confirmed;
   });
 
@@ -195,15 +209,19 @@ final class RecurringTransactionService {
     required UtcInstant now,
   }) => unitOfWork.run(() async {
     final existing = await _existing(occurrence);
+    final current = await _active(occurrence.schedule);
     late final LedgerTransaction skipped;
     if (existing == null) {
+      _requireProposed(current, occurrence.recurrenceDate);
       skipped = _materialize(
-        occurrence.schedule,
+        current.at(occurrence.recurrenceDate),
         recurrenceDate: occurrence.recurrenceDate,
         financialDate: occurrence.scheduledDate,
         status: LedgerTransactionStatus.cancelled,
         now: now,
       );
+    } else if (existing.deletedAt != null) {
+      return existing;
     } else if (existing.status == LedgerTransactionStatus.pending) {
       skipped = existing.transitionTo(
         LedgerTransactionStatus.cancelled,
@@ -216,7 +234,7 @@ final class RecurringTransactionService {
       throw StateError('A confirmed occurrence cannot be skipped.');
     }
     await ledger.save(skipped);
-    await _advance(occurrence.schedule, occurrence.recurrenceDate, now);
+    await _advance(current, occurrence.recurrenceDate, now);
     return skipped;
   });
 
@@ -224,18 +242,21 @@ final class RecurringTransactionService {
     ScheduledOccurrence occurrence, {
     required LocalDate newDate,
     required UtcInstant now,
-  }) async {
+  }) => unitOfWork.run(() async {
+    final current = await _active(occurrence.schedule);
     final existing = await _existing(occurrence);
     late final LedgerTransaction pending;
     if (existing == null) {
+      _requireProposed(current, occurrence.recurrenceDate);
       pending = _materialize(
-        occurrence.schedule,
+        current.at(occurrence.recurrenceDate),
         recurrenceDate: occurrence.recurrenceDate,
         financialDate: newDate,
         status: LedgerTransactionStatus.pending,
         now: now,
       );
-    } else if (existing.status == LedgerTransactionStatus.pending) {
+    } else if (existing.status == LedgerTransactionStatus.pending &&
+        existing.deletedAt == null) {
       pending = existing.revise(
         movements: existing.movements,
         splits: existing.splits,
@@ -250,19 +271,23 @@ final class RecurringTransactionService {
     }
     await ledger.save(pending);
     return pending;
-  }
+  });
 
   Future<LedgerTransaction> modifyOne(
     ScheduledOccurrence occurrence, {
     required RecurringTemplate replacement,
     required UtcInstant now,
-  }) async {
+  }) => unitOfWork.run(() async {
+    final current = await _active(occurrence.schedule);
     final candidateSchedule = RecurringSchedule(
-      rule: occurrence.schedule.rule,
+      rule: current.rule,
       template: replacement,
     );
     _validateTemplate(candidateSchedule);
     final existing = await _existing(occurrence);
+    if (existing == null) {
+      _requireProposed(current, occurrence.recurrenceDate);
+    }
     final candidate = _materialize(
       candidateSchedule,
       recurrenceDate: occurrence.recurrenceDate,
@@ -272,7 +297,8 @@ final class RecurringTransactionService {
     );
     final modified = existing == null
         ? candidate
-        : existing.status != LedgerTransactionStatus.pending
+        : existing.status != LedgerTransactionStatus.pending ||
+              existing.deletedAt != null
         ? (throw StateError('Only an unconfirmed occurrence can be modified.'))
         : existing.type != candidate.type
         ? (throw StateError('One occurrence cannot change transaction type.'))
@@ -286,7 +312,7 @@ final class RecurringTransactionService {
           );
     await ledger.save(modified);
     return modified;
-  }
+  });
 
   Future<RecurringSchedule> modifyFuture(
     RecurringSchedule current, {
@@ -294,79 +320,175 @@ final class RecurringTransactionService {
     RecurrencePattern? pattern,
     RecurringTemplate? template,
     String? name,
+    LocalDate? endsOn,
+    bool clearEndsOn = false,
     required UtcInstant now,
   }) => unitOfWork.run(() async {
-    if (effectiveFrom.compareTo(current.rule.startsOn) < 0) {
+    final latest = await _active(current, expectedRevision: true);
+    ZonedRecurrenceClock.initialize();
+    final clock = tz.TZDateTime.from(
+      now.toDateTime(),
+      tz.getLocation(latest.rule.timezone),
+    );
+    final today = LocalDate(clock.year, clock.month, clock.day);
+    if (effectiveFrom.compareTo(latest.rule.startsOn) < 0 ||
+        effectiveFrom.compareTo(today) < 0) {
       throw ArgumentError(
-        'Future modification cannot precede the series start.',
+        'Modification cannot precede today or the series start.',
       );
     }
-    if (effectiveFrom == current.rule.startsOn) {
-      final replacement = RecurringSchedule(
-        rule: current.rule.revise(
-          name: name,
-          pattern: pattern,
-          nextOccurrence: effectiveFrom,
-          at: now,
-        ),
-        template: _cloneTemplate(template ?? current.template),
-      );
-      _validateTemplate(replacement);
-      await repository.save(replacement);
-      return replacement;
+    final previous = latest.configurationAt(effectiveFrom);
+    final selectedPattern = pattern ?? previous.pattern;
+    final selectedTemplate = _cloneTemplate(template ?? previous.template);
+    final selectedEnd = clearEndsOn ? null : endsOn ?? previous.endsOn;
+    if (selectedEnd != null && selectedEnd.compareTo(effectiveFrom) < 0) {
+      throw ArgumentError('End must follow the effective date.');
     }
-    final clearPredecessorNext =
-        current.rule.nextOccurrence != null &&
-        current.rule.nextOccurrence!.compareTo(effectiveFrom) >= 0;
-    final predecessor = current.rule.revise(
-      endsOn: effectiveFrom.addDays(-1),
-      nextOccurrence: current.rule.nextOccurrence,
-      clearNextOccurrence: clearPredecessorNext,
-      at: now,
-    );
-    await repository.save(
-      RecurringSchedule(rule: predecessor, template: current.template),
-    );
-    final successorTemplate = _cloneTemplate(template ?? current.template);
-    final successor = RecurringSchedule(
-      rule: RecurringRule(
-        id: EntityId.generate(),
-        vaultId: current.rule.vaultId,
-        name: name ?? current.rule.name,
-        pattern: pattern ?? current.rule.pattern,
-        timezone: current.rule.timezone,
-        startsOn: effectiveFrom,
-        endsOn: current.rule.endsOn,
-        nextOccurrence: effectiveFrom,
-        createdAt: now,
-        updatedAt: now,
+    if (selectedTemplate.transactionType != previous.template.transactionType ||
+        selectedTemplate.movements.any(
+          (movement) =>
+              movement.pocket.currency !=
+              previous.template.movements.first.pocket.currency,
+        )) {
+      throw ArgumentError(
+        'The transaction type and currency must remain unchanged.',
+      );
+    }
+    final versions = [
+      ...latest.configurations.where(
+        (version) => version.effectiveFrom.compareTo(effectiveFrom) < 0,
       ),
-      template: successorTemplate,
+      RecurringRuleVersion(
+        effectiveFrom: effectiveFrom,
+        anchorOn:
+            selectedPattern.frequency == previous.pattern.frequency &&
+                selectedPattern.interval == previous.pattern.interval
+            ? previous.anchorOn
+            : effectiveFrom,
+        name: name ?? previous.name,
+        pattern: selectedPattern,
+        endsOn: selectedEnd,
+        template: selectedTemplate,
+      ),
+    ];
+    if (versions.last.name.trim().isEmpty) {
+      throw ArgumentError('A name is required.');
+    }
+    final revised = RecurringSchedule(
+      rule: latest.rule.revise(scheduleHistoryEdited: true, at: now),
+      template: latest.template,
+      versions: versions,
     );
-    _validateTemplate(successor);
-    await repository.save(successor);
-    return successor;
+    _validateTemplate(revised.at(effectiveFrom));
+    final next = await _next(revised, today);
+    final saved = RecurringSchedule(
+      rule: latest.rule.revise(
+        scheduleHistoryEdited: true,
+        nextOccurrence: next,
+        clearNextOccurrence: next == null,
+        at: now,
+      ),
+      template: latest.template,
+      versions: versions,
+    );
+    await repository.save(saved);
+    return saved;
   });
 
   Future<void> end(
     RecurringSchedule schedule, {
     required LocalDate lastDate,
     required UtcInstant now,
-  }) async {
-    if (lastDate.compareTo(schedule.rule.startsOn) < 0) {
-      throw ArgumentError('End date cannot precede the series start.');
+  }) => unitOfWork.run(() async {
+    final latest = await _active(schedule, expectedRevision: true);
+    if (lastDate.compareTo(latest.rule.startsOn) < 0) {
+      throw ArgumentError('End precedes start.');
     }
     await repository.save(
       RecurringSchedule(
-        rule: schedule.rule.revise(
+        rule: latest.rule.revise(
           endsOn: lastDate,
           enabled: false,
           clearNextOccurrence: true,
           at: now,
         ),
-        template: schedule.template,
+        template: latest.template,
+        versions: latest.versions,
       ),
     );
+  });
+
+  Future<void> delete(RecurringSchedule schedule, {required UtcInstant now}) =>
+      unitOfWork.run(() async {
+        final latest = await repository.find(schedule.rule.id);
+        if (latest == null ||
+            latest.rule.vaultId != schedule.rule.vaultId ||
+            latest.rule.revision != schedule.rule.revision ||
+            latest.rule.deletedAt != null) {
+          throw RecurringRevisionConflict(schedule.rule.id);
+        }
+        await repository.save(
+          RecurringSchedule(
+            rule: latest.rule.revise(
+              enabled: false,
+              clearNextOccurrence: true,
+              deletedAt: now,
+              at: now,
+            ),
+            template: latest.template,
+            versions: latest.versions,
+          ),
+        );
+      });
+
+  Future<RecurringSchedule> _active(
+    RecurringSchedule expected, {
+    bool expectedRevision = false,
+  }) async {
+    final current = await repository.find(expected.rule.id);
+    if (current == null ||
+        current.rule.vaultId != expected.rule.vaultId ||
+        current.rule.deletedAt != null ||
+        !current.rule.enabled ||
+        (expectedRevision && current.rule.revision != expected.rule.revision)) {
+      throw RecurringRevisionConflict(expected.rule.id);
+    }
+    return current;
+  }
+
+  Future<LocalDate?> _next(RecurringSchedule schedule, LocalDate from) async {
+    // Scan bounded chunks: occupied nominal keys, including cancelled/deleted rows,
+    // must never become new proposals.
+    var cursor = from;
+    while (cursor.year <= 9999) {
+      final dates = schedule.datesBetween(
+        cursor,
+        LocalDate(9999, 12, 31),
+        limit: 200,
+      );
+      if (dates.isEmpty) return null;
+      final occupied = await repository.materializedOccurrences(
+        ruleIds: {schedule.rule.id},
+        from: dates.first,
+        through: dates.last,
+      );
+      for (final date in dates) {
+        if (!occupied.containsKey(occurrenceKey(schedule.rule.id, date))) {
+          return date;
+        }
+      }
+      if (dates.last == LocalDate(9999, 12, 31)) return null;
+      cursor = dates.last.addDays(1);
+    }
+    return null;
+  }
+
+  void _requireProposed(RecurringSchedule current, LocalDate date) {
+    if (!current.datesBetween(date, date).contains(date)) {
+      throw StateError(
+        'This occurrence no longer belongs to the current schedule.',
+      );
+    }
   }
 
   LedgerTransaction _materialize(
@@ -420,26 +542,21 @@ final class RecurringTransactionService {
     LocalDate occurrence,
     UtcInstant now,
   ) async {
-    final candidates = schedule.rule.pattern.between(
-      anchor: schedule.rule.startsOn,
-      from: occurrence.addDays(1),
-      through: schedule.rule.endsOn ?? LocalDate(9999, 12, 31),
-      limit: 1,
-    );
+    final next = await _next(schedule, occurrence.addDays(1));
     await repository.save(
       RecurringSchedule(
         rule: schedule.rule.revise(
-          nextOccurrence: candidates.isEmpty ? null : candidates.single,
-          clearNextOccurrence: candidates.isEmpty,
+          nextOccurrence: next,
+          clearNextOccurrence: next == null,
           at: now,
         ),
         template: schedule.template,
+        versions: schedule.versions,
       ),
     );
   }
 
   Future<LedgerTransaction?> _existing(ScheduledOccurrence occurrence) async {
-    if (occurrence.transaction != null) return occurrence.transaction;
     final rows = await repository.materializedOccurrences(
       ruleIds: {occurrence.schedule.rule.id},
       from: occurrence.recurrenceDate,
@@ -473,6 +590,7 @@ final class RecurringTransactionService {
                 pocket: movement.pocket,
                 amountMinor: movement.amountMinor,
                 sortOrder: movement.sortOrder,
+                statementId: movement.statementId,
               ),
             )
             .toList(growable: false),

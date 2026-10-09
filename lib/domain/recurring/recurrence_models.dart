@@ -74,6 +74,7 @@ final class RecurrencePattern {
     final result = <LocalDate>[];
     while (result.length < limit) {
       final occurrence = occurrenceAt(anchor, index);
+      if (occurrence.year > 9999) break;
       if (occurrence.compareTo(through) > 0) break;
       if (occurrence.compareTo(from) >= 0) result.add(occurrence);
       index++;
@@ -114,6 +115,7 @@ final class RecurringRule {
     this.nextOccurrence,
     this.revision = 1,
     this.deletedAt,
+    this.scheduleHistoryEdited = false,
   }) {
     if (name.trim().isEmpty) throw ArgumentError.value(name, 'name');
     if (timezone.trim().isEmpty) {
@@ -138,6 +140,7 @@ final class RecurringRule {
   final UtcInstant createdAt;
   final UtcInstant updatedAt;
   final UtcInstant? deletedAt;
+  final bool scheduleHistoryEdited;
 
   RecurringRule revise({
     String? name,
@@ -148,6 +151,9 @@ final class RecurringRule {
     bool? enabled,
     LocalDate? nextOccurrence,
     bool clearNextOccurrence = false,
+    bool clearEndsOn = false,
+    bool? scheduleHistoryEdited,
+    UtcInstant? deletedAt,
     required UtcInstant at,
   }) => RecurringRule(
     id: id,
@@ -156,7 +162,7 @@ final class RecurringRule {
     pattern: pattern ?? this.pattern,
     timezone: timezone ?? this.timezone,
     startsOn: startsOn ?? this.startsOn,
-    endsOn: endsOn ?? this.endsOn,
+    endsOn: clearEndsOn ? null : endsOn ?? this.endsOn,
     enabled: enabled ?? this.enabled,
     nextOccurrence: clearNextOccurrence
         ? null
@@ -164,7 +170,9 @@ final class RecurringRule {
     revision: revision + 1,
     createdAt: createdAt,
     updatedAt: at,
-    deletedAt: deletedAt,
+    deletedAt: deletedAt ?? this.deletedAt,
+    scheduleHistoryEdited:
+        this.scheduleHistoryEdited || (scheduleHistoryEdited ?? false),
   );
 }
 
@@ -185,9 +193,92 @@ final class RecurringTemplate {
 }
 
 final class RecurringSchedule {
-  const RecurringSchedule({required this.rule, required this.template});
+  RecurringSchedule({
+    required this.rule,
+    required this.template,
+    List<RecurringRuleVersion> versions = const [],
+  }) : versions = List.unmodifiable(versions);
 
   final RecurringRule rule;
+  final RecurringTemplate template;
+  final List<RecurringRuleVersion> versions;
+
+  List<RecurringRuleVersion> get configurations => versions.isEmpty
+      ? [
+          RecurringRuleVersion(
+            effectiveFrom: rule.startsOn,
+            anchorOn: rule.startsOn,
+            name: rule.name,
+            pattern: rule.pattern,
+            endsOn: rule.endsOn,
+            template: template,
+          ),
+        ]
+      : versions;
+
+  RecurringRuleVersion configurationAt(LocalDate date) =>
+      configurations
+          .where((version) => version.effectiveFrom.compareTo(date) <= 0)
+          .lastOrNull ??
+      configurations.first;
+
+  RecurringSchedule at(LocalDate date) {
+    final version = configurationAt(date);
+    return RecurringSchedule(
+      rule: rule,
+      template: version.template,
+      versions: configurations,
+    );
+  }
+
+  List<LocalDate> datesBetween(
+    LocalDate from,
+    LocalDate through, {
+    int limit = 1000,
+  }) {
+    final result = <LocalDate>[];
+    final segments = configurations;
+    for (var i = 0; i < segments.length; i++) {
+      final version = segments[i];
+      final start = from.compareTo(version.effectiveFrom) < 0
+          ? version.effectiveFrom
+          : from;
+      var end = through;
+      if (i + 1 < segments.length &&
+          segments[i + 1].effectiveFrom.compareTo(end) <= 0) {
+        end = segments[i + 1].effectiveFrom.addDays(-1);
+      }
+      if (version.endsOn != null && version.endsOn!.compareTo(end) < 0) {
+        end = version.endsOn!;
+      }
+      result.addAll(
+        version.pattern.between(
+          anchor: version.anchorOn,
+          from: start,
+          through: end,
+          limit: limit,
+        ),
+      );
+      if (result.length >= limit) break;
+    }
+    return result.take(limit).toList(growable: false);
+  }
+}
+
+final class RecurringRuleVersion {
+  const RecurringRuleVersion({
+    required this.effectiveFrom,
+    required this.anchorOn,
+    required this.name,
+    required this.pattern,
+    required this.template,
+    this.endsOn,
+  });
+  final LocalDate effectiveFrom;
+  final LocalDate anchorOn;
+  final String name;
+  final RecurrencePattern pattern;
+  final LocalDate? endsOn;
   final RecurringTemplate template;
 }
 
@@ -207,6 +298,18 @@ final class ScheduledOccurrence {
   final LocalDate scheduledDate;
   final ScheduledOccurrenceState state;
   final LedgerTransaction? transaction;
+
+  RecurringTemplate get template {
+    final materialized = transaction;
+    if (materialized == null) return schedule.template;
+    return RecurringTemplate(
+      transactionType: materialized.type,
+      movements: materialized.movements,
+      splits: materialized.splits,
+      title: materialized.title,
+      notes: materialized.notes,
+    );
+  }
 }
 
 LocalDate _monthOccurrence(LocalDate anchor, int monthOffset) {

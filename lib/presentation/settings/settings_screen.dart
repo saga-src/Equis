@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'update_card.dart';
+import 'licenses_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -22,6 +23,12 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(24),
         children: [
           const UpdateCard(),
+          ListTile(
+            key: const Key('settings-getting-started'),
+            leading: const Icon(Icons.help_outline),
+            title: Text(l10n.gettingStartedGuideTitle),
+            onTap: () => context.push('/guide'),
+          ),
           if (ref.watch(vaultWorkspaceProvider) != null)
             ListTile(
               leading: const Icon(Icons.lock_outline),
@@ -165,10 +172,15 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           ListTile(
+            key: const Key('settings-licenses'),
             leading: const Icon(Icons.description_outlined),
             title: Text(MaterialLocalizations.of(context).licensesPageTitle),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => showLicensePage(context: context),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const LicensesScreen(),
+              ),
+            ),
           ),
         ],
       ),

@@ -13,6 +13,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers/app_providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../shared/equis_glass.dart';
+import '../shared/vault_required.dart';
+import '../../application/services/getting_started_service.dart';
+import '../../domain/shared/uuid_v7.dart';
 
 class PortabilityScreen extends ConsumerStatefulWidget {
   const PortabilityScreen({super.key});
@@ -84,6 +87,7 @@ class _PortabilityScreenState extends ConsumerState<PortabilityScreen> {
         padding: const EdgeInsets.all(24),
         children: [
           if (_busy) const LinearProgressIndicator(),
+          if (vault == null) const VaultRequiredNotice(),
           if (_lastBackup != null)
             ListTile(
               title: Text(l.lastBackupLabel),
@@ -167,6 +171,17 @@ class _PortabilityScreenState extends ConsumerState<PortabilityScreen> {
   }
 
   Future<void> _createBackup(String vaultId) async {
+    final dependencies = ref.read(localAppDependenciesProvider);
+    if (dependencies == null) return;
+    final experience = dependencies.experience;
+    final captured = experience == null
+        ? null
+        : BackupChecklistOperation(
+            preferences: experience,
+            profileId: dependencies.profileId,
+            vaultId: EntityId.parse(vaultId),
+          );
+    var preferenceFailed = false;
     final password = await _askPassword(confirm: true);
     if (password == null || !mounted) return;
     await _run(() async {
@@ -176,31 +191,58 @@ class _PortabilityScreenState extends ConsumerState<PortabilityScreen> {
       try {
         final name = 'equis-backup-${_stamp()}.equis';
         final file = File('${directory.path}/$name');
-        final backups = ref.read(localAppDependenciesProvider)!.backups;
-        await backups.create(
-          vaultId: vaultId,
-          password: password,
-          destination: file,
+        final backups = dependencies.backups;
+        final published = await publishCheckedBackup(
+          create: () => backups.create(
+            vaultId: vaultId,
+            password: password,
+            destination: file,
+          ),
+          validate: () async {
+            await backups.validate(source: file, password: password);
+          },
+          publish: () =>
+              _publisher.publish(file, name, 'application/octet-stream'),
+          checklist: captured,
         );
-        await backups.validate(source: file, password: password);
-        final saved = await _publisher.publish(
-          file,
-          name,
-          'application/octet-stream',
-        );
-        if (saved == null) throw const _SaveCancelled();
+        if (published == null) throw const _SaveCancelled();
+        final saved = published.destination;
+        preferenceFailed = published.preferenceError != null;
+        if (mounted &&
+            ref.read(localAppDependenciesProvider)?.profileId ==
+                dependencies.profileId) {
+          ref.invalidate(gettingStartedStatusProvider);
+        }
         final metadata = <String, dynamic>{
           ...saved,
           'name': name,
           'date': DateTime.now().toUtc().toIso8601String(),
         };
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('last_portable_backup', jsonEncode(metadata));
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          if (!await prefs.setString(
+            'last_portable_backup',
+            jsonEncode(metadata),
+          )) {
+            preferenceFailed = true;
+          }
+        } catch (_) {
+          preferenceFailed = true;
+        }
         if (mounted) setState(() => _lastBackup = metadata);
       } finally {
         await directory.delete(recursive: true);
       }
     }, AppLocalizations.of(context).backupCreatedMessage);
+    if (preferenceFailed && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).backupSavedChecklistFailedMessage,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _validateBackup() async {

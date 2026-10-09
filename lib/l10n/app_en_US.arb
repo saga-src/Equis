@@ -42,7 +42,7 @@
   "notesLabel": "Notes",
   "requiredFieldMessage": "Required field",
   "localVaultErrorMessage": "The encrypted local vault could not be opened.",
-  "setupRequiredMessage": "Set up the local vault before adding transactions.",
+  "setupRequiredMessage": "You need to create or open a vault before recording or editing financial data. Synchronization also needs an active vault. You can use Equis offline without signing in.",
   "transactionNotFoundMessage": "Transaction not found.",
   "transactionDetailTitle": "Transaction details",
   "transactionDetailLoadFailedMessage": "Could not load this transaction from the local vault.",
@@ -71,7 +71,7 @@
   "transactionDetailReversalTitle": "Reversal",
   "transactionDetailReversalOfLabel": "Reversal of",
   "setupLocalVaultTitle": "Set up your local vault",
-  "setupLocalVaultBody": "Your data stays encrypted on this device and works offline.",
+  "setupLocalVaultBody": "Create your first vault and account below to start recording income and expenses. Your financial data stays encrypted on this device. Choose Continue offline to use Equis without signing in, or create an Equis account for optional synchronization.",
   "profileNameLabel": "Profile name",
   "firstAccountNameLabel": "First account name",
   "reportingCurrencyLabel": "Reporting currency",
@@ -253,6 +253,88 @@
   "budgetLoadFailedMessage": "Could not load budgets from the local vault.",
   "budgetNameLabel": "Budget name",
   "budgetLimitLabel": "Limit",
+  "budgetPreviousMonth": "Previous month",
+  "budgetNextMonth": "Next month",
+  "budgetCurrentMonth": "Current month",
+  "budgetSelectMonth": "Select month",
+  "budgetYearLabel": "Year",
+  "budgetInvalidMonth": "Enter a year from 1 to 9999.",
+  "budgetMonthScopeHint": "The month applies to monthly budgets. Other periods show their current progress.",
+  "budgetShowDeleted": "Include deleted budgets",
+  "budgetEmptyMonth": "No budgets for this month. Budgets appear from their creation month.",
+  "budgetRetryAction": "Retry",
+  "budgetDeletedReadOnly": "Deleted budget · history is read only",
+  "budgetFutureMonthHint": "Future month: no actual spending yet.",
+  "budgetPastMonthHint": "Actual spending includes the full month.",
+  "budgetCurrentMonthHint": "Actual spending through {date}.",
+  "budgetLimitMethodLabel": "Monthly limit calculation",
+  "budgetFixedMonthly": "Fixed monthly amount",
+  "budgetPerDay": "Per day",
+  "budgetPerWeekday": "Per weekday",
+  "budgetDailyAmountLabel": "Daily amount",
+  "budgetEditScopeLabel": "Apply changes to",
+  "budgetOnlyMonth": "Only this month",
+  "budgetFromMonth": "This month and following months",
+  "budgetPreserveOverridesHint": "Future months with their own settings are preserved.",
+  "budgetGeneralNameHint": "The name is shared by all months.",
+  "budgetCreationMonthHint": "A new budget starts in the current month.",
+  "budgetPreviewHint": "Enter an amount to preview the monthly limit.",
+  "budgetWeekdayHint": "Monday to Friday. Holidays are not excluded.",
+  "budgetMonthlyTotal": "Monthly limit: {total}",
+  "budgetLimitCalculation": "{rate} × {days} days = {total}",
+  "budgetInvalidAmount": "Enter a positive amount within the supported monetary range.",
+  "budgetInvalidForm": "Check the name, positive amount, warning percentage (up to 100%), and dates.",
+  "budgetSaveFailed": "Could not save. Check that the selected filters are still available and try again.",
+  "budgetRevisionChanged": "This budget changed on another screen or device. Close and reopen the editor to review the latest settings.",
+  "budgetSaving": "Saving…",
+  "budgetUsageLabel": "Used (%)",
+  "budgetWarningValue": "Warning at {percent}",
+  "budgetUnavailableCategory": "Unavailable category",
+  "budgetCategoryWithDescendants": "{category} (and subcategories)",
+  "@budgetCategoryWithDescendants": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetUnavailableAccount": "Inactive or unavailable account",
+  "budgetUnavailableTag": "Unavailable tag",
+  "budgetAllFilters": "All",
+  "@budgetCurrentMonthHint": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@budgetMonthlyTotal": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@budgetLimitCalculation": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@budgetWarningValue": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "budgetPeriodLabel": "Period",
   "weeklyBudgetPeriod": "Weekly",
   "monthlyBudgetPeriod": "Monthly",
@@ -489,7 +571,16 @@
   "linkMarketAssetAction": "Link market quote",
   "linkMarketAssetTitle": "Link asset to market data",
   "marketRefreshSummary": "{updated} updated, {failed} failed.",
-  "@marketRefreshSummary": {"placeholders": {"updated": {"type": "int"}, "failed": {"type": "int"}}},
+  "@marketRefreshSummary": {
+    "placeholders": {
+      "updated": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
   "intelligenceTitle": "Financial insights",
   "intelligenceSubtitle": "Local estimates based on your recorded data",
   "intelligencePrivacyMessage": "These insights are calculated on this device. Transaction history is not sent to an external AI service.",
@@ -673,6 +764,7 @@
   },
   "retrySyncAction": "Sync now",
   "syncConflictsTitle": "Conflicts requiring review",
+  "syncBudgetHistoryProtected": "Another device needs an update to support monthly budget history. Update it, then keep the current local version to preserve your settings.",
   "syncConflictBody": "{entityType} · {recordId} · local revision {localRevision}, remote revision {remoteRevision}",
   "@syncConflictBody": {
     "placeholders": {
@@ -931,5 +1023,59 @@
   "accountReferencesTransactions": "Transactions",
   "accountReferencesGoals": "Goals",
   "accountReferencesBudgets": "Budgets",
-  "accountReferencesAttachments": "Attachments"
+  "accountReferencesAttachments": "Attachments",
+  "editRecurringAction": "Edit rule",
+  "deleteRecurringAction": "Delete rule",
+  "deleteRecurringConfirmation": "Deleting this rule stops new occurrences. Existing transactions will be preserved.",
+  "recurrenceEffectiveFromLabel": "Effective date (today or later)",
+  "dashboardInvalidSelectionMessage": "The saved period is no longer valid. Showing this month; select another period to correct it.",
+  "dashboardLastThreeMonthsLabel": "Last 3 months",
+  "dashboardDailyLabel": "Daily",
+  "dashboardThisYearLabel": "This year",
+  "dashboardCurrentPositionLabel": "Current financial position",
+  "dashboardPeriodTitle": "Selected period",
+  "dashboardCumulativeLabel": "Cumulative",
+  "experiencePreferenceFailedMessage": "Your local preference could not be saved.",
+  "dashboardCustomRangeLabel": "Custom",
+  "dashboardLastMonthLabel": "Last month",
+  "dashboardFlowModeLabel": "Flow mode",
+  "checklistAccountLabel": "Set up an account",
+  "guideBackupBody": "Save an encrypted backup and keep its password so you can restore your vault. Validate the saved file; the checklist marks this step only after the backup is saved. JSON and CSV exports are unencrypted and do not replace a backup.",
+  "guideCategoriesBody": "Use categories to organize income and expenses. Add tags when you need another way to group records. A record with several tags appears under each tag, but its value is counted once in the total.",
+  "checklistShowAction": "Show checklist on home",
+  "guideTransactionsBody": "Add income, expenses or transfers after creating your vault and first account. Check the date, account, amount and category before saving. Open History to find or correct a record.",
+  "guideIntroBody": "Start on Home by creating your first vault and account. A vault stores your financial data; you need an active one to add or edit records and to synchronize them. The topics below explain what each feature does and open its screen.",
+  "checklistTransactionLabel": "Record a transaction",
+  "checklistPendingLabel": "Pending",
+  "guideBudgetsBody": "Set a spending limit and choose the accounts, categories or tags it covers. For monthly budgets, apply an edit to one month or that month and the following months. Months with custom settings keep them. Per-day amounts are multiplied by all days in the month. Per-weekday amounts count Monday to Friday, including public holidays.",
+  "gettingStartedGuideTitle": "Getting started guide",
+  "guideOpenAction": "Open feature",
+  "guideVaultsBody": "Create your first vault on Home: enter a profile name, your first account's name and the reporting currency. Choose Continue offline, or create an Equis account to synchronize later. To use an existing vault, open Vaults and account or restore an encrypted backup. Each vault keeps its finances separate.",
+  "checklistHideAction": "Hide checklist",
+  "backupSavedChecklistFailedMessage": "Backup saved. The local checklist preference could not be updated.",
+  "guideSkipAction": "Skip and start",
+  "checklistBackupLabel": "Create and save a backup",
+  "guideReportsBody": "Choose a period to see its income, expenses and cash flow. The first and last dates are included. Daily shows each day's flow; Cumulative adds those flows from the start of the period, without an opening balance. Balances, wealth and investments keep showing the current position.",
+  "checklistCompleteMessage": "Your first steps are complete.",
+  "guideTransactionsTitle": "Transactions",
+  "checklistDoneLabel": "Completed",
+  "guideSyncTitle": "Optional synchronization",
+  "guideSyncBody": "Create or open a vault first, then sign in to synchronize it between devices. Signing in alone does not create a vault. Update every device before editing budget or recurring-rule history; older versions may need conflict review.",
+  "guideWelcomeBody": "First, create a vault on Home. It stores your accounts and transactions, and you need one before you can enter or edit financial data. You can use Equis offline; signing in is only needed for synchronization. This guide explains each feature and stays available in Settings.",
+  "guideVaultsTitle": "Vaults and local profiles",
+  "guideAccountsBody": "Add the bank accounts, cash wallets or cards you want to track, and set their currencies. Enter an opening balance for money you already have. Archiving an account preserves its transactions.",
+  "guideWelcomeTitle": "Welcome to Equis",
+  "gettingStartedChecklistTitle": "Getting started",
+  "guideRecurringBody": "Create a rule for a payment or income that repeats. Confirm a proposed occurrence to record its payment or income. You can skip, reschedule or adjust individual occurrences. Editing a rule changes future proposals; deleting it stops new ones and preserves existing transactions.",
+  "checklistBudgetLabel": "Create a budget",
+  "licensesOverviewBody": "Equis license and notices for fonts, data and components included in the app.",
+  "licensesFontsTitle": "Fonts",
+  "licensesDataTitle": "Data",
+  "licensesDependenciesTitle": "Libraries and components",
+  "licensesDependenciesBody": "Third-party notices used by the app, including Flutter and its components.",
+  "licensesSearchLabel": "Search components",
+  "licensesNoMatches": "No matching components.",
+  "licensesLoadFailed": "This notice could not be loaded. Go back and try again.",
+  "vaultRequiredTitle": "Create or open a vault to continue",
+  "vaultOpenAction": "Open vaults or restore data"
 }

@@ -135,8 +135,13 @@ void main() {
 
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
-    expect(find.text('Language'), findsOneWidget);
     expect(find.byKey(const Key('taxonomy-settings')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Language'),
+      100,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('Language'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('language-pt-BR')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('language-pt-BR')));

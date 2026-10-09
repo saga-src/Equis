@@ -5,6 +5,7 @@ import 'recurring_transaction_service.dart';
 import '../../domain/goals/cash_flow_projection.dart';
 import '../../domain/goals/goal_models.dart';
 import '../../domain/ledger/ledger_models.dart';
+import '../../domain/recurring/recurrence_models.dart';
 import '../../domain/shared/currency.dart';
 import '../../domain/shared/local_date.dart';
 import '../../domain/shared/uuid_v7.dart';
@@ -49,7 +50,8 @@ final class CashFlowProjectionService {
       limit: 200,
     );
     for (final occurrence in recurringRows) {
-      final template = occurrence.schedule.template;
+      if (occurrence.state == ScheduledOccurrenceState.skipped) continue;
+      final template = occurrence.template;
       if (template.transactionType != LedgerTransactionType.income &&
           template.transactionType != LedgerTransactionType.expense) {
         continue;

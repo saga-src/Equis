@@ -41,7 +41,7 @@ void main() {
     expect(filter.reportingExpensesOnly, isTrue);
     expect(filter.types, isEmpty);
     expect(filter.fromDate, LocalDate(2026, 8, 1));
-    expect(filter.toDate, LocalDate(2026, 8, 17));
+    expect(filter.toDate, report.periodEnd);
   });
 
   test('income category limits history to income-producing types', () {

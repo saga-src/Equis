@@ -5,6 +5,8 @@ import 'package:equis/presentation/shared/equis_glass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../application/services/getting_started_service.dart';
 
 class EquisApp extends ConsumerStatefulWidget {
   const EquisApp({super.key});
@@ -15,6 +17,29 @@ class EquisApp extends ConsumerStatefulWidget {
 
 final class _EquisAppState extends ConsumerState<EquisApp>
     with WidgetsBindingObserver {
+  bool _welcomeAttempted = false;
+
+  Future<void> _checkWelcome(WelcomeGuideGate gate, GoRouter router) async {
+    final decision = await gate.check();
+    if (!mounted) return;
+    if (decision.show) router.go('/welcome');
+    if (decision.preferenceError != null) {
+      final navigationContext =
+          router.routerDelegate.navigatorKey.currentContext;
+      if (navigationContext != null && navigationContext.mounted) {
+        ScaffoldMessenger.of(navigationContext).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                navigationContext,
+              ).experiencePreferenceFailedMessage,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +62,13 @@ final class _EquisAppState extends ConsumerState<EquisApp>
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
+    final gate = ref.watch(welcomeGuideGateProvider);
+    if (!_welcomeAttempted && gate != null) {
+      _welcomeAttempted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _checkWelcome(gate, router);
+      });
+    }
     final locale = ref.watch(localeProvider);
     final themeVariant = ref.watch(themeVariantProvider);
     final theme = EquisTheme.forVariant(themeVariant);

@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:equis/application/ports/budget_repository.dart';
 import 'package:equis/application/services/budget_service.dart';
 import 'package:equis/domain/budgeting/budget_models.dart';
@@ -10,10 +11,16 @@ import 'package:equis/domain/shared/local_date.dart';
 import 'package:equis/domain/shared/money.dart';
 import 'package:equis/domain/shared/utc_instant.dart';
 import 'package:equis/domain/shared/uuid_v7.dart';
-import 'package:equis/infrastructure/persistence/database/equis_database.dart';
+import 'package:equis/infrastructure/persistence/database/equis_database.dart'
+    hide BudgetMonthlyConfiguration;
 import 'package:equis/infrastructure/repositories/drift_budget_repository.dart';
 import 'package:equis/infrastructure/repositories/drift_dashboard_repository.dart';
 import 'package:equis/infrastructure/repositories/drift_ledger_repository.dart';
+import 'package:equis/presentation/budgets/budget_controller.dart';
+import 'package:equis/application/sync/sync_models.dart';
+import 'package:equis/infrastructure/sync/drift_sync_aggregate_store.dart';
+import 'package:equis/infrastructure/sync/drift_sync_metadata_store.dart';
+import 'package:equis/infrastructure/sync/drift_sync_mutation_recorder.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -25,7 +32,18 @@ void main() {
   setUp(() async {
     database = EquisDatabase(NativeDatabase.memory());
     final ledger = DriftLedgerRepository(database);
-    repository = DriftBudgetRepository(database);
+    final metadata = DriftSyncMetadataStore(database);
+    repository = DriftBudgetRepository(
+      database,
+      syncRecorder: DriftSyncMutationRecorder(
+        database: database,
+        metadata: metadata,
+        aggregates: DriftSyncAggregateStore(
+          database: database,
+          metadata: metadata,
+        ),
+      ),
+    );
     service = BudgetService(
       repository: repository,
       reporting: DriftDashboardRepository(database),
@@ -34,6 +52,322 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'historical category ancestors survive archive and soft deletion',
+    () async {
+      final budget = await _create(
+        service,
+        fixture,
+        name: 'Past taxonomy',
+        limit: 20000,
+        scope: BudgetScope(
+          categories: [BudgetCategoryScope(categoryId: fixture.parentCategory)],
+        ),
+      );
+      await database.customStatement(
+        'UPDATE categories SET archived = 1, deleted_at = 2 WHERE id = ?',
+        [fixture.parentCategory.value],
+      );
+      final progress = (await service.loadProgress(
+        vaultId: fixture.vault,
+        asOf: LocalDate(2026, 9, 15),
+        month: BudgetMonth(2026, 8),
+      )).single;
+      expect(progress.budget.id, budget.id);
+      expect(progress.usedMinor, 13000);
+    },
+  );
+
+  test(
+    'monthly service edits preserve earlier months and future overrides including filters',
+    () async {
+      var budget = await _create(
+        service,
+        fixture,
+        name: 'Plan',
+        limit: 100000,
+        scope: BudgetScope(),
+      );
+      final original = budget;
+      Future<void> edit(
+        int month,
+        int amount,
+        BudgetMonthlyEditScope editScope,
+        BudgetScope scope,
+        int threshold,
+      ) async {
+        budget = await service.editMonthly(
+          existing: budget,
+          month: BudgetMonth(2026, month),
+          name: 'Shared name',
+          scope: editScope,
+          configuration: BudgetMonthlyConfiguration(
+            amountMinor: amount,
+            warningThresholdBps: threshold,
+            scope: scope,
+          ),
+          now: UtcInstant.fromDateTime(DateTime.utc(2026, 8, 17)),
+        );
+      }
+
+      await edit(
+        8,
+        120000,
+        BudgetMonthlyEditScope.onlyMonth,
+        BudgetScope(accountIds: {fixture.bankAccount}),
+        7500,
+      );
+      await edit(
+        9,
+        150000,
+        BudgetMonthlyEditScope.onlyMonth,
+        BudgetScope(tagIds: {fixture.plannedTag}),
+        6000,
+      );
+      await edit(
+        8,
+        120000,
+        BudgetMonthlyEditScope.fromMonth,
+        BudgetScope(
+          categories: [BudgetCategoryScope(categoryId: fixture.parentCategory)],
+        ),
+        7000,
+      );
+      final history = await repository.loadMonthlyHistory(budget.id);
+      expect(history.resolve(BudgetMonth(2026, 7))!.amountMinor, 100000);
+      expect(history.resolve(BudgetMonth(2026, 8))!.amountMinor, 120000);
+      expect(history.resolve(BudgetMonth(2026, 9))!.amountMinor, 150000);
+      expect(history.resolve(BudgetMonth(2026, 10))!.amountMinor, 120000);
+      expect(history.resolve(BudgetMonth(2026, 9))!.scope.tagIds, {
+        fixture.plannedTag,
+      });
+      expect(history.resolve(BudgetMonth(2026, 9))!.warningThresholdBps, 6000);
+      expect(history.resolve(BudgetMonth(2026, 10))!.warningThresholdBps, 7000);
+      expect((await repository.find(budget.id))!.name, 'Shared name');
+      await expectLater(
+        service.editMonthly(
+          existing: original,
+          month: BudgetMonth(2026, 8),
+          name: 'Stale name',
+          scope: BudgetMonthlyEditScope.onlyMonth,
+          configuration: BudgetMonthlyConfiguration(
+            amountMinor: 1,
+            warningThresholdBps: 1,
+            scope: BudgetScope(),
+          ),
+          now: UtcInstant.fromDateTime(DateTime.utc(2026, 8, 17)),
+        ),
+        throwsA(isA<BudgetRevisionConflict>()),
+      );
+      expect((await repository.find(budget.id))!.name, 'Shared name');
+    },
+  );
+
+  test(
+    'selected competence cuts actual usage inclusively and retains deleted history',
+    () async {
+      final budget = await _create(
+        service,
+        fixture,
+        name: 'History',
+        limit: 20000,
+        scope: BudgetScope(accountIds: {fixture.bankAccount}),
+      );
+      final pocket =
+          (await database
+                  .customSelect(
+                    'SELECT id FROM account_pockets WHERE account_id = ?',
+                    variables: [Variable(fixture.bankAccount.value)],
+                  )
+                  .getSingle())
+              .read<String>('id');
+      final ledger = DriftLedgerRepository(database);
+      for (final entry in [
+        (LocalDate(2026, 8, 17), 2000),
+        (LocalDate(2026, 8, 18), 3000),
+        (LocalDate(2026, 8, 31), 4000),
+        (LocalDate(2026, 9, 1), 5000),
+      ]) {
+        await ledger.save(
+          LedgerEngine().expense(
+            vaultId: fixture.vault,
+            pocket: LedgerPocket(
+              id: EntityId.parse(pocket),
+              currency: CurrencyCode.brl,
+              nature: AccountNature.asset,
+            ),
+            amount: Money(currency: CurrencyCode.brl, minorUnits: entry.$2),
+            categoryId: fixture.parentCategory,
+            date: entry.$1,
+            now: UtcInstant.fromDateTime(DateTime.utc(2026, 8, 17)),
+          ),
+        );
+      }
+      Future<BudgetProgress> load(
+        LocalDate asOf,
+        int month, {
+        bool deleted = false,
+      }) async => (await service.loadProgress(
+        vaultId: fixture.vault,
+        asOf: asOf,
+        month: BudgetMonth(2026, month),
+        includeDeleted: deleted,
+      )).single;
+      final current = await load(LocalDate(2026, 8, 17), 8);
+      expect(
+        current.usedMinor,
+        8000,
+      ); // Existing 7000 expense - 1000 refund + 2000.
+      final future = await load(LocalDate(2026, 8, 17), 9);
+      expect(future.usedMinor, 0);
+      expect(future.projectedMinor, 0);
+      expect(future.effectiveLimitMinor, 20000);
+      final past = await load(LocalDate(2026, 9, 15), 8);
+      expect(past.usedMinor, 15000);
+      expect(past.projectedMinor, 15000);
+      await database.customStatement(
+        'UPDATE transaction_splits SET amount_minor = amount_minor + 1000 '
+        "WHERE category_id = ? AND transaction_id IN (SELECT id FROM transactions WHERE financial_date = '2026-08-31')",
+        [fixture.parentCategory.value],
+      );
+      final corrected = await load(LocalDate(2026, 9, 15), 8);
+      expect(corrected.usedMinor, 16000);
+      expect(corrected.effectiveLimitMinor, 20000);
+      await service.delete(
+        budget,
+        now: UtcInstant.fromDateTime(DateTime.utc(2026, 9, 15)),
+      );
+      expect(
+        await service.loadProgress(
+          vaultId: fixture.vault,
+          asOf: LocalDate(2026, 9, 15),
+          month: BudgetMonth(2026, 8),
+        ),
+        isEmpty,
+      );
+      expect(
+        (await load(LocalDate(2026, 9, 15), 8, deleted: true)).usedMinor,
+        16000,
+      );
+    },
+  );
+
+  test(
+    'controller creates daily base atomically in vault month and home stays current',
+    () async {
+      await database.customStatement(
+        "INSERT INTO vault_cloud_bindings "
+        "(vault_id, auth_user_id, sync_enabled, linked_at) VALUES (?, 'fixture', 1, 1)",
+        [fixture.vault.value],
+      );
+      final controller = BudgetController(
+        service: service,
+        vaultId: fixture.vault,
+        timezone: 'America/Sao_Paulo',
+        clock: () => DateTime.utc(2024, 3, 1, 1),
+      );
+      addTearDown(controller.dispose);
+      expect(controller.today, LocalDate(2024, 2, 29));
+      expect(
+        await controller.create(
+          name: 'Daily',
+          currency: CurrencyCode.brl,
+          limitText: '10,00',
+          periodType: BudgetPeriodType.monthly,
+          warningThresholdBps: 7550,
+          scope: BudgetScope(),
+          limitMethod: BudgetLimitMethod.weekday,
+        ),
+        isTrue,
+      );
+      final budget = controller.state.items.single;
+      expect(budget.effectiveLimitMinor, 21000);
+      expect(budget.effectiveConfiguration!.amountMinor, 1000);
+      expect(budget.budget.revision, 1);
+      expect(budget.budget.monthlyHistoryEdited, isTrue);
+      final pending = (await DriftSyncMetadataStore(database).pendingFor(
+        vaultId: fixture.vault.value,
+        entityType: SyncEntityType.budget,
+        recordId: budget.budget.id.value,
+      ))!;
+      expect(pending.baseRevision, isNull);
+      expect(pending.newRevision, 1);
+      final aggregate =
+          (await DriftSyncAggregateStore(
+            database: database,
+            metadata: DriftSyncMetadataStore(database),
+          ).loadPayload(
+            vaultId: fixture.vault.value,
+            entityType: SyncEntityType.budget,
+            recordId: budget.budget.id.value,
+          ))!;
+      expect(aggregate['format_version'], 2);
+      expect(
+        (await repository.loadMonthlyHistory(
+          budget.budget.id,
+        )).entries.single.month,
+        BudgetMonth(2024, 2),
+      );
+      await controller.selectMonth(BudgetMonth(2024, 1));
+      expect(controller.state.items, isEmpty);
+      expect(controller.state.currentItems.single.effectiveLimitMinor, 21000);
+      await controller.selectMonth(BudgetMonth(2024, 3));
+      expect(
+        controller.state.items.single.effectiveLimitMinor,
+        21000,
+      ); // March also 21 weekdays.
+      expect(controller.state.items.single.usedMinor, 0);
+      expect(
+        controller.state.currentItems.single.period.start,
+        LocalDate(2024, 2, 1),
+      );
+    },
+  );
+
+  test('failed daily creation rolls back root, base, filters and outbox', () async {
+    await database.customStatement(
+      "INSERT INTO vault_cloud_bindings "
+      "(vault_id, auth_user_id, sync_enabled, linked_at) VALUES (?, 'fixture', 1, 1)",
+      [fixture.vault.value],
+    );
+    await database.customStatement(
+      "CREATE TRIGGER reject_daily BEFORE INSERT ON budget_monthly_configurations "
+      "WHEN NEW.limit_method = 'calendar_day' BEGIN SELECT RAISE(ABORT, 'fixture'); END",
+    );
+    final controller = BudgetController(
+      service: service,
+      vaultId: fixture.vault,
+      timezone: 'America/Sao_Paulo',
+      clock: () => DateTime.utc(2026, 8, 17, 12),
+    );
+    addTearDown(controller.dispose);
+    expect(
+      await controller.create(
+        name: 'Daily',
+        currency: CurrencyCode.brl,
+        limitText: '10',
+        periodType: BudgetPeriodType.monthly,
+        warningThresholdBps: 8000,
+        scope: BudgetScope(),
+        limitMethod: BudgetLimitMethod.calendarDay,
+      ),
+      isFalse,
+    );
+    for (final table in [
+      'budgets',
+      'budget_monthly_configurations',
+      'sync_outbox',
+    ]) {
+      expect(
+        (await database
+                .customSelect('SELECT COUNT(*) AS n FROM $table')
+                .getSingle())
+            .read<int>('n'),
+        0,
+      );
+    }
+  });
 
   test(
     'hierarchy, overlap, refunds, card neutrality, and FX reconcile exactly',
@@ -150,25 +484,30 @@ void main() {
         categories: [BudgetCategoryScope(categoryId: fixture.parentCategory)],
       ),
     );
-    final updated = await service.update(
+    final updated = await service.editMonthly(
       existing: original,
-      name: 'Planned',
-      limitMinor: 12000,
-      periodType: BudgetPeriodType.monthly,
-      warningThresholdBps: 7500,
-      scope: BudgetScope(
-        accountIds: {fixture.bankAccount},
-        tagIds: {fixture.plannedTag},
+      month: BudgetMonth(2026, 8),
+      scope: BudgetMonthlyEditScope.onlyMonth,
+      configuration: BudgetMonthlyConfiguration(
+        amountMinor: 12000,
+        warningThresholdBps: 7500,
+        scope: BudgetScope(
+          accountIds: {fixture.bankAccount},
+          tagIds: {fixture.plannedTag},
+        ),
       ),
-      enabled: true,
       now: const UtcInstant.fromEpochMicroseconds(9000),
     );
     final loaded = await repository.find(original.id);
-    expect(loaded!.name, 'Planned');
-    expect(loaded.limitMinor, 12000);
-    expect(loaded.scope.categories, isEmpty);
-    expect(loaded.scope.accountIds, {fixture.bankAccount});
-    expect(loaded.scope.tagIds, {fixture.plannedTag});
+    expect(loaded!.name, 'Food');
+    expect(loaded.limitMinor, 10000); // Legacy projection is not the timeline.
+    final configuration = (await repository.loadMonthlyHistory(
+      original.id,
+    )).resolve(BudgetMonth(2026, 8))!;
+    expect(configuration.amountMinor, 12000);
+    expect(configuration.scope.categories, isEmpty);
+    expect(configuration.scope.accountIds, {fixture.bankAccount});
+    expect(configuration.scope.tagIds, {fixture.plannedTag});
 
     await expectLater(
       service.update(
@@ -188,7 +527,8 @@ void main() {
       updated,
       now: const UtcInstant.fromEpochMicroseconds(11000),
     );
-    expect(await repository.find(updated.id), isNull);
+    expect((await repository.find(updated.id))!.deletedAt, isNotNull);
+    expect(await repository.listForVault(updated.vaultId), isEmpty);
   });
 
   test('weekly, monthly, yearly, and custom boundaries are inclusive', () {

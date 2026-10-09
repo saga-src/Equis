@@ -16,13 +16,25 @@ import '../shared/equis_glass.dart';
 import 'recurring_controller.dart';
 
 class RecurringScreen extends ConsumerWidget {
-  const RecurringScreen({super.key});
+  const RecurringScreen({super.key, this.financeOverride, this.stateOverride});
+  final LocalFinanceSnapshot? financeOverride;
+  final RecurringState? stateOverride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final snapshot = ref.watch(localFinanceControllerProvider).valueOrNull;
-    final recurring = ref.watch(recurringControllerProvider);
+    final snapshot =
+        financeOverride ??
+        ref.watch(localFinanceControllerProvider).valueOrNull;
+    final RecurringState recurring =
+        stateOverride ?? ref.watch<RecurringState>(recurringControllerProvider);
+    ref.listen(recurringControllerProvider, (previous, next) {
+      if (next.error != null && next.error != previous?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.recurringLoadFailedMessage)),
+        );
+      }
+    });
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -49,7 +61,7 @@ class RecurringScreen extends ConsumerWidget {
             : TabBarView(
                 children: [
                   _UpcomingList(state: recurring),
-                  _RulesList(state: recurring),
+                  _RulesList(state: recurring, finance: snapshot!),
                 ],
               ),
       ),
@@ -109,8 +121,10 @@ class _UpcomingList extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.event_repeat_outlined),
               title: Text(
-                occurrence.schedule.template.title ??
-                    occurrence.schedule.rule.name,
+                occurrence.template.title ??
+                    occurrence.schedule
+                        .configurationAt(occurrence.recurrenceDate)
+                        .name,
               ),
               subtitle: Text(
                 '${occurrence.scheduledDate} · ${_occurrenceState(l10n, occurrence.state)}',
@@ -119,7 +133,7 @@ class _UpcomingList extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _amount(context, occurrence.schedule.template),
+                    _amount(context, occurrence.template),
                     style: EquisTypography.numeric,
                   ),
                   if (occurrence.state == ScheduledOccurrenceState.scheduled ||
@@ -207,8 +221,9 @@ class _UpcomingList extends ConsumerWidget {
 enum _OccurrenceAction { confirm, skip, reschedule, modifyOne, modifyFuture }
 
 class _RulesList extends ConsumerWidget {
-  const _RulesList({required this.state});
+  const _RulesList({required this.state, required this.finance});
   final RecurringState state;
+  final LocalFinanceSnapshot finance;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -221,43 +236,119 @@ class _RulesList extends ConsumerWidget {
       itemCount: state.rules.length,
       itemBuilder: (context, index) {
         final schedule = state.rules[index];
+        final version = schedule.configurationAt(_localToday());
         return EquisGlassCard(
           child: ListTile(
             leading: Icon(
               schedule.rule.enabled ? Icons.repeat : Icons.event_busy_outlined,
             ),
-            title: Text(schedule.rule.name),
+            title: Text(version.name),
             subtitle: Text(
-              '${_patternLabel(l10n, schedule.rule.pattern)} · ${schedule.rule.startsOn}',
+              '${_patternLabel(l10n, version.pattern)} · ${_amount(context, version.template)}',
             ),
-            trailing: schedule.rule.enabled
-                ? IconButton(
-                    tooltip: l10n.endRecurrenceAction,
-                    icon: const Icon(Icons.stop_circle_outlined),
-                    onPressed: () async {
-                      final now = DateTime.now();
-                      final date = await _pickDate(
-                        context,
-                        LocalDate(now.year, now.month, now.day),
-                      );
-                      if (date != null) {
-                        await ref
-                            .read(recurringControllerProvider.notifier)
-                            .end(schedule, date);
-                      }
-                    },
-                  )
-                : Chip(label: Text(l10n.endedRecurrenceLabel)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (schedule.rule.enabled)
+                  IconButton(
+                    tooltip: l10n.editRecurringAction,
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _edit(context, ref, schedule),
+                  ),
+                IconButton(
+                  tooltip: l10n.deleteRecurringAction,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(l10n.deleteRecurringAction),
+                        content: Text(l10n.deleteRecurringConfirmation),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text(l10n.cancelAction),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: Text(l10n.deleteRecurringAction),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await ref
+                          .read(recurringControllerProvider.notifier)
+                          .delete(schedule);
+                    }
+                  },
+                ),
+                schedule.rule.enabled
+                    ? IconButton(
+                        tooltip: l10n.endRecurrenceAction,
+                        icon: const Icon(Icons.stop_circle_outlined),
+                        onPressed: () async {
+                          final now = DateTime.now();
+                          final date = await _pickDate(
+                            context,
+                            LocalDate(now.year, now.month, now.day),
+                          );
+                          if (date != null) {
+                            await ref
+                                .read(recurringControllerProvider.notifier)
+                                .end(schedule, date);
+                          }
+                        },
+                      )
+                    : Chip(label: Text(l10n.endedRecurrenceLabel)),
+              ],
+            ),
           ),
         );
       },
     );
   }
+
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref,
+    RecurringSchedule schedule,
+  ) async {
+    final snapshot = finance;
+    await showDialog<_RecurringDraft>(
+      context: context,
+      builder: (context) => _RecurringEditor(
+        snapshot: snapshot,
+        schedule: schedule,
+        onSubmit: (draft) => ref
+            .read(recurringControllerProvider.notifier)
+            .edit(
+              schedule,
+              name: draft.name,
+              source: draft.source,
+              destination: draft.destination,
+              amountText: draft.amount,
+              categoryId: draft.categoryId,
+              effectiveFrom: draft.startsOn,
+              pattern: draft.pattern,
+              endsOn: draft.endsOn,
+              title: draft.title,
+              notes: draft.notes,
+            ),
+      ),
+    );
+  }
 }
 
 class _RecurringEditor extends StatefulWidget {
-  const _RecurringEditor({required this.snapshot});
+  const _RecurringEditor({
+    required this.snapshot,
+    this.schedule,
+    this.onSubmit,
+  });
   final LocalFinanceSnapshot snapshot;
+  final RecurringSchedule? schedule;
+  final Future<bool> Function(_RecurringDraft)? onSubmit;
 
   @override
   State<_RecurringEditor> createState() => _RecurringEditorState();
@@ -276,6 +367,8 @@ class _RecurringEditorState extends State<_RecurringEditor> {
   int _interval = 1;
   late LocalDate _startsOn;
   LocalDate? _endsOn;
+  bool _saving = false;
+  bool _failed = false;
 
   @override
   void initState() {
@@ -283,6 +376,39 @@ class _RecurringEditorState extends State<_RecurringEditor> {
     final now = DateTime.now();
     _startsOn = LocalDate(now.year, now.month, now.day);
     _sourceId = _pockets.firstOrNull?.pocket.id;
+    final schedule = widget.schedule;
+    if (schedule != null) {
+      final version = schedule.configurationAt(_startsOn);
+      final template = version.template;
+      _name.text = version.name;
+      _title.text = template.title ?? '';
+      _notes.text = template.notes ?? '';
+      _amount.text = _amountText(template);
+      _type = template.transactionType;
+      _sourceId = template.movements
+          .where(
+            (m) => _type == LedgerTransactionType.income
+                ? m.amountMinor > 0
+                : m.amountMinor < 0,
+          )
+          .first
+          .pocket
+          .id;
+      _destinationId = _type == LedgerTransactionType.transfer
+          ? template.movements
+                .where((m) => m.pocket.id != _sourceId)
+                .first
+                .pocket
+                .id
+          : null;
+      _categoryId = template.splits.firstOrNull?.categoryId;
+      _frequency = version.pattern.frequency;
+      _interval = version.pattern.interval;
+      _endsOn = version.endsOn;
+      if (_startsOn.compareTo(schedule.rule.startsOn) < 0) {
+        _startsOn = schedule.rule.startsOn;
+      }
+    }
   }
 
   @override
@@ -297,7 +423,12 @@ class _RecurringEditorState extends State<_RecurringEditor> {
   List<_PocketOption> get _pockets => [
     for (final aggregate in widget.snapshot.accounts)
       for (final pocket in aggregate.pockets.where(
-        (pocket) => !pocket.archived,
+        (pocket) =>
+            !pocket.archived &&
+            !aggregate.account.archived &&
+            (widget.schedule == null ||
+                pocket.currency ==
+                    widget.schedule!.template.movements.first.pocket.currency),
       ))
         _PocketOption(
           '${aggregate.account.name} · ${pocket.currency.value}',
@@ -332,7 +463,11 @@ class _RecurringEditorState extends State<_RecurringEditor> {
         .where((category) => category.type == categoryType)
         .toList();
     return AlertDialog(
-      title: Text(l10n.addRecurringAction),
+      title: Text(
+        widget.schedule == null
+            ? l10n.addRecurringAction
+            : l10n.editRecurringAction,
+      ),
       content: SizedBox(
         width: 560,
         child: SingleChildScrollView(
@@ -349,6 +484,7 @@ class _RecurringEditorState extends State<_RecurringEditor> {
               const SizedBox(height: 12),
               DropdownButtonFormField<LedgerTransactionType>(
                 initialValue: _type,
+                isExpanded: true,
                 decoration: InputDecoration(
                   labelText: l10n.transactionTypeLabel,
                 ),
@@ -366,11 +502,13 @@ class _RecurringEditorState extends State<_RecurringEditor> {
                     child: Text(l10n.transferTypeLabel),
                   ),
                 ],
-                onChanged: (value) => setState(() {
-                  _type = value!;
-                  _categoryId = null;
-                  _destinationId = null;
-                }),
+                onChanged: widget.schedule != null
+                    ? null
+                    : (value) => setState(() {
+                        _type = value!;
+                        _categoryId = null;
+                        _destinationId = null;
+                      }),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<EntityId>(
@@ -435,7 +573,9 @@ class _RecurringEditorState extends State<_RecurringEditor> {
               ),
               const SizedBox(height: 12),
               _DateInput(
-                label: l10n.recurrenceStartsLabel,
+                label: widget.schedule == null
+                    ? l10n.recurrenceStartsLabel
+                    : l10n.recurrenceEffectiveFromLabel,
                 value: _startsOn,
                 onChanged: (date) => setState(() => _startsOn = date!),
               ),
@@ -445,6 +585,7 @@ class _RecurringEditorState extends State<_RecurringEditor> {
                   Expanded(
                     child: DropdownButtonFormField<RecurrenceFrequency>(
                       initialValue: _frequency,
+                      isExpanded: true,
                       decoration: InputDecoration(
                         labelText: l10n.frequencyLabel,
                       ),
@@ -487,6 +628,11 @@ class _RecurringEditorState extends State<_RecurringEditor> {
                 controller: _notes,
                 decoration: InputDecoration(labelText: l10n.notesLabel),
               ),
+              if (_failed)
+                Text(
+                  l10n.recurringLoadFailedMessage,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
             ],
           ),
         ),
@@ -497,14 +643,18 @@ class _RecurringEditorState extends State<_RecurringEditor> {
           child: Text(l10n.cancelAction),
         ),
         FilledButton(
-          onPressed: _submit,
-          child: Text(l10n.createRecurringAction),
+          onPressed: _saving ? null : _submit,
+          child: Text(
+            widget.schedule == null
+                ? l10n.createRecurringAction
+                : l10n.applyAction,
+          ),
         ),
       ],
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final source = _pockets
         .where((option) => option.pocket.id == _sourceId)
         .firstOrNull;
@@ -527,22 +677,35 @@ class _RecurringEditorState extends State<_RecurringEditor> {
       );
       return;
     }
-    Navigator.pop(
-      context,
-      _RecurringDraft(
-        name: _name.text.trim(),
-        title: _title.text.trim().isEmpty ? null : _title.text.trim(),
-        notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
-        type: _type,
-        source: source.pocket,
-        destination: destination?.pocket,
-        categoryId: _categoryId,
-        amount: _amount.text,
-        startsOn: _startsOn,
-        endsOn: _endsOn,
-        pattern: RecurrencePattern(frequency: _frequency, interval: _interval),
-      ),
+    final draft = _RecurringDraft(
+      name: _name.text.trim(),
+      title: _title.text.trim().isEmpty ? null : _title.text.trim(),
+      notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
+      type: _type,
+      source: source.pocket,
+      destination: destination?.pocket,
+      categoryId: _categoryId,
+      amount: _amount.text,
+      startsOn: _startsOn,
+      endsOn: _endsOn,
+      pattern: RecurrencePattern(frequency: _frequency, interval: _interval),
     );
+    if (widget.onSubmit != null) {
+      setState(() {
+        _saving = true;
+        _failed = false;
+      });
+      final success = await widget.onSubmit!(draft);
+      if (!mounted) return;
+      if (!success) {
+        setState(() {
+          _saving = false;
+          _failed = true;
+        });
+        return;
+      }
+    }
+    if (mounted) Navigator.pop(context, draft);
   }
 }
 
@@ -567,11 +730,16 @@ class _OccurrenceEditorState extends State<_OccurrenceEditor> {
   @override
   void initState() {
     super.initState();
-    final template = widget.occurrence.schedule.template;
+    final configuration = widget.occurrence.schedule.configurationAt(
+      widget.occurrence.recurrenceDate,
+    );
+    final template = widget.includePattern
+        ? configuration.template
+        : widget.occurrence.template;
     _title = TextEditingController(text: template.title);
     _amount = TextEditingController(text: _amountText(template));
-    _frequency = widget.occurrence.schedule.rule.pattern.frequency;
-    _interval = widget.occurrence.schedule.rule.pattern.interval;
+    _frequency = configuration.pattern.frequency;
+    _interval = configuration.pattern.interval;
   }
 
   @override

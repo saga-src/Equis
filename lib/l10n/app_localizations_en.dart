@@ -143,7 +143,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setupRequiredMessage =>
-      'Set up the local vault before adding transactions.';
+      'You need to create or open a vault before recording or editing financial data. Synchronization also needs an active vault. You can use Equis offline without signing in.';
 
   @override
   String get transactionNotFoundMessage => 'Transaction not found.';
@@ -232,7 +232,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setupLocalVaultBody =>
-      'Your data stays encrypted on this device and works offline.';
+      'Create your first vault and account below to start recording income and expenses. Your financial data stays encrypted on this device. Choose Continue offline to use Equis without signing in, or create an Equis account for optional synchronization.';
 
   @override
   String get profileNameLabel => 'Profile name';
@@ -797,6 +797,149 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get budgetLimitLabel => 'Limit';
+
+  @override
+  String get budgetPreviousMonth => 'Previous month';
+
+  @override
+  String get budgetNextMonth => 'Next month';
+
+  @override
+  String get budgetCurrentMonth => 'Current month';
+
+  @override
+  String get budgetSelectMonth => 'Select month';
+
+  @override
+  String get budgetYearLabel => 'Year';
+
+  @override
+  String get budgetInvalidMonth => 'Enter a year from 1 to 9999.';
+
+  @override
+  String get budgetMonthScopeHint =>
+      'The month applies to monthly budgets. Other periods show their current progress.';
+
+  @override
+  String get budgetShowDeleted => 'Include deleted budgets';
+
+  @override
+  String get budgetEmptyMonth =>
+      'No budgets for this month. Budgets appear from their creation month.';
+
+  @override
+  String get budgetRetryAction => 'Retry';
+
+  @override
+  String get budgetDeletedReadOnly => 'Deleted budget · history is read only';
+
+  @override
+  String get budgetFutureMonthHint => 'Future month: no actual spending yet.';
+
+  @override
+  String get budgetPastMonthHint => 'Actual spending includes the full month.';
+
+  @override
+  String budgetCurrentMonthHint(String date) {
+    return 'Actual spending through $date.';
+  }
+
+  @override
+  String get budgetLimitMethodLabel => 'Monthly limit calculation';
+
+  @override
+  String get budgetFixedMonthly => 'Fixed monthly amount';
+
+  @override
+  String get budgetPerDay => 'Per day';
+
+  @override
+  String get budgetPerWeekday => 'Per weekday';
+
+  @override
+  String get budgetDailyAmountLabel => 'Daily amount';
+
+  @override
+  String get budgetEditScopeLabel => 'Apply changes to';
+
+  @override
+  String get budgetOnlyMonth => 'Only this month';
+
+  @override
+  String get budgetFromMonth => 'This month and following months';
+
+  @override
+  String get budgetPreserveOverridesHint =>
+      'Future months with their own settings are preserved.';
+
+  @override
+  String get budgetGeneralNameHint => 'The name is shared by all months.';
+
+  @override
+  String get budgetCreationMonthHint =>
+      'A new budget starts in the current month.';
+
+  @override
+  String get budgetPreviewHint =>
+      'Enter an amount to preview the monthly limit.';
+
+  @override
+  String get budgetWeekdayHint =>
+      'Monday to Friday. Holidays are not excluded.';
+
+  @override
+  String budgetMonthlyTotal(String total) {
+    return 'Monthly limit: $total';
+  }
+
+  @override
+  String budgetLimitCalculation(String rate, int days, String total) {
+    return '$rate × $days days = $total';
+  }
+
+  @override
+  String get budgetInvalidAmount =>
+      'Enter a positive amount within the supported monetary range.';
+
+  @override
+  String get budgetInvalidForm =>
+      'Check the name, positive amount, warning percentage (up to 100%), and dates.';
+
+  @override
+  String get budgetSaveFailed =>
+      'Could not save. Check that the selected filters are still available and try again.';
+
+  @override
+  String get budgetRevisionChanged =>
+      'This budget changed on another screen or device. Close and reopen the editor to review the latest settings.';
+
+  @override
+  String get budgetSaving => 'Saving…';
+
+  @override
+  String get budgetUsageLabel => 'Used (%)';
+
+  @override
+  String budgetWarningValue(String percent) {
+    return 'Warning at $percent';
+  }
+
+  @override
+  String get budgetUnavailableCategory => 'Unavailable category';
+
+  @override
+  String budgetCategoryWithDescendants(String category) {
+    return '$category (and subcategories)';
+  }
+
+  @override
+  String get budgetUnavailableAccount => 'Inactive or unavailable account';
+
+  @override
+  String get budgetUnavailableTag => 'Unavailable tag';
+
+  @override
+  String get budgetAllFilters => 'All';
 
   @override
   String get budgetPeriodLabel => 'Period';
@@ -1596,6 +1739,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncConflictsTitle => 'Conflicts requiring review';
 
   @override
+  String get syncBudgetHistoryProtected =>
+      'Another device needs an update to support monthly budget history. Update it, then keep the current local version to preserve your settings.';
+
+  @override
   String syncConflictBody(
     String entityType,
     String recordId,
@@ -2332,6 +2479,186 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountReferencesAttachments => 'Attachments';
+
+  @override
+  String get editRecurringAction => 'Edit rule';
+
+  @override
+  String get deleteRecurringAction => 'Delete rule';
+
+  @override
+  String get deleteRecurringConfirmation =>
+      'Deleting this rule stops new occurrences. Existing transactions will be preserved.';
+
+  @override
+  String get recurrenceEffectiveFromLabel => 'Effective date (today or later)';
+
+  @override
+  String get dashboardInvalidSelectionMessage =>
+      'The saved period is no longer valid. Showing this month; select another period to correct it.';
+
+  @override
+  String get dashboardLastThreeMonthsLabel => 'Last 3 months';
+
+  @override
+  String get dashboardDailyLabel => 'Daily';
+
+  @override
+  String get dashboardThisYearLabel => 'This year';
+
+  @override
+  String get dashboardCurrentPositionLabel => 'Current financial position';
+
+  @override
+  String get dashboardPeriodTitle => 'Selected period';
+
+  @override
+  String get dashboardCumulativeLabel => 'Cumulative';
+
+  @override
+  String get experiencePreferenceFailedMessage =>
+      'Your local preference could not be saved.';
+
+  @override
+  String get dashboardCustomRangeLabel => 'Custom';
+
+  @override
+  String get dashboardLastMonthLabel => 'Last month';
+
+  @override
+  String get dashboardFlowModeLabel => 'Flow mode';
+
+  @override
+  String get checklistAccountLabel => 'Set up an account';
+
+  @override
+  String get guideBackupBody =>
+      'Save an encrypted backup and keep its password so you can restore your vault. Validate the saved file; the checklist marks this step only after the backup is saved. JSON and CSV exports are unencrypted and do not replace a backup.';
+
+  @override
+  String get guideCategoriesBody =>
+      'Use categories to organize income and expenses. Add tags when you need another way to group records. A record with several tags appears under each tag, but its value is counted once in the total.';
+
+  @override
+  String get checklistShowAction => 'Show checklist on home';
+
+  @override
+  String get guideTransactionsBody =>
+      'Add income, expenses or transfers after creating your vault and first account. Check the date, account, amount and category before saving. Open History to find or correct a record.';
+
+  @override
+  String get guideIntroBody =>
+      'Start on Home by creating your first vault and account. A vault stores your financial data; you need an active one to add or edit records and to synchronize them. The topics below explain what each feature does and open its screen.';
+
+  @override
+  String get checklistTransactionLabel => 'Record a transaction';
+
+  @override
+  String get checklistPendingLabel => 'Pending';
+
+  @override
+  String get guideBudgetsBody =>
+      'Set a spending limit and choose the accounts, categories or tags it covers. For monthly budgets, apply an edit to one month or that month and the following months. Months with custom settings keep them. Per-day amounts are multiplied by all days in the month. Per-weekday amounts count Monday to Friday, including public holidays.';
+
+  @override
+  String get gettingStartedGuideTitle => 'Getting started guide';
+
+  @override
+  String get guideOpenAction => 'Open feature';
+
+  @override
+  String get guideVaultsBody =>
+      'Create your first vault on Home: enter a profile name, your first account\'s name and the reporting currency. Choose Continue offline, or create an Equis account to synchronize later. To use an existing vault, open Vaults and account or restore an encrypted backup. Each vault keeps its finances separate.';
+
+  @override
+  String get checklistHideAction => 'Hide checklist';
+
+  @override
+  String get backupSavedChecklistFailedMessage =>
+      'Backup saved. The local checklist preference could not be updated.';
+
+  @override
+  String get guideSkipAction => 'Skip and start';
+
+  @override
+  String get checklistBackupLabel => 'Create and save a backup';
+
+  @override
+  String get guideReportsBody =>
+      'Choose a period to see its income, expenses and cash flow. The first and last dates are included. Daily shows each day\'s flow; Cumulative adds those flows from the start of the period, without an opening balance. Balances, wealth and investments keep showing the current position.';
+
+  @override
+  String get checklistCompleteMessage => 'Your first steps are complete.';
+
+  @override
+  String get guideTransactionsTitle => 'Transactions';
+
+  @override
+  String get checklistDoneLabel => 'Completed';
+
+  @override
+  String get guideSyncTitle => 'Optional synchronization';
+
+  @override
+  String get guideSyncBody =>
+      'Create or open a vault first, then sign in to synchronize it between devices. Signing in alone does not create a vault. Update every device before editing budget or recurring-rule history; older versions may need conflict review.';
+
+  @override
+  String get guideWelcomeBody =>
+      'First, create a vault on Home. It stores your accounts and transactions, and you need one before you can enter or edit financial data. You can use Equis offline; signing in is only needed for synchronization. This guide explains each feature and stays available in Settings.';
+
+  @override
+  String get guideVaultsTitle => 'Vaults and local profiles';
+
+  @override
+  String get guideAccountsBody =>
+      'Add the bank accounts, cash wallets or cards you want to track, and set their currencies. Enter an opening balance for money you already have. Archiving an account preserves its transactions.';
+
+  @override
+  String get guideWelcomeTitle => 'Welcome to Equis';
+
+  @override
+  String get gettingStartedChecklistTitle => 'Getting started';
+
+  @override
+  String get guideRecurringBody =>
+      'Create a rule for a payment or income that repeats. Confirm a proposed occurrence to record its payment or income. You can skip, reschedule or adjust individual occurrences. Editing a rule changes future proposals; deleting it stops new ones and preserves existing transactions.';
+
+  @override
+  String get checklistBudgetLabel => 'Create a budget';
+
+  @override
+  String get licensesOverviewBody =>
+      'Equis license and notices for fonts, data and components included in the app.';
+
+  @override
+  String get licensesFontsTitle => 'Fonts';
+
+  @override
+  String get licensesDataTitle => 'Data';
+
+  @override
+  String get licensesDependenciesTitle => 'Libraries and components';
+
+  @override
+  String get licensesDependenciesBody =>
+      'Third-party notices used by the app, including Flutter and its components.';
+
+  @override
+  String get licensesSearchLabel => 'Search components';
+
+  @override
+  String get licensesNoMatches => 'No matching components.';
+
+  @override
+  String get licensesLoadFailed =>
+      'This notice could not be loaded. Go back and try again.';
+
+  @override
+  String get vaultRequiredTitle => 'Create or open a vault to continue';
+
+  @override
+  String get vaultOpenAction => 'Open vaults or restore data';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -2473,7 +2800,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get setupRequiredMessage =>
-      'Set up the local vault before adding transactions.';
+      'You need to create or open a vault before recording or editing financial data. Synchronization also needs an active vault. You can use Equis offline without signing in.';
 
   @override
   String get transactionNotFoundMessage => 'Transaction not found.';
@@ -2562,7 +2889,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get setupLocalVaultBody =>
-      'Your data stays encrypted on this device and works offline.';
+      'Create your first vault and account below to start recording income and expenses. Your financial data stays encrypted on this device. Choose Continue offline to use Equis without signing in, or create an Equis account for optional synchronization.';
 
   @override
   String get profileNameLabel => 'Profile name';
@@ -3127,6 +3454,149 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get budgetLimitLabel => 'Limit';
+
+  @override
+  String get budgetPreviousMonth => 'Previous month';
+
+  @override
+  String get budgetNextMonth => 'Next month';
+
+  @override
+  String get budgetCurrentMonth => 'Current month';
+
+  @override
+  String get budgetSelectMonth => 'Select month';
+
+  @override
+  String get budgetYearLabel => 'Year';
+
+  @override
+  String get budgetInvalidMonth => 'Enter a year from 1 to 9999.';
+
+  @override
+  String get budgetMonthScopeHint =>
+      'The month applies to monthly budgets. Other periods show their current progress.';
+
+  @override
+  String get budgetShowDeleted => 'Include deleted budgets';
+
+  @override
+  String get budgetEmptyMonth =>
+      'No budgets for this month. Budgets appear from their creation month.';
+
+  @override
+  String get budgetRetryAction => 'Retry';
+
+  @override
+  String get budgetDeletedReadOnly => 'Deleted budget · history is read only';
+
+  @override
+  String get budgetFutureMonthHint => 'Future month: no actual spending yet.';
+
+  @override
+  String get budgetPastMonthHint => 'Actual spending includes the full month.';
+
+  @override
+  String budgetCurrentMonthHint(String date) {
+    return 'Actual spending through $date.';
+  }
+
+  @override
+  String get budgetLimitMethodLabel => 'Monthly limit calculation';
+
+  @override
+  String get budgetFixedMonthly => 'Fixed monthly amount';
+
+  @override
+  String get budgetPerDay => 'Per day';
+
+  @override
+  String get budgetPerWeekday => 'Per weekday';
+
+  @override
+  String get budgetDailyAmountLabel => 'Daily amount';
+
+  @override
+  String get budgetEditScopeLabel => 'Apply changes to';
+
+  @override
+  String get budgetOnlyMonth => 'Only this month';
+
+  @override
+  String get budgetFromMonth => 'This month and following months';
+
+  @override
+  String get budgetPreserveOverridesHint =>
+      'Future months with their own settings are preserved.';
+
+  @override
+  String get budgetGeneralNameHint => 'The name is shared by all months.';
+
+  @override
+  String get budgetCreationMonthHint =>
+      'A new budget starts in the current month.';
+
+  @override
+  String get budgetPreviewHint =>
+      'Enter an amount to preview the monthly limit.';
+
+  @override
+  String get budgetWeekdayHint =>
+      'Monday to Friday. Holidays are not excluded.';
+
+  @override
+  String budgetMonthlyTotal(String total) {
+    return 'Monthly limit: $total';
+  }
+
+  @override
+  String budgetLimitCalculation(String rate, int days, String total) {
+    return '$rate × $days days = $total';
+  }
+
+  @override
+  String get budgetInvalidAmount =>
+      'Enter a positive amount within the supported monetary range.';
+
+  @override
+  String get budgetInvalidForm =>
+      'Check the name, positive amount, warning percentage (up to 100%), and dates.';
+
+  @override
+  String get budgetSaveFailed =>
+      'Could not save. Check that the selected filters are still available and try again.';
+
+  @override
+  String get budgetRevisionChanged =>
+      'This budget changed on another screen or device. Close and reopen the editor to review the latest settings.';
+
+  @override
+  String get budgetSaving => 'Saving…';
+
+  @override
+  String get budgetUsageLabel => 'Used (%)';
+
+  @override
+  String budgetWarningValue(String percent) {
+    return 'Warning at $percent';
+  }
+
+  @override
+  String get budgetUnavailableCategory => 'Unavailable category';
+
+  @override
+  String budgetCategoryWithDescendants(String category) {
+    return '$category (and subcategories)';
+  }
+
+  @override
+  String get budgetUnavailableAccount => 'Inactive or unavailable account';
+
+  @override
+  String get budgetUnavailableTag => 'Unavailable tag';
+
+  @override
+  String get budgetAllFilters => 'All';
 
   @override
   String get budgetPeriodLabel => 'Period';
@@ -3926,6 +4396,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get syncConflictsTitle => 'Conflicts requiring review';
 
   @override
+  String get syncBudgetHistoryProtected =>
+      'Another device needs an update to support monthly budget history. Update it, then keep the current local version to preserve your settings.';
+
+  @override
   String syncConflictBody(
     String entityType,
     String recordId,
@@ -4662,4 +5136,184 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get accountReferencesAttachments => 'Attachments';
+
+  @override
+  String get editRecurringAction => 'Edit rule';
+
+  @override
+  String get deleteRecurringAction => 'Delete rule';
+
+  @override
+  String get deleteRecurringConfirmation =>
+      'Deleting this rule stops new occurrences. Existing transactions will be preserved.';
+
+  @override
+  String get recurrenceEffectiveFromLabel => 'Effective date (today or later)';
+
+  @override
+  String get dashboardInvalidSelectionMessage =>
+      'The saved period is no longer valid. Showing this month; select another period to correct it.';
+
+  @override
+  String get dashboardLastThreeMonthsLabel => 'Last 3 months';
+
+  @override
+  String get dashboardDailyLabel => 'Daily';
+
+  @override
+  String get dashboardThisYearLabel => 'This year';
+
+  @override
+  String get dashboardCurrentPositionLabel => 'Current financial position';
+
+  @override
+  String get dashboardPeriodTitle => 'Selected period';
+
+  @override
+  String get dashboardCumulativeLabel => 'Cumulative';
+
+  @override
+  String get experiencePreferenceFailedMessage =>
+      'Your local preference could not be saved.';
+
+  @override
+  String get dashboardCustomRangeLabel => 'Custom';
+
+  @override
+  String get dashboardLastMonthLabel => 'Last month';
+
+  @override
+  String get dashboardFlowModeLabel => 'Flow mode';
+
+  @override
+  String get checklistAccountLabel => 'Set up an account';
+
+  @override
+  String get guideBackupBody =>
+      'Save an encrypted backup and keep its password so you can restore your vault. Validate the saved file; the checklist marks this step only after the backup is saved. JSON and CSV exports are unencrypted and do not replace a backup.';
+
+  @override
+  String get guideCategoriesBody =>
+      'Use categories to organize income and expenses. Add tags when you need another way to group records. A record with several tags appears under each tag, but its value is counted once in the total.';
+
+  @override
+  String get checklistShowAction => 'Show checklist on home';
+
+  @override
+  String get guideTransactionsBody =>
+      'Add income, expenses or transfers after creating your vault and first account. Check the date, account, amount and category before saving. Open History to find or correct a record.';
+
+  @override
+  String get guideIntroBody =>
+      'Start on Home by creating your first vault and account. A vault stores your financial data; you need an active one to add or edit records and to synchronize them. The topics below explain what each feature does and open its screen.';
+
+  @override
+  String get checklistTransactionLabel => 'Record a transaction';
+
+  @override
+  String get checklistPendingLabel => 'Pending';
+
+  @override
+  String get guideBudgetsBody =>
+      'Set a spending limit and choose the accounts, categories or tags it covers. For monthly budgets, apply an edit to one month or that month and the following months. Months with custom settings keep them. Per-day amounts are multiplied by all days in the month. Per-weekday amounts count Monday to Friday, including public holidays.';
+
+  @override
+  String get gettingStartedGuideTitle => 'Getting started guide';
+
+  @override
+  String get guideOpenAction => 'Open feature';
+
+  @override
+  String get guideVaultsBody =>
+      'Create your first vault on Home: enter a profile name, your first account\'s name and the reporting currency. Choose Continue offline, or create an Equis account to synchronize later. To use an existing vault, open Vaults and account or restore an encrypted backup. Each vault keeps its finances separate.';
+
+  @override
+  String get checklistHideAction => 'Hide checklist';
+
+  @override
+  String get backupSavedChecklistFailedMessage =>
+      'Backup saved. The local checklist preference could not be updated.';
+
+  @override
+  String get guideSkipAction => 'Skip and start';
+
+  @override
+  String get checklistBackupLabel => 'Create and save a backup';
+
+  @override
+  String get guideReportsBody =>
+      'Choose a period to see its income, expenses and cash flow. The first and last dates are included. Daily shows each day\'s flow; Cumulative adds those flows from the start of the period, without an opening balance. Balances, wealth and investments keep showing the current position.';
+
+  @override
+  String get checklistCompleteMessage => 'Your first steps are complete.';
+
+  @override
+  String get guideTransactionsTitle => 'Transactions';
+
+  @override
+  String get checklistDoneLabel => 'Completed';
+
+  @override
+  String get guideSyncTitle => 'Optional synchronization';
+
+  @override
+  String get guideSyncBody =>
+      'Create or open a vault first, then sign in to synchronize it between devices. Signing in alone does not create a vault. Update every device before editing budget or recurring-rule history; older versions may need conflict review.';
+
+  @override
+  String get guideWelcomeBody =>
+      'First, create a vault on Home. It stores your accounts and transactions, and you need one before you can enter or edit financial data. You can use Equis offline; signing in is only needed for synchronization. This guide explains each feature and stays available in Settings.';
+
+  @override
+  String get guideVaultsTitle => 'Vaults and local profiles';
+
+  @override
+  String get guideAccountsBody =>
+      'Add the bank accounts, cash wallets or cards you want to track, and set their currencies. Enter an opening balance for money you already have. Archiving an account preserves its transactions.';
+
+  @override
+  String get guideWelcomeTitle => 'Welcome to Equis';
+
+  @override
+  String get gettingStartedChecklistTitle => 'Getting started';
+
+  @override
+  String get guideRecurringBody =>
+      'Create a rule for a payment or income that repeats. Confirm a proposed occurrence to record its payment or income. You can skip, reschedule or adjust individual occurrences. Editing a rule changes future proposals; deleting it stops new ones and preserves existing transactions.';
+
+  @override
+  String get checklistBudgetLabel => 'Create a budget';
+
+  @override
+  String get licensesOverviewBody =>
+      'Equis license and notices for fonts, data and components included in the app.';
+
+  @override
+  String get licensesFontsTitle => 'Fonts';
+
+  @override
+  String get licensesDataTitle => 'Data';
+
+  @override
+  String get licensesDependenciesTitle => 'Libraries and components';
+
+  @override
+  String get licensesDependenciesBody =>
+      'Third-party notices used by the app, including Flutter and its components.';
+
+  @override
+  String get licensesSearchLabel => 'Search components';
+
+  @override
+  String get licensesNoMatches => 'No matching components.';
+
+  @override
+  String get licensesLoadFailed =>
+      'This notice could not be loaded. Go back and try again.';
+
+  @override
+  String get vaultRequiredTitle => 'Create or open a vault to continue';
+
+  @override
+  String get vaultOpenAction => 'Open vaults or restore data';
 }

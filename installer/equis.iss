@@ -1,8 +1,8 @@
 #ifndef AppVersion
-  #define AppVersion "1.2.1"
+  #define AppVersion "1.3.0"
 #endif
 #ifndef AppBuild
-  #define AppBuild "13"
+  #define AppBuild "14"
 #endif
 
 #ifdef UpdateTestMode

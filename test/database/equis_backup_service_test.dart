@@ -2,6 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:equis/domain/budgeting/budget_models.dart' as budgets;
+import 'package:equis/domain/shared/currency.dart';
+import 'package:equis/domain/shared/utc_instant.dart';
+import 'package:equis/domain/shared/uuid_v7.dart';
+import 'package:equis/infrastructure/repositories/drift_budget_repository.dart';
+
 import 'package:archive/archive.dart';
 import 'package:drift/native.dart';
 import 'package:equis/infrastructure/files/encrypted_attachment_file_codec.dart';
@@ -121,6 +127,34 @@ void main() {
   });
 
   test('creates, validates and restores a portable encrypted backup', () async {
+    final budgetRepository = DriftBudgetRepository(sourceDatabase);
+    final budget = budgets.BudgetDefinition(
+      id: EntityId.generate(),
+      vaultId: EntityId.parse(vault),
+      name: 'Historical budget',
+      currency: CurrencyCode.brl,
+      limitMinor: 100000,
+      periodType: budgets.BudgetPeriodType.monthly,
+      warningThresholdBps: 8000,
+      scope: budgets.BudgetScope(),
+      createdAt: const UtcInstant.fromEpochMicroseconds(1),
+      updatedAt: const UtcInstant.fromEpochMicroseconds(1),
+    );
+    await budgetRepository.save(budget);
+    await budgetRepository.saveMonthlyEdit(
+      budgetId: budget.id,
+      vaultId: budget.vaultId,
+      expectedRevision: 1,
+      month: budgets.BudgetMonth(2026, 8),
+      scope: budgets.BudgetMonthlyEditScope.onlyMonth,
+      configuration: budgets.BudgetMonthlyConfiguration(
+        amountMinor: 1000,
+        limitMethod: budgets.BudgetLimitMethod.weekday,
+        warningThresholdBps: 7500,
+        scope: budgets.BudgetScope(accountIds: {EntityId.parse(account)}),
+      ),
+      now: const UtcInstant.fromEpochMicroseconds(2),
+    );
     await sourceDatabase.customStatement(
       "INSERT INTO sync_activity_events VALUES (?, 'transaction', ?, 'sent', 1, 1, 1)",
       [vault, transaction],
@@ -153,6 +187,12 @@ void main() {
       password: password,
     );
     expect(restored.attachmentCount, 1);
+    final restoredBudget = (await DriftBudgetRepository(
+      targetDatabase,
+    ).loadMonthlyHistory(budget.id)).resolve(budgets.BudgetMonth(2026, 8))!;
+    expect(restoredBudget.amountMinor, 1000);
+    expect(restoredBudget.limitMethod, budgets.BudgetLimitMethod.weekday);
+    expect(restoredBudget.scope.accountIds, {EntityId.parse(account)});
     expect(
       await targetDatabase
           .customSelect('SELECT * FROM sync_activity_events')
@@ -225,7 +265,7 @@ void main() {
     );
   });
 
-  test('restores a real encrypted schema v6 backup into schema v7', () async {
+  test('restores a real encrypted schema v6 backup into schema v8', () async {
     final fixture = File('test/fixtures/v1.1-schema-v6.equis.fixture');
     const fixturePassword = 'synthetic v6 fixture password';
     final keys = VaultKeyManager(
@@ -248,7 +288,7 @@ void main() {
       password: fixturePassword,
     );
     expect(restored.schemaVersion, 6);
-    expect(targetDatabase.schemaVersion, 7);
+    expect(targetDatabase.schemaVersion, 8);
     expect(
       (await targetDatabase
               .customSelect('SELECT name FROM accounts')
